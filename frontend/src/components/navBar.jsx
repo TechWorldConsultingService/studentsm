@@ -8,7 +8,7 @@ import { CgProfile } from "react-icons/cg";
 
 const NavBar = () => {
   return (
-    <div className="flex items-center justify-between shadow-md p-2  pl-7 pr-8 bg-purple-900 text-white rounded-sm">
+    <div className="flex items-center justify-between shadow-md p-1  pl-7 pr-8 bg-purple-900 text-white rounded-sm">
 
       <div className="flex gap-7 items-center">
     <h4 className="font-semibold">Dashboard</h4>
