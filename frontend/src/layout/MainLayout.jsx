@@ -10,7 +10,7 @@ const MainLayout = ({children}) => {
       <Sidebar />
       <div className=" flex w-full flex-col">
         <NavBar />
-        <div>{children}</div>
+        <div className='bg-gray-100 p-4'>{children}</div>
       </div>
     </div>
       </div>
