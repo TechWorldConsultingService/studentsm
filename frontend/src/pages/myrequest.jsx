@@ -1,13 +1,13 @@
 import React from 'react'
 import MainLayout from '../layout/MainLayout'
 
-const Request = () => {
+const MyRequest = () => {
   return (
     <MainLayout>
-    <div>Request</div>
+    <div>My Request</div>
 
     </MainLayout>
   )
 }
 
-export default Request
+export default MyRequest

@@ -6,13 +6,17 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
-import Class from "./pages/class";
 import Calendar from "./pages/calendar";
 import Reports from "./pages/reports";
-import Request from "./pages/request";
 import MyBus from "./pages/mybus";
 import Leave from "./pages/leave";
 import Attendence from "./pages/attendence";
+import Science from "./pages/science";
+import Computer from "./pages/computer";
+import MyRequest from "./pages/myrequest";
+import AllRequest from "./pages/allrequest";
+import Math from "./pages/math";
+import HomePage from "./pages/dashboard";
 
 const router = createBrowserRouter([
   {
@@ -21,13 +25,28 @@ const router = createBrowserRouter([
   },
 
   {
+    path: "/dashboard",
+    element: <HomePage />,
+  },
+
+  {
     path: "/calendar",
     element: <Calendar />,
   },
 
   {
-    path: "/class",
-    element: <Class />,
+    path: "/math",
+    element: <Math />,
+  },
+
+  {
+    path: "/science",
+    element: <Science />,
+  },
+
+  {
+    path: "/computer",
+    element: <Computer />,
   },
 
   {
@@ -36,8 +55,13 @@ const router = createBrowserRouter([
   },
 
   {
-    path: "/request",
-    element: <Request />,
+    path: "/myrequest",
+    element: <MyRequest />,
+  },
+
+  {
+    path: "/allrequest",
+    element: <AllRequest />,
   },
 
   {

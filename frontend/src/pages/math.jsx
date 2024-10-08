@@ -1,13 +1,13 @@
 import React from 'react'
 import MainLayout from '../layout/MainLayout';
 
-const Class = () => {
+const Math = () => {
   return (
     <MainLayout>
-    <div>Class</div>
+    <div>Math</div>
     </MainLayout>
 
   )
 }
 
-export default Class;
+export default Math

@@ -10,7 +10,7 @@ import { FaAngleDown } from "react-icons/fa6";
 
 
 const sidebarData = [
-  { id: 1, title: "Dashboard", icon: <MdOutlineSpaceDashboard />, link: "/" },
+  { id: 1, title: "Dashboard", icon: <MdOutlineSpaceDashboard />, link: "/dashboard" },
   { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
 
   {
@@ -32,7 +32,7 @@ const sidebarData = [
     icon: <IoIosGitPullRequest />,
     subSidebar: [
       { id: 1, title: "All Request", link: "/allrequest" },
-      { id: 2, title: "myrequest", link: "/myrequest" },
+      { id: 2, title: "My request", link: "/myrequest" },
     ],
   },
 
@@ -58,7 +58,7 @@ const Sidebar = () => {
 
   return (
     <div className="flex flex-col shadow-md  bg-gray-200 w-[12%] ">
-      <Link to="/">
+      <Link to="/dashboard">
         <div className="mb-5 p-1 items-center justify-center flex flex-col">
           <img src="/logo.jpeg" className="h-[38.5px] w-[100px] " />
           <span className="text-sm text-purple-800">Satyam Xavier's</span>
