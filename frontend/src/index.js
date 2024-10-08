@@ -1,13 +1,89 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
+import Calendar from "./pages/calendar";
+import Reports from "./pages/reports";
+import MyBus from "./pages/mybus";
+import Leave from "./pages/leave";
+import Attendence from "./pages/attendence";
+import Science from "./pages/science";
+import Computer from "./pages/computer";
+import MyRequest from "./pages/myrequest";
+import AllRequest from "./pages/allrequest";
+import Math from "./pages/math";
+import HomePage from "./pages/dashboard";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+  },
+
+  {
+    path: "/dashboard",
+    element: <HomePage />,
+  },
+
+  {
+    path: "/calendar",
+    element: <Calendar />,
+  },
+
+  {
+    path: "/math",
+    element: <Math />,
+  },
+
+  {
+    path: "/science",
+    element: <Science />,
+  },
+
+  {
+    path: "/computer",
+    element: <Computer />,
+  },
+
+  {
+    path: "/reports",
+    element: <Reports />,
+  },
+
+  {
+    path: "/myrequest",
+    element: <MyRequest />,
+  },
+
+  {
+    path: "/allrequest",
+    element: <AllRequest />,
+  },
+
+  {
+    path: "/mybus",
+    element: <MyBus />,
+  },
+
+  {
+    path: "/leave",
+    element: <Leave />,
+  },
+
+  {
+    path: "/attendence",
+    element: <Attendence />,
+  },
+]);
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
 
