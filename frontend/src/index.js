@@ -1,13 +1,65 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
+import Class from "./pages/class";
+import Calendar from "./pages/calendar";
+import Reports from "./pages/reports";
+import Request from "./pages/request";
+import MyBus from "./pages/mybus";
+import Leave from "./pages/leave";
+import Attendence from "./pages/attendence";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+  },
+
+  {
+    path: "/calendar",
+    element: <Calendar />,
+  },
+
+  {
+    path: "/class",
+    element: <Class />,
+  },
+
+  {
+    path: "/reports",
+    element: <Reports />,
+  },
+
+  {
+    path: "/request",
+    element: <Request />,
+  },
+
+  {
+    path: "/mybus",
+    element: <MyBus />,
+  },
+
+  {
+    path: "/leave",
+    element: <Leave />,
+  },
+
+  {
+    path: "/attendence",
+    element: <Attendence />,
+  },
+]);
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
 
