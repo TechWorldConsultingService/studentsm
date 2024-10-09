@@ -8,9 +8,13 @@ import { LuFileSpreadsheet } from "react-icons/lu";
 import { Link } from "react-router-dom";
 import { FaAngleDown } from "react-icons/fa6";
 
-
 const sidebarData = [
-  { id: 1, title: "Dashboard", icon: <MdOutlineSpaceDashboard />, link: "/dashboard" },
+  {
+    id: 1,
+    title: "Dashboard",
+    icon: <MdOutlineSpaceDashboard />,
+    link: "/studentdashboard",
+  },
   { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
 
   {
@@ -47,18 +51,16 @@ const sidebarData = [
 ];
 
 const Sidebar = () => {
-    const [openSubMenuId, setOpenSubMenuId] = useState(null);
+  const [openSubMenuId, setOpenSubMenuId] = useState(null);
 
-    const handleSubMenu = (id) => {
-        setOpenSubMenuId(openSubMenuId === id ? null : id)
-       console.log(openSubMenuId)
-    };
-
-
+  const handleSubMenu = (id) => {
+    setOpenSubMenuId(openSubMenuId === id ? null : id);
+    console.log(openSubMenuId);
+  };
 
   return (
     <div className="flex flex-col shadow-md  bg-gray-200 w-[12%] ">
-      <Link to="/dashboard">
+      <Link to="/studentdashboard">
         <div className="mb-5 p-1 items-center justify-center flex flex-col">
           <img src="/logo.jpeg" className="h-[38.5px] w-[100px] " />
           <span className="text-sm text-purple-800">Satyam Xavier's</span>
@@ -69,22 +71,23 @@ const Sidebar = () => {
         if (items.subSidebar) {
           return (
             <div key={items.id}>
-            <div
-              onClick={()=>handleSubMenu(items.id)}
-              className=" flex items-center justify-between hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5 "
-            >
+              <div
+                onClick={() => handleSubMenu(items.id)}
+                className=" flex items-center justify-between hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5 "
+              >
                 <div className="flex gap-2">
-                <span className="text-3xl ">{items.icon}</span>
-                <span>{items.title}</span>
+                  <span className="text-3xl ">{items.icon}</span>
+                  <span>{items.title}</span>
                 </div>
-              <span >
-                <FaAngleDown
-                className={`transform ${openSubMenuId === items.id ? "rotate-180" : ""}`}
-                />
+                <span>
+                  <FaAngleDown
+                    className={`transform ${
+                      openSubMenuId === items.id ? "rotate-180" : ""
+                    }`}
+                  />
                 </span>
-
-            </div>
-            {openSubMenuId === items.id && (
+              </div>
+              {openSubMenuId === items.id && (
                 <div className="flex flex-col pl-5">
                   {items.subSidebar.map((subItem) => (
                     <Link
