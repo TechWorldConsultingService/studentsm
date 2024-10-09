@@ -16,7 +16,10 @@ import Computer from "./pages/computer";
 import MyRequest from "./pages/myrequest";
 import AllRequest from "./pages/allrequest";
 import Math from "./pages/math";
-import HomePage from "./pages/dashboard";
+import StudentHomePage from "./pages/studentdashboard";
+import MasterHomePage from "./pages/masterdashboard";
+import PrincipalHomePage from "./pages/principaldashboard";
+import TeacherHomePage from "./pages/teacherdashboard";
 
 const router = createBrowserRouter([
   {
@@ -25,8 +28,23 @@ const router = createBrowserRouter([
   },
 
   {
-    path: "/dashboard",
-    element: <HomePage />,
+    path: "/studentdashboard",
+    element: <StudentHomePage />,
+  },
+
+  {
+    path: "/masterdashboard",
+    element: <MasterHomePage />,
+  },
+
+  {
+    path: "/principaldashboard",
+    element: <PrincipalHomePage />,
+  },
+
+  {
+    path: "/teacherdashboard",
+    element: <TeacherHomePage />,
   },
 
   {
