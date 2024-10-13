@@ -20,7 +20,7 @@ const loginSchema = Yup.object().shape({
   .required("Username is required."),
   
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters long.")
+    .min(6, "Password must be at least 8 characters long.")
     .required("Password is required."),
 });
 
@@ -44,6 +44,7 @@ const Login = () => {
   });
 
   const loginUser = async (values) => {
+    console.log("Login values:", values);
     try {
       const response = await axios.post("http://localhost:8000/api/login/", values);
       const data = response.data;

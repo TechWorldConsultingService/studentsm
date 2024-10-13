@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+import json
 
 User = get_user_model()
 
@@ -40,15 +41,16 @@ def get_user_role(user):
 @csrf_exempt
 def login(request):
     if request.method == "POST":
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        body = json.loads(request.body)
+        username = body.get('username')
+        password = body.get('password')
+        
         print(f"Username: {username}, Password: {password}")
         user = authenticate(request, username=username, password=password)
         print(user)
   
         if user is not None:
             auth_login(request,user)
-
             #role-base redirection or success message
             role = get_user_role(user)
 
