@@ -22,6 +22,7 @@ import PrincipalHomePage from "./pages/principaldashboard";
 import TeacherHomePage from "./pages/teacherdashboard";
 import ReduxProvider from "./redux/ReduxProvider";
 import { Toaster } from "react-hot-toast";
+import Profile from "./pages/profile";
 
 
 
@@ -99,6 +100,11 @@ const router = createBrowserRouter([
   {
     path: "/attendence",
     element: <Attendence />,
+  },
+
+  {
+    path: "/profile",
+    element: <Profile />,
   },
 ]);
 

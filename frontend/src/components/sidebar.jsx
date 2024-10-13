@@ -1,19 +1,10 @@
 import React, { useState } from "react";
-import { MdOutlineSpaceDashboard, MdCoPresent } from "react-icons/md";
-import { IoCalendarOutline, IoBusOutline } from "react-icons/io5";
-import { PiStudent } from "react-icons/pi";
-import { TbReportSearch } from "react-icons/tb";
-import { IoIosGitPullRequest } from "react-icons/io";
-import { LuFileSpreadsheet } from "react-icons/lu";
 import { Link } from "react-router-dom";
 import { FaAngleDown } from "react-icons/fa6";
 import { useSelector } from 'react-redux';
 
 import sidebarData from '../constant/sidebardata.json'
 import iconMapping from "../constant/iconMapping";
-
-
-
 
 
 // const sidebarData = [
