@@ -8,6 +8,8 @@ import { useFormik } from "formik";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
+import { setLoginDetails } from '../redux/reducerSlices/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 // Validation Schema
 const loginSchema = Yup.object().shape({
@@ -27,6 +29,8 @@ const loginSchema = Yup.object().shape({
 const Login = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
+  const dispatch = useDispatch();
+
 
   const toggleVisibility = () => {
     setIsVisible(!isVisible);
@@ -51,6 +55,8 @@ const Login = () => {
       if (response.status === 200) {
         const successMessage = data.msg || "Login successful";
         toast.success(successMessage);
+        dispatch(setLoginDetails(data));
+
         
         // Redirect based on role
         switch (data.role) {

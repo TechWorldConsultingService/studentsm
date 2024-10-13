@@ -2,11 +2,14 @@ import React from "react";
 import { FaRegMessage } from "react-icons/fa6";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
+import { useSelector } from "react-redux";
 
 
 
 
 const NavBar = () => {
+  const {username,role} = useSelector(state=>state.user)
+
   return (
     <div className="flex items-center justify-between shadow-md p-1  pl-7 pr-8 bg-purple-900 text-white rounded-sm">
 
@@ -20,8 +23,8 @@ const NavBar = () => {
 <div className="flex p-1 items-center text-sm">
 <span className="m-2 text-2xl">  <CgProfile  /></span>
 <div className="flex flex-col">
-<span className="font-semibold">Aakash Singh</span>
-<span >Admin</span>
+<span className="font-semibold">{username}</span>
+<span >{role}</span>
 </div>
 
 </div>
