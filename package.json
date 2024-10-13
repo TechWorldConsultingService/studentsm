@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "react-scripts": "^5.0.1",
+    "webpack": "^5.95.0",
+    "webpack-dev-server": "^5.1.0"
+  }
+}
