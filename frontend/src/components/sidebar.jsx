@@ -1,61 +1,61 @@
 import React, { useState } from "react";
-import { MdOutlineSpaceDashboard, MdCoPresent } from "react-icons/md";
-import { IoCalendarOutline, IoBusOutline } from "react-icons/io5";
-import { PiStudent } from "react-icons/pi";
-import { TbReportSearch } from "react-icons/tb";
-import { IoIosGitPullRequest } from "react-icons/io";
-import { LuFileSpreadsheet } from "react-icons/lu";
 import { Link } from "react-router-dom";
 import { FaAngleDown } from "react-icons/fa6";
+import { useSelector } from 'react-redux';
 
-const sidebarData = [
-  {
-    id: 1,
-    title: "Dashboard",
-    icon: <MdOutlineSpaceDashboard />,
-    link: "/studentdashboard",
-  },
-  { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
+import sidebarData from '../constant/sidebardata.json'
+import iconMapping from "../constant/iconMapping";
 
-  {
-    id: 3,
-    title: "Class",
-    icon: <PiStudent />,
-    subSidebar: [
-      { id: 1, title: "Math", link: "/math" },
-      { id: 2, title: "Computer", link: "/computer" },
-      { id: 3, title: "Science", link: "/science" },
-    ],
-  },
 
-  { id: 4, title: "Reports", icon: <TbReportSearch />, link: "/reports" },
+// const sidebarData = [
+//   {
+//     id: 1,
+//     title: "Dashboard",
+//     icon: <MdOutlineSpaceDashboard />,
+//     link: "/studentdashboard",
+//   },
+//   { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
 
-  {
-    id: 5,
-    title: "Request",
-    icon: <IoIosGitPullRequest />,
-    subSidebar: [
-      { id: 1, title: "All Request", link: "/allrequest" },
-      { id: 2, title: "My request", link: "/myrequest" },
-    ],
-  },
+//   {
+//     id: 3,
+//     title: "Class",
+//     icon: <PiStudent />,
+//     subSidebar: [
+//       { id: 1, title: "Math", link: "/math" },
+//       { id: 2, title: "Computer", link: "/computer" },
+//       { id: 3, title: "Science", link: "/science" },
+//     ],
+//   },
 
-  { id: 6, title: "My Bus", icon: <IoBusOutline />, link: "/mybus" },
-  { id: 7, title: "Leave", icon: <MdCoPresent />, link: "/leave" },
-  {
-    id: 8,
-    title: "Attendence",
-    icon: <LuFileSpreadsheet />,
-    link: "/attendence",
-  },
-];
+//   { id: 4, title: "Reports", icon: <TbReportSearch />, link: "/reports" },
+
+//   {
+//     id: 5,
+//     title: "Request",
+//     icon: <IoIosGitPullRequest />,
+//     subSidebar: [
+//       { id: 1, title: "All Request", link: "/allrequest" },
+//       { id: 2, title: "My request", link: "/myrequest" },
+//     ],
+//   },
+
+//   { id: 6, title: "My Bus", icon: <IoBusOutline />, link: "/mybus" },
+//   { id: 7, title: "Leave", icon: <MdCoPresent />, link: "/leave" },
+//   {
+//     id: 8,
+//     title: "Attendence",
+//     icon: <LuFileSpreadsheet />,
+//     link: "/attendence",
+//   },
+// ];
 
 const Sidebar = () => {
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
+  const {role} = useSelector(state=>state.user)
+
 
   const handleSubMenu = (id) => {
     setOpenSubMenuId(openSubMenuId === id ? null : id);
-    console.log(openSubMenuId);
   };
 
   return (
@@ -67,7 +67,9 @@ const Sidebar = () => {
         </div>
       </Link>
 
-      {sidebarData.map((items) => {
+
+
+      {sidebarData[role] && sidebarData[role].map((items) => {
         if (items.subSidebar) {
           return (
             <div key={items.id}>
@@ -76,7 +78,7 @@ const Sidebar = () => {
                 className=" flex items-center justify-between hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5 "
               >
                 <div className="flex gap-2">
-                  <span className="text-3xl ">{items.icon}</span>
+                  <span className="text-3xl ">{React.createElement(iconMapping[items.icon])}</span>
                   <span>{items.title}</span>
                 </div>
                 <span>
@@ -109,7 +111,7 @@ const Sidebar = () => {
               key={items.id}
               className="gap-2 flex items-center  hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5 "
             >
-              <span className="text-3xl ">{items.icon}</span>
+              <span className="text-3xl ">{React.createElement(iconMapping[items.icon])}</span>
               <span>{items.title}</span>
             </Link>
           );

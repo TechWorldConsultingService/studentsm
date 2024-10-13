@@ -20,6 +20,11 @@ import StudentHomePage from "./pages/studentdashboard";
 import MasterHomePage from "./pages/masterdashboard";
 import PrincipalHomePage from "./pages/principaldashboard";
 import TeacherHomePage from "./pages/teacherdashboard";
+import ReduxProvider from "./redux/ReduxProvider";
+import { Toaster } from "react-hot-toast";
+import Profile from "./pages/profile";
+
+
 
 const router = createBrowserRouter([
   {
@@ -96,12 +101,26 @@ const router = createBrowserRouter([
     path: "/attendence",
     element: <Attendence />,
   },
+
+  {
+    path: "/profile",
+    element: <Profile />,
+  },
 ]);
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
+     <ReduxProvider>
     <RouterProvider router={router} />
+
+    <Toaster
+  position="top-center"
+  reverseOrder={false}
+/>
+
+    <div className='mainFooterr'>&nbsp; &nbsp; &nbsp; &nbsp; &copy; Copyright by Akash Singh. </div>
+    </ReduxProvider>
   </React.StrictMode>
 );
 
