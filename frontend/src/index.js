@@ -9,7 +9,9 @@ import reportWebVitals from "./reportWebVitals";
 import Calendar from "./pages/calendar";
 import Reports from "./pages/reports";
 import MyBus from "./pages/mybus";
-import Leave from "./pages/leave";
+// import Leave from "./pages/leave";
+import Applyleave from "./pages/applyleave";
+import Appliedleave from "./pages/appliedleave";
 import Attendence from "./pages/attendence";
 import Science from "./pages/science";
 import Computer from "./pages/computer";
@@ -88,8 +90,12 @@ const router = createBrowserRouter([
   },
 
   {
-    path: "/leave",
-    element: <Leave />,
+    path: "/applyleave",
+    element: <Applyleave />,
+  },
+  {
+    path: "/appliedleave",
+    element: <Appliedleave />,
   },
 
   {

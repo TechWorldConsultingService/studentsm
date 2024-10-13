@@ -1,13 +1,13 @@
 import React from 'react'
 import MainLayout from '../layout/MainLayout'
 
-const Leave = () => {
+const Applyleave = () => {
   return (
     <MainLayout>
-    <div>Leave</div>
+    <div>apply-Leave</div>
 
     </MainLayout>
   )
 }
 
-export default Leave
+export default Applyleave

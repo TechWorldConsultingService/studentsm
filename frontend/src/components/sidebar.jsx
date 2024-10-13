@@ -15,11 +15,20 @@ const sidebarData = [
     icon: <MdOutlineSpaceDashboard />,
     link: "/studentdashboard",
   },
-  { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
+  { 
+    id: 2,
+    title: "Leave",
+    icon: <MdCoPresent />, 
+    // link: "/leave",
+    subSidebar:[
+      { id:1, title: "Apply Leave", link: "/applyleave"},
+      { id:2, title: "Applied Leave", link: "/appliedleave"},
+    ],
+  },
 
   {
     id: 3,
-    title: "Class",
+    title: "Subjects",
     icon: <PiStudent />,
     subSidebar: [
       { id: 1, title: "Math", link: "/math" },
@@ -41,7 +50,9 @@ const sidebarData = [
   },
 
   { id: 6, title: "My Bus", icon: <IoBusOutline />, link: "/mybus" },
-  { id: 7, title: "Leave", icon: <MdCoPresent />, link: "/leave" },
+  { id: 7, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
+
+
   {
     id: 8,
     title: "Attendence",
