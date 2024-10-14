@@ -117,16 +117,7 @@ const Sidebar = () => {
           );
         }
       })}
-
-      {/* <div className="flex flex-col rounded-md ">
-                  {items.subSidebar &&
-                    items.subSidebar.length > 0 &&
-                    items.subSidebar.map((sub) => {
-                      return (
-                      <span className="flex flex-col ml-2 p-3 border  hover:bg-purple-800 shadow-md bg-gray-200">{sub.title}</span>
-                    )
-                    })}
-                </div> */}
+      
     </div>
   );
 };
