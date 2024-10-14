@@ -6,11 +6,13 @@ import { TbReportSearch } from "react-icons/tb";
 import { IoIosGitPullRequest } from "react-icons/io";
 import { LuFileSpreadsheet } from "react-icons/lu";
 
+
 const iconMapping = {
   MdOutlineSpaceDashboard: MdOutlineSpaceDashboard,
   IoCalendarOutline: IoCalendarOutline,
   IoBusOutline: IoBusOutline,
   PiStudent: PiStudent,
+  MdCoPresent:MdCoPresent,
   TbReportSearch: TbReportSearch,
   IoIosGitPullRequest: IoIosGitPullRequest,
   LuFileSpreadsheet: LuFileSpreadsheet,

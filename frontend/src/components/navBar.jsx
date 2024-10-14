@@ -4,45 +4,42 @@ import { IoMdNotificationsOutline } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { useDispatch, useSelector } from "react-redux";
 
-
-
-
-
 import { FaAngleDown } from "react-icons/fa6";
-import { Dropdown, Space } from 'antd';
-import { Link, Navigate } from "react-router-dom";
-
-const dropdownItems = [
-  {
-      label: <Link to="/profile">Profile</Link>,
-      key: '0',
-  },
-  {
-      label: <Link to="/setting">Setting</Link>,
-      key: '1',
-  },
-  {
-      type: 'divider',
-  },
-  {
-      label:'Logout',
-      key: '3',
-  },
-];
-
+import {  Dropdown, Space } from 'antd';
+import { Link, useNavigate } from "react-router-dom";
+import { logoutUser } from "../redux/reducerSlices/userSlice";
 
 
 const NavBar = () => {
-  // const dispatch = useDispatch();
-
-
-// const logout =()=>{
-//   dispatch(logoutUser())
-//   Navigate("/");
-
-// }
-
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const {username,role} = useSelector(state=>state.user)
+
+
+
+const logout =()=>{
+  dispatch(logoutUser())
+  navigate("/");
+}
+
+const dropdownItems = [
+  {
+    label: <Link to="/profile">Profile</Link>,
+    key: '0',
+  },
+  {
+    label: <Link to="/setting">Setting</Link>,
+    key: '1',
+  },
+  {
+    type: 'divider',
+  },
+  {
+    label: <span onClick={logout}>Logout</span>,
+    key: '3',
+  },
+];
+
 
   return (
     <div className="flex items-center justify-between shadow-md p-1  pl-7 pr-8 bg-purple-900 text-white rounded-sm">
@@ -59,6 +56,7 @@ const NavBar = () => {
 <Dropdown
                     menu={{ items: dropdownItems }}
                     trigger={['click']}
+                    className=" hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md"
                 >
                     <Space>
                         <div className="flex p-1 items-center text-sm">

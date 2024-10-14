@@ -1,7 +1,6 @@
 import React from 'react'
 import Sidebar from '../components/sidebar'
 import NavBar from '../components/navBar'
-import HomePage from '../pages/studentdashboard'
 
 const MainLayout = ({children}) => {
   return (

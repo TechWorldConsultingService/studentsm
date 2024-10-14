@@ -4,7 +4,7 @@ import MainLayout from "../layout/MainLayout";
 const StudentHomePage = () => {
   return (
     <MainLayout>
-      <div>student dashboard</div>
+      <div>StudentHomePage studentdashboard</div>
     </MainLayout>
   );
 };

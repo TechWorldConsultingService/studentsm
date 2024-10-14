@@ -21,13 +21,16 @@ return {
     role:role,
     username:username
        }
-   }
+   },
 
+   logoutUser() {
+    return initialState
+},
 
 
 
   },
 })
 
-export const{ setLoginDetails } = userSlice.actions
+export const{ setLoginDetails,logoutUser } = userSlice.actions
 export default userSlice.reducer
