@@ -6,49 +6,6 @@ import { useSelector } from 'react-redux';
 import sidebarData from '../constant/sidebardata.json'
 import iconMapping from "../constant/iconMapping";
 
-
-// const sidebarData = [
-//   {
-//     id: 1,
-//     title: "Dashboard",
-//     icon: <MdOutlineSpaceDashboard />,
-//     link: "/studentdashboard",
-//   },
-//   { id: 2, title: "Calendar", icon: <IoCalendarOutline />, link: "/calendar" },
-
-//   {
-//     id: 3,
-//     title: "Class",
-//     icon: <PiStudent />,
-//     subSidebar: [
-//       { id: 1, title: "Math", link: "/math" },
-//       { id: 2, title: "Computer", link: "/computer" },
-//       { id: 3, title: "Science", link: "/science" },
-//     ],
-//   },
-
-//   { id: 4, title: "Reports", icon: <TbReportSearch />, link: "/reports" },
-
-//   {
-//     id: 5,
-//     title: "Request",
-//     icon: <IoIosGitPullRequest />,
-//     subSidebar: [
-//       { id: 1, title: "All Request", link: "/allrequest" },
-//       { id: 2, title: "My request", link: "/myrequest" },
-//     ],
-//   },
-
-//   { id: 6, title: "My Bus", icon: <IoBusOutline />, link: "/mybus" },
-//   { id: 7, title: "Leave", icon: <MdCoPresent />, link: "/leave" },
-//   {
-//     id: 8,
-//     title: "Attendence",
-//     icon: <LuFileSpreadsheet />,
-//     link: "/attendence",
-//   },
-// ];
-
 const Sidebar = () => {
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
   const {role} = useSelector(state=>state.user)
@@ -66,7 +23,6 @@ const Sidebar = () => {
           <span className="text-sm text-purple-800">Satyam Xavier's</span>
         </div>
       </Link>
-
 
 
       {sidebarData[role] && sidebarData[role].map((items) => {
