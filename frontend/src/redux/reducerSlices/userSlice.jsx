@@ -12,20 +12,20 @@ const userSlice = createSlice({
   name: 'user',
   initialState: initialState,
   reducers: {
-   setLoginDetails(state,action){
-    const {role,access,username} = action.payload
-return {
-    ...state,
-    isLoggedIn: true,
-    access:access,
-    role:role,
-    username:username
-       }
-   },
+    setLoginDetails(state,action){
+      const {role,access,username} = action.payload
+      return {
+          ...state,
+          isLoggedIn: true,
+          access:access,
+          role:role,
+          username:username
+            }
+    },
 
    logoutUser() {
     return initialState
-},
+    },
 
 
 
