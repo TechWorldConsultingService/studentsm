@@ -5,6 +5,8 @@ import { PiStudent } from "react-icons/pi";
 import { TbReportSearch } from "react-icons/tb";
 import { IoIosGitPullRequest } from "react-icons/io";
 import { LuFileSpreadsheet } from "react-icons/lu";
+import { SlPeople } from "react-icons/sl";
+
 
 
 const iconMapping = {
@@ -16,6 +18,7 @@ const iconMapping = {
   TbReportSearch: TbReportSearch,
   IoIosGitPullRequest: IoIosGitPullRequest,
   LuFileSpreadsheet: LuFileSpreadsheet,
+  SlPeople:SlPeople,
 };
 
 export default iconMapping;

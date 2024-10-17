@@ -11,11 +11,8 @@ import Reports from "./pages/reports";
 import MyBus from "./pages/mybus";
 import Leave from "./pages/leave";
 import Attendence from "./pages/attendence";
-import Science from "./pages/science";
-import Computer from "./pages/computer";
 import MyRequest from "./pages/myrequest";
 import AllRequest from "./pages/allrequest";
-import Math from "./pages/math";
 import StudentHomePage from "./pages/studentdashboard";
 import MasterHomePage from "./pages/masterdashboard";
 import PrincipalHomePage from "./pages/principaldashboard";
@@ -23,6 +20,10 @@ import TeacherHomePage from "./pages/teacherdashboard";
 import ReduxProvider from "./redux/ReduxProvider";
 import { Toaster } from "react-hot-toast";
 import Profile from "./pages/profile";
+import Notes from "./pages/notes";
+import Syllabus from "./pages/syllabus";
+import Homework from "./pages/homework";
+import MyStudents from "./pages/myStudents";
 
 const router = createBrowserRouter([
   {
@@ -56,18 +57,18 @@ const router = createBrowserRouter([
   },
 
   {
-    path: "/math",
-    element: <Math />,
+    path: "/notes",
+    element: <Notes />,
   },
 
   {
-    path: "/science",
-    element: <Science />,
+    path: "/syllabus",
+    element: <Syllabus />,
   },
 
   {
-    path: "/computer",
-    element: <Computer />,
+    path: "/homework",
+    element: <Homework />,
   },
 
   {
@@ -103,6 +104,10 @@ const router = createBrowserRouter([
   {
     path: "/profile",
     element: <Profile />,
+  },
+  {
+    path: "/myStudents",
+    element: <MyStudents />,
   },
 ]);
 
