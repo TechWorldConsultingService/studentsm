@@ -81,6 +81,7 @@ class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the student
     parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
 
+
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
