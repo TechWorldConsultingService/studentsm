@@ -6,6 +6,7 @@ import { TbReportSearch } from "react-icons/tb";
 import { IoIosGitPullRequest } from "react-icons/io";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import { SlPeople } from "react-icons/sl";
+import { IoMdPersonAdd } from "react-icons/io";
 
 
 
@@ -19,6 +20,7 @@ const iconMapping = {
   IoIosGitPullRequest: IoIosGitPullRequest,
   LuFileSpreadsheet: LuFileSpreadsheet,
   SlPeople:SlPeople,
+  IoMdPersonAdd:IoMdPersonAdd,
 };
 
 export default iconMapping;

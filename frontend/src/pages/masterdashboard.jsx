@@ -4,7 +4,7 @@ import MainLayout from "../layout/MainLayout";
 const MasterHomePage = () => {
   return (
     <MainLayout>
-      <div>teacher dashboard</div>
+      <div>master dashboard</div>
     </MainLayout>
   );
 };

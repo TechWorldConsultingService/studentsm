@@ -24,6 +24,8 @@ import Notes from "./pages/notes";
 import Syllabus from "./pages/syllabus";
 import Homework from "./pages/homework";
 import MyStudents from "./pages/myStudents";
+import AddStudent from "./pages/principal/addStudent";
+import AddTeacher from "./pages/principal/addTeacher";
 
 const router = createBrowserRouter([
   {
@@ -108,6 +110,14 @@ const router = createBrowserRouter([
   {
     path: "/myStudents",
     element: <MyStudents />,
+  },
+  {
+    path: "/addStudent",
+    element: <AddStudent />,
+  },
+  {
+    path: "/addTeacher",
+    element: <AddTeacher />,
   },
 ]);
 

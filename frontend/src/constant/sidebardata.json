@@ -68,9 +68,9 @@
         "title": "Class",
         "icon": "PiStudent",
         "subSidebar": [
-          { "id": 1, "title": "Math", "link": "/math" },
-          { "id": 2, "title": "Computer", "link": "/computer" },
-          { "id": 3, "title": "Science", "link": "/science" }
+          { "id": 1, "title": "Syllabus", "link": "/syllabus" },
+          { "id": 2, "title": "Homework" , "link": "/homework" },
+          { "id": 3, "title": "Notes", "link": "/notes" }
         ]
       },
       {
@@ -137,6 +137,15 @@
       },
       {
         "id": 6,
+        "title": "Add Person",
+        "icon": "IoMdPersonAdd",
+        "subSidebar": [
+          { "id": 1, "title": "Add Teacher", "link": "/addTeacher" },
+          { "id": 2, "title": "Add Student", "link": "/addStudent" }
+        ]
+      },
+      {
+        "id": 7,
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"

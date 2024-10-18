@@ -9,7 +9,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
 import { setLoginDetails } from '../redux/reducerSlices/userSlice';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 
 // Validation Schema
 const loginSchema = Yup.object().shape({
