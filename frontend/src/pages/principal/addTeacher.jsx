@@ -60,10 +60,27 @@ const AddTeacher = () => {
       password: "",
     },
     validationSchema: addToTeacherSchema,
-    onSubmit: (values) => {
-      console.log(values);
+    onSubmit: async(values) => {
+      // await registerTeacher(values);
+      await console.log(values)
     },
   });
+
+   // const registerTeacher = async (values) => {
+  //   try {
+  //     const response = await axios.post('http://localhost:8000/register', values, {
+  //       headers: { 'Content-Type': 'application/json' }
+  //     });
+  
+  //     if (response.status === 201) {
+  //       toast.success(response.data.msg);
+  //     }
+  //   } catch (error) {
+  //     const errorMsg = error.response?.data?.msg || 'An error occurred';
+  //     toast.error(errorMsg);
+  //   }
+  // };
+
 
   const handleSubjectChange = (value) => {
     formik.setFieldValue("subject", value);
