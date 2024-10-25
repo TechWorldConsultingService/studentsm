@@ -27,7 +27,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'date_of_joining']
+        fields = ['user', 'phone', 'address', 'date_of_joining', 'gender']
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
@@ -55,7 +55,7 @@ class PrincipalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Principal
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address']
+        fields = ['user', 'phone', 'address', 'gender']
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
@@ -79,20 +79,19 @@ class PrincipalSerializer(serializers.ModelSerializer):
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the student
-    parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
+    #parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
 
 
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents']
+        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender']
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def create(self, validated_data):
         # Extract user and parents data from the validated data
         user_data = validated_data.pop('user')
-        parents_data = validated_data.pop('parents')
         # Mark the user as a student
         user_data['is_student'] = True
         # Serialize the user data
@@ -102,8 +101,8 @@ class StudentSerializer(serializers.ModelSerializer):
             user = user_serializer.save()
             # Create and save the Student instance
             student = Student.objects.create(user=user, **validated_data)
-            # Set the parents for the student
-            student.parents.set(parents_data)
+
+
             return student
         else:
             # Raise validation error if user data is invalid
