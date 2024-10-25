@@ -7,7 +7,8 @@ class Teacher(models.Model):
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
-
+    gender = models.CharField(max_length=6, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+   
     def __str__(self):
         return self.user.username
 
@@ -16,18 +17,11 @@ class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
-
+    gender = models.CharField(max_length=6, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+   
     def __str__(self):
         return self.user.username
 
-
-class Parent(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, unique=True)
-    address = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.user.username
 
 
 class Student(models.Model):
@@ -35,7 +29,8 @@ class Student(models.Model):
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_birth = models.DateField()
-    parents = models.ManyToManyField(Parent, related_name='children')
+    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
+    parents = models.CharField(max_length=15)
 
    
     def __str__(self):
@@ -60,7 +55,6 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Class(models.Model):
     name = models.CharField(max_length=50)

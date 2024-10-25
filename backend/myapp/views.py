@@ -132,6 +132,7 @@ class RegisterTeacherView(APIView):
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_joining': request.data.get('date_of_joining'),
+                'gender': request.data.get('gender'),
                 'user': user_data
             }
         
@@ -173,7 +174,8 @@ class RegisterPrincipalView(APIView):
             principal_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
-                'user': user_data
+                'gender': request.data.get('gender'),
+                'user': user_data,
             }
         
         # Serialize principal data and validate
@@ -215,7 +217,8 @@ class RegisterStudentView(APIView):
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_birth': request.data.get('date_of_birth'),
-                'parents': request.data.getlist('parents'),  # Handle multiple parent IDs
+                'parents': request.data.get('parents'),
+                'gender': request.data.get('gender'),  
                 'user': user_data
             }
         
