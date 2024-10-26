@@ -2,12 +2,14 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+
+    
 class Teacher(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
-    gender = models.CharField(max_length=6, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
    
     def __str__(self):
         return self.user.username
@@ -17,11 +19,27 @@ class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
-    gender = models.CharField(max_length=6, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')])
+    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
    
     def __str__(self):
         return self.user.username
+    
+    
+class Subject(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='subjects')
 
+    def __str__(self):
+        return self.name
+    
+class Class(models.Model):
+    name = models.CharField(max_length=50)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='classes')  # Use a unique related_name for teacher
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='class_subjects')  # Use a unique related_name for subject
+
+    def __str__(self):
+        return self.name
 
 
 class Student(models.Model):
@@ -31,7 +49,7 @@ class Student(models.Model):
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
-
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
    
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
@@ -48,23 +66,9 @@ class LeaveApplication(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-class Subject(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='subjects')
 
-    def __str__(self):
-        return self.name
 
-class Class(models.Model):
-    name = models.CharField(max_length=50)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    teachers = models.ManyToManyField(Teacher, related_name='classes')
-    subjects = models.ManyToManyField(Subject, related_name='classes')
 
-    def __str__(self):
-        return self.name
 
 
 class Enrollment(models.Model):
