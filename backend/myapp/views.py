@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 import json
 
 User = get_user_model()
@@ -472,3 +473,110 @@ class LeaveApplicationDeleteView(APIView):
         application.delete()
         # Return success message with 204 No Content status
         return Response({"message": "Leave application successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+# API view to list all subjects or create a new subject
+class SubjectListCreateView(APIView):
+
+    def get(self, request, format=None):
+        """
+        Handle GET requests to retrieve a list of all subjects.
+        """
+        subjects = Subject.objects.all()  # Retrieve all Subject instances
+        serializer = SubjectSerializer(subjects, many=True)  # Serialize Subject data
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+    def post(self, request, format=None):
+        """
+        Handle POST requests to create a new Subject instance.
+        """
+        serializer = SubjectSerializer(data=request.data)  # Deserialize Subject data
+        if serializer.is_valid():
+            # Save the new Subject instance
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+
+# API view to retrieve, update, or delete a specific subject
+class SubjectDetailView(APIView):
+
+    def get(self, request, pk, format=None):
+        """
+        Handle GET requests to retrieve the details of a specific Subject by primary key.
+        """
+        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
+        serializer = SubjectSerializer(subject)  # Serialize the Subject instance
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+    def put(self, request, pk, format=None):
+        """
+        Handle PUT requests to update a specific Subject by primary key.
+        """
+        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
+        serializer = SubjectSerializer(subject, data=request.data)  # Deserialize and validate data for updating
+        if serializer.is_valid():
+            # Save the updated Subject instance
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+
+    def delete(self, request, pk, format=None):
+        """
+        Handle DELETE requests to remove a specific Subject by primary key.
+        """
+        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
+        subject.delete()  # Delete the Subject instance
+        return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
+    
+# API view to list all classes or create a new class
+class ClassListCreateView(APIView):
+
+    def get(self, request, format=None):
+        """
+        Handle GET requests to retrieve a list of all classes.
+        """
+        classes = Class.objects.all()  # Retrieve all Class instances
+        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+    def post(self, request, format=None):
+        """
+        Handle POST requests to create a new Class instance.
+        """
+        serializer = ClassSerializer(data=request.data)  # Deserialize Class data
+        if serializer.is_valid():
+            # Save the new Class instance
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+
+# API view to retrieve, update, or delete a specific class
+class ClassDetailView(APIView):
+
+    def get(self, request, pk, format=None):
+        """
+        Handle GET requests to retrieve the details of a specific Class by primary key.
+        """
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        serializer = ClassSerializer(class_instance)  # Serialize the Class instance
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+    def put(self, request, pk, format=None):
+        """
+        Handle PUT requests to update a specific Class by primary key.
+        """
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
+        if serializer.is_valid():
+            # Save the updated Class instance
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+
+    def delete(self, request, pk, format=None):
+        """
+        Handle DELETE requests to remove a specific Class by primary key.
+        """
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        class_instance.delete()  # Delete the Class instance
+        return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status

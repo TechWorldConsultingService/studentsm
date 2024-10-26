@@ -39,6 +39,16 @@ urlpatterns = [
     path('api/leave-applications/create/', LeaveApplicationCreateView.as_view(), name='leave-application-create'),  # Endpoint for creating a new leave application
     path('api/leave-applications/<int:pk>/', LeaveApplicationDetailView.as_view(), name='leave-application-detail'),  # Endpoint for retrieving details of a specific leave application by ID
     path('api/leave-applications/<int:pk>/delete/', LeaveApplicationDeleteView.as_view(), name='leave-application-delete'),  # Endpoint for deleting a specific leave application by ID
+
+    # API endpoints for subjects
+    path('api/subjects/', SubjectListCreateView.as_view(), name='subject-list-create'),  # Endpoint for listing and creating subjects
+    path('api/subjects/<int:pk>/', SubjectDetailView.as_view(), name='subject-detail'),  # Endpoint for subject details, update, and delete
+
+    # API endpoints for classes
+    path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
+    path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
+
+
 ]
 
 
