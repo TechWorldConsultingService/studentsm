@@ -35,8 +35,8 @@ class Subject(models.Model):
     
 class Class(models.Model):
     name = models.CharField(max_length=50)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='classes')  # Use a unique related_name for teacher
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='class_subjects')  # Use a unique related_name for subject
+    teachers = models.ManyToManyField(Teacher, related_name='classes')  # Many-to-many relationship for teachers
+    subjects = models.ManyToManyField(Subject, related_name='classes')  # Many-to-many relationship for subjects
 
     def __str__(self):
         return self.name

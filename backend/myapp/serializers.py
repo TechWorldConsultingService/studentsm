@@ -129,4 +129,4 @@ class SubjectSerializer(serializers.ModelSerializer):
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Class
-        fields = ['id', 'name', 'teacher', 'subject']  # Define fields to include in the serialized output
+        fields = ['id', 'name', 'teachers', 'subjects']  # Define fields to include in the serialized output
