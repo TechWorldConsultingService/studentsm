@@ -5,25 +5,61 @@ import { useFormik } from "formik";
 import toast from "react-hot-toast";
 import { DatePicker } from "antd";
 import axios from "axios";
+import moment from "moment"; // Ensure moment is installed via npm
+import { useNavigate } from "react-router-dom";
 
 // Validation Schema
 const addStudentSchema = Yup.object().shape({
   user: Yup.object({
-    first_name: Yup.string().min(3, "First Name must be at least 3 letters").required("First Name is required"),
-    last_name: Yup.string().min(3, "Last Name must be at least 3 letters").required("Last Name is required"),
-    email: Yup.string().email("Invalid email format").required("Email is required"),
-    username: Yup.string().min(3, "Username must be at least 3 letters").required("Username is required"),
-    password: Yup.string().min(4, "Password must be at least 4 characters").required("Password is required"),
+    first_name: Yup.string()
+    .min(3, "First Name must be at least 3 letters")
+    .required("First Name is required"),
+
+    last_name: Yup.string()
+    .min(3, "Last Name must be at least 3 letters")
+    .required("Last Name is required"),
+
+    email: Yup.string()
+    .email("Invalid email format")
+    .required("Email is required"),
+
+    username: Yup.string()
+    .min(3, "Username must be at least 3 letters")
+    .required("Username is required"),
+
+    password: Yup.string()
+    .min(4, "Password must be at least 4 characters")
+    .required("Password is required"),
   }),
-  phone: Yup.string().required("Phone number is required"),
-  address: Yup.string().min(3, "Address must be at least 3 letters").required("Address is required"),
-  gender: Yup.string().required("Gender is required"),
-  parents: Yup.string().required("Parent name is required"),
-  class_assigned: Yup.string().required("Class is required"),
-  date_of_birth: Yup.date().required("Date of Birth is required").max(new Date(), "Date cannot be in the future"),
+
+  phone: Yup.string()
+  .required("Phone number is required"),
+
+  address: Yup.string()
+  .min(3, "Address must be at least 3 letters")
+  .required("Address is required"),
+
+  gender: Yup.string()
+  .required("Gender is required"),
+
+  parents: Yup.string()
+  .required("Parent name is required"),
+
+  class_assigned: Yup.string()
+  .required("Class is required"),
+
+  date_of_birth: Yup.date()
+  .required("Date of Birth is required")
+  .max(new Date(), "Date cannot be in the future"),
 });
 
+
+
 const AddStudent = () => {
+
+  const navigate = useNavigate();
+
+
   const formik = useFormik({
     initialValues: {
       user: {
@@ -36,29 +72,39 @@ const AddStudent = () => {
       phone: "",
       address: "",
       gender: "",
-      class_assigned: "", 
-      date_of_birth: "",  
+      class_assigned: "",
+      date_of_birth: null,  
       parents: "",
     },
     validationSchema: addStudentSchema,
     onSubmit: async(values) => {
-      // await registerStudent(values);
-      // await console.log(values)
-      try {
-        // await console.log(values)
+      // Format the date of birth
+      const formattedValues = {
+        ...values,
+        date_of_birth: values.date_of_birth ? moment(values.date_of_birth).format("YYYY-MM-DD") : null,
+      };
+              console.log(formattedValues.date_of_birth)
 
+      console.log("Payload before sending:", formattedValues);
+      try {
         const response = await axios.post(
-          'http://localhost:8000/api/register/student/', values, { headers: { 'Content-Type': 'application/json' } }
+          'http://localhost:8000/api/register/student/', 
+          formattedValues, 
+          { headers: { 'Content-Type': 'application/json' } }
         );
         if (response.status === 201) {
-          console.log('Student registered successfully:', response.data);
+          toast.success('Student added Sucessfully');
+          navigate("/principalDashboard");
+        }else{
+          toast.error('Error on adding student.');
         }
-      } catch  (error) {
+      } catch (error) {
         console.error('Error registering student:', error.response?.data);
-        // console.log(values)
+        toast.error("Network error or server is down");
       }
-    },
+    }
   });
+
 
 
   const handleDateChange = (date) => {
@@ -181,6 +227,26 @@ const AddStudent = () => {
           </div>
 
           <div className="flex items-center gap-x-5">
+            <label className="w-1/6">Parents Phone</label>
+            <div className="flex flex-col w-1/2">
+            <input
+              type="text"
+              placeholder="phone"
+              className="p-2 border w-full rounded-sm"
+              id="phone"
+              name="phone"
+              onChange={formik.handleChange}
+              value={formik.values.phone}
+            />
+            {formik.touched.phone && formik.errors.phone && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.phone}
+              </div>
+            )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-x-5">
             <label className="w-1/6">Parents Name</label>
             <div className="flex flex-col w-1/2">
             <input
@@ -224,17 +290,17 @@ const AddStudent = () => {
             <label className="w-1/6">Class</label>
             <div className="flex flex-col w-1/2">
             <input
-              type="number"
+              type="text"
               placeholder="Class"
               className="p-2 border w-full rounded-sm"
               id="class"
               name="class_assigned"
               onChange={formik.handleChange}
-              value={formik.values.class}
+              value={formik.values.class_assigned}
             />
-            {formik.touched.class && formik.errors.class && (
+            {formik.touched.class_assigned && formik.errors.class_assigned && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.class}
+                {formik.errors.class_assigned}
               </div>
             )}
             </div>
@@ -249,7 +315,8 @@ const AddStudent = () => {
               onChange={(date) => formik.setFieldValue("date_of_birth", date)}
               // name="date_of_birth"
               onBlur={formik.handleBlur}
-              value={formik.values.date_of_birth}
+              value={formik.values.date_of_birth ? moment(formik.values.date_of_birth) : null}
+              format="YYYY-MM-DD"
             />
             {formik.touched.date_of_birth && formik.errors.date_of_birth && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
@@ -302,7 +369,7 @@ const AddStudent = () => {
           <button
             className="flex bg-purple-600 w-1/6 self-center justify-center p-3 rounded-md shadow-lg hover:bg-purple-800 text-white "
             type="submit"
-          >
+            onClick={formik.submitForm}>
             Submit
           </button>
         </form>
