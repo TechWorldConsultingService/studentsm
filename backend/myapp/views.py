@@ -527,56 +527,93 @@ class SubjectDetailView(APIView):
         subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
         subject.delete()  # Delete the Subject instance
         return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
-    
-# API view to list all classes or create a new class
+ 
+
 class ClassListCreateView(APIView):
+    """
+    API view to list all classes or create a new class.
+    """
 
     def get(self, request, format=None):
         """
         Handle GET requests to retrieve a list of all classes.
         """
-        classes = Class.objects.all()  # Retrieve all Class instances
-        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+        # Retrieve all instances of the Class model
+        classes = Class.objects.all()
+        
+        # Serialize the list of Class instances into JSON format
+        serializer = ClassSerializer(classes, many=True)
+        
+        # Return the serialized data with an HTTP 200 OK status
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
         """
         Handle POST requests to create a new Class instance.
         """
-        serializer = ClassSerializer(data=request.data)  # Deserialize Class data
+        # Deserialize incoming data into a ClassSerializer instance
+        serializer = ClassSerializer(data=request.data)
+        
+        # Check if the provided data is valid according to the ClassSerializer
         if serializer.is_valid():
-            # Save the new Class instance
+            # Save the new Class instance to the database
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            
+            # Return the serialized data for the created instance with HTTP 201 Created status
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        # Return validation errors with HTTP 400 Bad Request status if data is invalid
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# API view to retrieve, update, or delete a specific class
+
 class ClassDetailView(APIView):
+    """
+    API view to retrieve, update, or delete a specific class by primary key.
+    """
 
     def get(self, request, pk, format=None):
         """
         Handle GET requests to retrieve the details of a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
-        serializer = ClassSerializer(class_instance)  # Serialize the Class instance
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+        # Retrieve the Class instance by primary key or return 404 if not found
+        class_instance = get_object_or_404(Class, pk=pk)
+        
+        # Serialize the retrieved Class instance into JSON format
+        serializer = ClassSerializer(class_instance)
+        
+        # Return the serialized data with HTTP 200 OK status
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk, format=None):
         """
         Handle PUT requests to update a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
-        serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
+        # Retrieve the Class instance by primary key or return 404 if not found
+        class_instance = get_object_or_404(Class, pk=pk)
+        
+        # Deserialize and validate the provided data for updating the Class instance
+        serializer = ClassSerializer(class_instance, data=request.data)
+        
+        # Check if the provided data is valid according to the ClassSerializer
         if serializer.is_valid():
-            # Save the updated Class instance
+            # Save the updated Class instance to the database
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            
+            # Return the serialized data for the updated instance with HTTP 200 OK status
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        # Return validation errors with HTTP 400 Bad Request status if data is invalid
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
         """
         Handle DELETE requests to remove a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
-        class_instance.delete()  # Delete the Class instance
-        return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
+        # Retrieve the Class instance by primary key or return 404 if not found
+        class_instance = get_object_or_404(Class, pk=pk)
+        
+        # Delete the retrieved Class instance from the database
+        class_instance.delete()
+        
+        # Return a success message with HTTP 204 No Content status, as no further content is needed
+        return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
