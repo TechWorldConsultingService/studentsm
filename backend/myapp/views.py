@@ -617,3 +617,63 @@ class ClassDetailView(APIView):
         
         # Return a success message with HTTP 204 No Content status, as no further content is needed
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+# Daily Attendance API View
+class DailyAttendanceView(APIView):
+    def post(self, request, class_id, format=None):
+        """
+        Record daily attendance for all students in a specific class.
+        """
+        # Get all students in the specified class
+        students = Student.objects.filter(classes__id=class_id)
+        attendance_data = request.data.get('attendance', [])
+        
+        for data in attendance_data:
+            data['date'] = timezone.now().date()
+            serializer = DailyAttendanceSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "Daily attendance recorded successfully."}, status=status.HTTP_201_CREATED)
+
+    def get(self, request, class_id, format=None):
+        """
+        Retrieve daily attendance records for a specific class.
+        """
+        students = Student.objects.filter(classes__id=class_id)
+        attendance = DailyAttendance.objects.filter(student__in=students)
+        serializer = DailyAttendanceSerializer(attendance, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# Lesson Attendance API View
+class LessonAttendanceView(APIView):
+    def post(self, request, class_id, subject_id, format=None):
+        """
+        Record lesson-wise attendance for all students in a specific class and subject.
+        """
+        students = Student.objects.filter(classes__id=class_id)
+        attendance_data = request.data.get('attendance', [])
+
+        for data in attendance_data:
+            data['subject'] = subject_id
+            data['date'] = timezone.now().date()
+            serializer = LessonAttendanceSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "Lesson attendance recorded successfully."}, status=status.HTTP_201_CREATED)
+
+    def get(self, request, class_id, subject_id, format=None):
+        """
+        Retrieve lesson attendance records for a specific class and subject.
+        """
+        students = Student.objects.filter(classes__id=class_id)
+        attendance = LessonAttendance.objects.filter(student__in=students, subject__id=subject_id)
+        serializer = LessonAttendanceSerializer(attendance, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
