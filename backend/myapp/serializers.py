@@ -85,7 +85,11 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
+<<<<<<< HEAD
         fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'classes']
+=======
+        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents','class_assigned', 'gender']
+>>>>>>> 905d9f0a460f6e30f1bbb1b0f20ae1cd4b8a953d
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
