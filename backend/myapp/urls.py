@@ -48,10 +48,13 @@ urlpatterns = [
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
 
-     # URLs for daily attendance
-    path('api/classes/<int:class_id>/daily-attendance/', DailyAttendanceView.as_view(), name='daily-attendance'),
-    # URLs for lesson attendance (subject-wise)
-    path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/', LessonAttendanceView.as_view(), name='lesson-attendance'),
+    # Daily Attendance URLs
+    path('api/classes/<int:class_id>/daily-attendance/', DailyAttendanceView.as_view(), name='daily-attendance-create'),
+    path('api/classes/<int:class_id>/daily-attendance/<str:date>/', DailyAttendanceView.as_view(), name='daily-attendance-list'),
+
+    # Lesson Attendance URLs
+    path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/', LessonAttendanceView.as_view(), name='lesson-attendance-create'),
+    path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/<str:date>/', LessonAttendanceView.as_view(), name='lesson-attendance-list'),
 
 
 ]
