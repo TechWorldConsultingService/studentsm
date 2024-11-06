@@ -221,7 +221,8 @@ class RegisterStudentView(APIView):
                 'address': request.data.get('address'),
                 'date_of_birth': request.data.get('date_of_birth'),
                 'parents': request.data.get('parents'),
-                'gender': request.data.get('gender'),  
+                'gender': request.data.get('gender'), 
+                'classes':request.data.get('classes'),
                 'user': user_data
             }
         
