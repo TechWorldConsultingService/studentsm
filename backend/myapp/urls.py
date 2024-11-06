@@ -7,7 +7,7 @@ from .views import *
 
 urlpatterns = [
     # Admin site URL
-    path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
+    # path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
 
     # Login page URL
     # path('', views.login, name='login'),  # URL for the login page, mapped to the `login` view function
