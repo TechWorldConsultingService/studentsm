@@ -14,6 +14,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 import json
+from django.utils.dateparse import parse_date
+
 
 User = get_user_model()
 
@@ -626,12 +628,11 @@ class DailyAttendanceView(APIView):
         """
         Record daily attendance for all students in a specific class.
         """
-        # Get all students in the specified class
         students = Student.objects.filter(classes__id=class_id)
         attendance_data = request.data.get('attendance', [])
         
         for data in attendance_data:
-            data['date'] = timezone.now().date()
+            data['date'] = timezone.now().date()  # Today's date for daily attendance
             serializer = DailyAttendanceSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -640,12 +641,20 @@ class DailyAttendanceView(APIView):
 
         return Response({"message": "Daily attendance recorded successfully."}, status=status.HTTP_201_CREATED)
 
-    def get(self, request, class_id, format=None):
+    def get(self, request, class_id, date=None, format=None):
         """
-        Retrieve daily attendance records for a specific class.
+        Retrieve daily attendance records for a specific class and optionally filter by date.
         """
         students = Student.objects.filter(classes__id=class_id)
         attendance = DailyAttendance.objects.filter(student__in=students)
+
+        if date:
+            attendance_date = parse_date(date)
+            if attendance_date:
+                attendance = attendance.filter(date=attendance_date)
+            else:
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = DailyAttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -660,7 +669,7 @@ class LessonAttendanceView(APIView):
 
         for data in attendance_data:
             data['subject'] = subject_id
-            data['date'] = timezone.now().date()
+            data['date'] = timezone.now().date()  # Today's date for lesson attendance
             serializer = LessonAttendanceSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
@@ -669,11 +678,19 @@ class LessonAttendanceView(APIView):
 
         return Response({"message": "Lesson attendance recorded successfully."}, status=status.HTTP_201_CREATED)
 
-    def get(self, request, class_id, subject_id, format=None):
+    def get(self, request, class_id, subject_id, date=None, format=None):
         """
-        Retrieve lesson attendance records for a specific class and subject.
+        Retrieve lesson attendance records for a specific class, subject, and optionally filter by date.
         """
         students = Student.objects.filter(classes__id=class_id)
         attendance = LessonAttendance.objects.filter(student__in=students, subject__id=subject_id)
+
+        if date:
+            attendance_date = parse_date(date)
+            if attendance_date:
+                attendance = attendance.filter(date=attendance_date)
+            else:
+                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = LessonAttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
