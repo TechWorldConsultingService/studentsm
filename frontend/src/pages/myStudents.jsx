@@ -30,8 +30,10 @@ const MyStudents = () => {
             key: index,  // Assign a unique key to each row
             name: `${student.user.first_name} ${student.user.last_name}`,  // Full name
             email: student.user.email,
+            username:student.user.username,
             phone: student.phone,
             address: student.address,
+            gender: student.gender,
             date_of_birth: student.date_of_birth,
             is_student: student.user.is_student ? 'Yes' : 'No',
           }));
@@ -54,16 +56,25 @@ const MyStudents = () => {
       dataIndex: 'name',
     },
     {
+      title: 'Username',
+      dataIndex: 'username',
+    },
+    {
       title: 'Email',
       dataIndex: 'email',
     },
     {
-      title: 'Phone',
-      dataIndex: 'phone',
+      title: 'Gender',
+      dataIndex: 'gender',
     },
+    
     {
       title: 'Address',
       dataIndex: 'address',
+    },
+    {
+      title: 'Parents Phone',
+      dataIndex: 'phone',
     },
     {
       title: 'Date of Birth',
