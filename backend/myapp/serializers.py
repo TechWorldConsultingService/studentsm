@@ -141,3 +141,11 @@ class LessonAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonAttendance
         fields = ['student', 'subject', 'date', 'status']
+
+
+from .models import Event
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['id', 'title', 'description', 'start_time', 'end_time', 'created_by', 'created_at']

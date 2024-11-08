@@ -57,6 +57,9 @@ urlpatterns = [
     path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/<str:date>/', LessonAttendanceView.as_view(), name='lesson-attendance-list'),
 
 
+    path('events/', EventListView.as_view(), name='event-list'),
+    path('events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
+
 ]
 
 
