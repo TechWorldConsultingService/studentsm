@@ -87,7 +87,7 @@ const MyCalendar = () => {
           onCancel={() => setModalVisible(false)}
           footer={[
             <Button key="cancel" onClick={() => setModalVisible(false)}>Cancel</Button>,
-            <Button key="save" type="primary" onClick= {handleSaveNote() }>Save</Button>
+            <Button key="save" type="submit" onClick= {handleSaveNote }>Save</Button>
           ]}
         >
           <Input
