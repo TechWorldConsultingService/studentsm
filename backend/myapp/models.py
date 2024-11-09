@@ -10,7 +10,7 @@ class Teacher(models.Model):
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-   
+    
     def __str__(self):
         return self.user.username
 
@@ -23,7 +23,7 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
-    
+
     
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -40,7 +40,6 @@ class Class(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Student(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
