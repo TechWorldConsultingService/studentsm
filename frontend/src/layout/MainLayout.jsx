@@ -5,7 +5,7 @@ import NavBar from '../components/navBar'
 const MainLayout = ({children}) => {
   return (
     <div>
-      <div className="flex h-screen w-screen">
+      <div className="flex h-full w-screen">
       <Sidebar />
       <div className=" flex w-full flex-col">
         <NavBar />

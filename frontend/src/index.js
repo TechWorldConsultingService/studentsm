@@ -129,9 +129,9 @@ root.render(
 
       <Toaster position="top-center" reverseOrder={false} />
 
-      <div className="mainFooterr">
+      {/* <div className="mainFooterr">
         &nbsp; &nbsp; &nbsp; &nbsp; &copy; Copyright by Akash Singh.{" "}
-      </div>
+      </div> */}
     </ReduxProvider>
   </React.StrictMode>
 );
