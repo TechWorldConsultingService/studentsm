@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-
+from django.contrib.auth.models import User
 
     
 class Teacher(models.Model):
@@ -10,7 +10,7 @@ class Teacher(models.Model):
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-   
+    
     def __str__(self):
         return self.user.username
 
@@ -23,7 +23,7 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
-    
+
     
 class Subject(models.Model):
     name = models.CharField(max_length=100)
@@ -40,7 +40,6 @@ class Class(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Student(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -59,7 +58,7 @@ class Student(models.Model):
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    applied_on = models.DateField(default=timezone.now())
+    applied_on = models.DateTimeField(default=timezone.now)
     leave_date = models.DateField()
     message = models.TextField()
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Disapproved', 'Disapproved')], default='Pending')
@@ -116,3 +115,17 @@ class Timetable(models.Model):
 
     def __str__(self):
         return f'{self.class_assigned} - {self.subject} on {self.day_of_week}'
+
+
+from django.conf import settings
+
+class Event(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # If you want to track who created the event
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

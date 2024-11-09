@@ -255,7 +255,18 @@ class PrincipalListView(APIView):
 # API view to list all students
 class StudentListView(APIView):
     def get(self, request, format=None):
-        students = Student.objects.all()  # Retrieve all student instances
+
+        # Retrieve class ID from query parameters
+        class_id = request.query_params.get('class_id')
+
+        if class_id:
+            # Filter students by class if class_id is provided
+            students = Student.objects.filter(classes__id=class_id)
+        else:
+            # Retrieve all students if no class_id is provided
+            students = Student.objects.all()
+
+        # students = Student.objects.all()  # Retrieve all student instances
         serializer = StudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
     
@@ -695,3 +706,23 @@ class LessonAttendanceView(APIView):
 
         serializer = LessonAttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+from rest_framework import generics
+from .models import Event
+from .serializers import EventSerializer
+from rest_framework.permissions import IsAuthenticated
+
+class EventListView(generics.ListCreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]  # Only authenticated users can view and create events
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)  # Save the user who created the event
+
+class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]
