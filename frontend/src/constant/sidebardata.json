@@ -106,7 +106,7 @@
         "id": 1,
         "title": "Dashboard",
         "icon": "MdOutlineSpaceDashboard",
-        "link": "/studentdashboard"
+        "link": "/principaldashboard"
       },
       {
         "id": 2,
