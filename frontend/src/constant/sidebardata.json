@@ -120,13 +120,16 @@
         "icon": "SlPeople",
         
         "subSidebar": [
-          { "id": 1, "title": "Class One", "link": "/myStudents?class_id=9" },
-          { "id": 2, "title": "Class Two", "link": "/myStudents?class_id=10" },
-          { "id": 3, "title": "Class Three", "link": "/myStudents?class_id=11" },
-          { "id": 4, "title": "Class Foue", "link": "/myStudents?class_id=12" },
-          { "id": 5, "title": "Class Five", "link": "/myStudents?class_id=13" },
-          { "id": 6, "title": "Class Six", "link": "/myStudents?class_id=14" },
-          { "id": 7, "title": "Class Seven", "link": "/myStudents?class_id=15" }
+          { "id": 1, "title": "Class One", "link": "/myStudents?class_id=1" },
+          { "id": 2, "title": "Class Two", "link": "/myStudents?class_id=2" },
+          { "id": 3, "title": "Class Three", "link": "/myStudents?class_id=3" },
+          { "id": 4, "title": "Class Foue", "link": "/myStudents?class_id=4" },
+          { "id": 5, "title": "Class Five", "link": "/myStudents?class_id=5" },
+          { "id": 6, "title": "Class Six", "link": "/myStudents?class_id=6" },
+          { "id": 7, "title": "Class Seven", "link": "/myStudents?class_id=7" },
+          { "id": 8, "title": "Class Eight", "link": "/myStudents?class_id=8" },
+          { "id": 9, "title": "Class Nine", "link": "/myStudents?class_id=9" },
+          { "id": 10, "title": "Class Ten", "link": "/myStudents?class_id=10" }
         ]
 
       },
