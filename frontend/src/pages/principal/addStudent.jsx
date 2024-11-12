@@ -106,19 +106,26 @@ const AddStudent = () => {
   });
 
 
-
-  const handleDateChange = (date) => {
-    formik.setFieldValue("date_of_birth", date);
-  };
-
   return (
-    <div className="flex flex-col bg-purple-400 text-white  w-full px-32 pt-5 pb-10  items-center justify-center">
+    <div className="flex ">
+         
+         
+           {/* Back button */}
+           <button
+          className="bg-purple-800 text-white p-2 rounded-md shadow-md mb-4 flex absolute top-5 left-5 "
+          onClick={() => navigate(-1)} // navigate to previous page
+        >
+          Back
+        </button>
+<div className="flex flex-col px-32 pt-5 pb-10 w-full items-center justify-center  bg-purple-400 text-white">
+
       <div className="flex flex-col items-center justify-center  bg-purple-800 rounded-sm shadow-2xl w-[80%] p-3">
         <h2 className=" text-3xl font-bold">Student Details</h2>
         <span>Enter the details of Student</span>
       </div>
 
       <div className="bg-white text-purple-900 w-[80%]">
+       
         <form
           onSubmit={formik.handleSubmit}
           className="flex flex-col p-8 gap-y-4 justify-center"
@@ -374,6 +381,7 @@ const AddStudent = () => {
           </button>
         </form>
       </div>
+    </div>
     </div>
   );
 };
