@@ -1,90 +1,117 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Select } from "antd";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import toast from "react-hot-toast";
 import { DatePicker } from "antd";
-import { useNavigate } from "react-router-dom";
-
+import moment from "moment";
+import axios from "axios";
 
 // Validation Schema
 const addToTeacherSchema = Yup.object().shape({
-  firstname: Yup.string()
-    .min(3, "Full Name must be at least 3 letter")
-    .required("Full Name is required"),
+  user: Yup.object({  
+    first_name: Yup.string()
+      .min(3, "First Name must be at least 3 letter")
+      .required("First Name is required"),
 
-  lastname: Yup.string()
-    .min(3, "Full Name must be at least 3 letter")
-    .required("Full Name is required"),
-
-  gender: Yup.string().required("Gender must be selected"),
-
+    last_name: Yup.string()
+      .min(3, "Last Name must be at least 3 letter")
+      .required("Last Name is required"),
+    
+    email: Yup.string()
+      .email("Invalid email format")
+      .required("Email is required."),
+  
+    username: Yup.string()
+      .min(3, "Username must be at least 3 letter")
+      .required("Username is required."),
+  
+    password: Yup.string()
+      .min(4, "Password must be at least 4 characters long.")
+      .required("Password is required."),
+  
+  
+    }),
+  gender: Yup.string()
+    .required("Gender must be selected"),
   address: Yup.string()
     .min(3, "Address must be at least 3 letter")
     .required("Address is required"),
 
   subject: Yup.string().required("Subject for tutoring must be selected"),
 
-  email: Yup.string()
-    .email("Invalid email format")
-    .required("Email is required."),
-
-  mobile: Yup.string()
+  
+  phone: Yup.string()
     .length(10, "Mobile number must be exactly 10 digits")
     .matches(/^\d{10}$/, "Mobile number must be a valid 10-digit number")
     .required("Mobile number is required."),
 
-  dateOfJoining: Yup.date()
+  date_of_joining: Yup.date()
     .required("Date of joining must be selected")
     .max(new Date(), "Date of joining cannot be in the future"),
 
-  username: Yup.string()
-    .min(3, "Username must be at least 3 letter")
-    .required("Username is required."),
-
-  password: Yup.string()
-    .min(4, "Password must be at least 4 characters long.")
-    .required("Password is required."),
-});
+  });
 
 const AddTeacher = () => {
+  const [subjectOptions, setSubjectOptions] = useState([]);
 
-  const navigate = useNavigate();
+  useEffect(()=> {
+    //  Fetch data from api
+    const fetchSubject = async () => {
+      try{
+        const response = await axios.get("http://localhost:8000/api/subjects/");
+        const subjects = response.data.map(subject => ({
+          value:subject.id,
+          label:subject.name
+        }));
+        setSubjectOptions(subjects);
+      } catch (error){
+        toast.error("Failed to load subjects");
+      }
+    }
+  },[]);
+
 
   const formik = useFormik({
     initialValues: {
-      firstname: "",
-      lastname: "",
+      user:{
+        first_name: "",
+        last_name: "",
+        email: "",
+        username: "",
+        password: "",
+      },
+      
       gender: "",
       address: "",
       subject: "",
-      email: "",
-      mobile: "",
-      dateOfJoining: "",
-      username: "",
-      password: "",
+      phone: "",
+      date_of_joining: null,
+      
     },
     validationSchema: addToTeacherSchema,
     onSubmit: async(values) => {
       // await registerTeacher(values);
-      await console.log(values)
+      values.date_of_joining = moment(values.date_of_joining).format("YYYY-MM-DD");
+      console.log(values);
+      await registerTeacher(values);
     },
   });
 
-   // const registerTeacher = async (values) => {
-  //   try {
-  //     const response = await axios.post('http://localhost:8000/register', values, {
-  //       headers: { 'Content-Type': 'application/json' }
-  //     });
+  const registerTeacher = async (values) => {
+    try {
+      const response = await axios.post('http://localhost:8000/register/teacher/', values, {
+        headers: { 'Content-Type': 'application/json' }
+      });
   
-  //     if (response.status === 201) {
-  //       toast.success(response.data.msg);
-  //     }
-  //   } catch (error) {
-  //     const errorMsg = error.response?.data?.msg || 'An error occurred';
-  //     toast.error(errorMsg);
-  //   }
-  // };
+      if (response.status === 201) {
+        toast.success(response.data.msg || "Teacher register successfully");
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.msg || 'An error occurred';
+      toast.error(errorMsg);
+    }
+  };
 
 
   const handleSubjectChange = (value) => {
@@ -92,7 +119,7 @@ const AddTeacher = () => {
   };
 
   const handleDateChange = (date) => {
-    formik.setFieldValue("dateOfJoining", date);
+    formik.setFieldValue("date_of_joining", date);
   };
 
   return (
@@ -117,6 +144,8 @@ const AddTeacher = () => {
           onSubmit={formik.handleSubmit}
           className="flex flex-col p-8 gap-y-4 justify-center"
         >
+
+          {/* First Name */} 
           <div className="flex gap-x-5 items-center">
             <label className="w-1/6">First Name:</label>
             <div className="flex flex-col w-1/2">
@@ -124,19 +153,20 @@ const AddTeacher = () => {
               className="border p-2 rounded-sm w-full"
               type="text"
               placeholder="First Name"
-              id="firstname"
-              name="firstname"
+              id="first_name"
+              name="user.first_name"
               onChange={formik.handleChange}
-              value={formik.values.firstname}
+              value={formik.values.user.first_name}
             />
-            {formik.touched.firstname && formik.errors.firstname && (
+            {formik.touched.user?.first_name && formik.errors.user?.first_name && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.firstname}
+                {formik.errors.user.first_name}
               </div>
             )}
             </div>
           </div>
 
+          {/* Last Name */}
           <div className="flex gap-x-5 items-center">
             <label className="w-1/6">Last Name:</label>
             <div className="flex flex-col w-1/2">
@@ -144,14 +174,14 @@ const AddTeacher = () => {
               className="border p-2 rounded-sm w-full"
               type="text"
               placeholder="Last Name"
-              id="lastname"
-              name="lastname"
+              id="last_name"
+              name="user.last_name"
               onChange={formik.handleChange}
-              value={formik.values.lastname}
+              value={formik.values.user.last_name}
             />
-            {formik.touched.lastname && formik.errors.lastname && (
+            {formik.touched.user?.last_name && formik.errors.user?.last_name && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.lastname}
+                {formik.errors.user?.last_name}
               </div>
             )}
             </div>
@@ -220,9 +250,10 @@ const AddTeacher = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-x-5 ">
             <label className="w-1/6">Subject for Tutoring</label>
-            <div className="flex flex-col">
+            <div className="flex flex-col w-1/2">
             <Select
               showSearch
               className="w-[200px] h-10"
@@ -230,24 +261,27 @@ const AddTeacher = () => {
               optionFilterProp="label"
               onChange={handleSubjectChange}
               onBlur={formik.handleBlur}
-              options={[
-                {
-                  value: "math",
-                  label: "Math",
-                },
-                {
-                  value: "science",
-                  label: "Science",
-                },
-                {
-                  value: "computer",
-                  label: "Computer",
-                },
-                {
-                  value: "english",
-                  label: "English",
-                },
-              ]}
+              options={subjectOptions}
+                // {
+                //   [
+                //     {
+                //       value: "math",
+                //       label: "Math",
+                //     },
+                //     {
+                //       value: "science",
+                //       label: "Science",
+                //     },
+                //     {
+                //       value: "computer",
+                //       label: "Computer",
+                //     },
+                //     {
+                //       value: "english",
+                //       label: "English",
+                //     },
+                //   ]
+                // }
             />
             {formik.touched.subject && formik.errors.subject && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
@@ -265,13 +299,13 @@ const AddTeacher = () => {
               placeholder="Email"
               className="p-2 border w-full rounded-sm"
               id="email"
-              name="email"
+              name="user.email"
               onChange={formik.handleChange}
-              value={formik.values.email}
+              value={formik.values.user?.email}
             />
-            {formik.touched.email && formik.errors.email && (
+            {formik.touched.user?.email && formik.errors.user?.email && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.email}
+                {formik.errors.user?.email}
               </div>
             )}
             </div>
@@ -284,19 +318,20 @@ const AddTeacher = () => {
               type="number"
               placeholder="Mobile Number"
               className="p-2 border w-full rounded-sm"
-              id="mobile"
-              name="mobile"
+              id="phone"
+              name="phone"
               onChange={formik.handleChange}
-              value={formik.values.mobile}
+              value={formik.values.phone}
             />
-            {formik.touched.mobile && formik.errors.mobile && (
+            {formik.touched.phone && formik.errors.phone && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.mobile}
+                {formik.errors.phone}
               </div>
             )}
             </div>
           </div>
 
+            {/* Date of Joining */}
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Date of Joining</label>
             <div className="flex flex-col w-1/2 ">
@@ -304,10 +339,12 @@ const AddTeacher = () => {
               className="p-2 border w-full rounded-sm"
               onChange={handleDateChange}
               onBlur={formik.handleBlur}
+              value={formik.values.date_of_joining ? moment(formik.values.date_of_joining) : null}
+              format="YYYY-MM-DD"
             />
-            {formik.touched.dateOfJoining && formik.errors.dateOfJoining && (
+            {formik.touched.date_of_joining && formik.errors.date_of_joining && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.dateOfJoining}
+                {formik.errors.date_of_joining}
               </div>
             )}
             </div>
@@ -321,13 +358,13 @@ const AddTeacher = () => {
               placeholder="Username"
               className="p-2 border w-full rounded-sm"
               id="username"
-              name="username"
+              name="user.username"
               onChange={formik.handleChange}
-              value={formik.values.username}
+              value={formik.values.user?.username}
             />
-            {formik.touched.username && formik.errors.username && (
+            {formik.touched.user?.username && formik.errors.user?.username && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.username}
+                {formik.errors.user?.username}
               </div>
             )}
             </div>
@@ -341,13 +378,13 @@ const AddTeacher = () => {
               placeholder="Password"
               className="p-2 border w-full rounded-sm"
               id="password"
-              name="password"
+              name="user.password"
               onChange={formik.handleChange}
-              value={formik.values.password}
+              value={formik.values.user?.password}
             />
-            {formik.touched.password && formik.errors.password && (
+            {formik.touched.user?.password && formik.errors.user?.password && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.password}
+                {formik.errors.user?.password}
               </div>
             )}
             </div>
@@ -356,6 +393,7 @@ const AddTeacher = () => {
           <button
             className="flex bg-purple-600 w-1/6 self-center justify-center p-3 rounded-md shadow-lg hover:bg-purple-800 text-white "
             type="submit"
+            onClick={formik.submitForm}
           >
             Submit
           </button>

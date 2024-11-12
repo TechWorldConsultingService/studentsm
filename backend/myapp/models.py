@@ -11,6 +11,7 @@ class Teacher(models.Model):
     date_of_joining = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     
+
     def __str__(self):
         return self.user.username
 
