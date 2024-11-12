@@ -8,7 +8,7 @@ from .models import Teacher, Principal, Student, LeaveApplication, Subject, Clas
 
 # Teacher admin customization
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'phone', 'address', 'date_of_joining', 'gender')
+    list_display = ('id', 'user', 'user__first_name', 'phone', 'address', 'gender','class_teacher')
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ('date_of_joining', 'gender')
 
