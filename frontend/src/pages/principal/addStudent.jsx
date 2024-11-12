@@ -45,7 +45,7 @@ const addStudentSchema = Yup.object().shape({
   parents: Yup.string()
   .required("Parent name is required"),
 
-  class_assigned: Yup.string()
+  classes: Yup.string()
   .required("Class is required"),
 
   date_of_birth: Yup.date()
@@ -72,7 +72,7 @@ const AddStudent = () => {
       phone: "",
       address: "",
       gender: "",
-      class_assigned: "",
+      classes: "",
       date_of_birth: null,  
       parents: "",
     },
@@ -246,6 +246,7 @@ const AddStudent = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Parents Name</label>
             <div className="flex flex-col w-1/2">
@@ -265,6 +266,7 @@ const AddStudent = () => {
             )}
             </div>
           </div>
+
 
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Email</label>
@@ -286,6 +288,7 @@ const AddStudent = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Class</label>
             <div className="flex flex-col w-1/2">
@@ -294,17 +297,18 @@ const AddStudent = () => {
               placeholder="Class"
               className="p-2 border w-full rounded-sm"
               id="class"
-              name="class_assigned"
+              name="classes"
               onChange={formik.handleChange}
-              value={formik.values.class_assigned}
+              value={formik.values.classes}
             />
-            {formik.touched.class_assigned && formik.errors.class_assigned && (
+            {formik.touched.classes && formik.errors.classes && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.class_assigned}
+                {formik.errors.classes}
               </div>
             )}
             </div>
           </div>
+
 
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Date of Birth</label>
