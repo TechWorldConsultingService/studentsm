@@ -120,6 +120,8 @@ class RegisterTeacherView(APIView):
                 # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
             
+            subjects_data = request.data.get('subjects', [])
+            classes_data = request.data.get('classes', [])
             teacher_data = request.data
         else:
             # Handle form-data
@@ -130,13 +132,17 @@ class RegisterTeacherView(APIView):
                 'first_name': request.data.get('user.first_name'),
                 'last_name': request.data.get('user.last_name'),
             }
+            subjects_data = request.data.getlist('subjects')  # Expecting a list of subject IDs
+            classes_data = request.data.getlist('classes')  # Expecting a list of class IDs
             
             teacher_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_joining': request.data.get('date_of_joining'),
                 'gender': request.data.get('gender'),
-                'user': user_data
+                'user': user_data,
+                'subjects': subjects_data,
+                'classes': classes_data,
             }
         
         # Serialize teacher data and validate
@@ -216,13 +222,16 @@ class RegisterStudentView(APIView):
                 'last_name': request.data.get('user.last_name'),
             }
             
+            
             student_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_birth': request.data.get('date_of_birth'),
                 'parents': request.data.get('parents'),
-                'gender': request.data.get('gender'),  
-                'user': user_data
+                'gender': request.data.get('gender'),
+                'classes': request.data.get('classes'),
+                'user': user_data,
+                
             }
         
         # Serialize student data and validate
@@ -479,7 +488,6 @@ class LeaveApplicationDeleteView(APIView):
 
 # API view to list all subjects or create a new subject
 class SubjectListCreateView(APIView):
-
     def get(self, request, format=None):
         """
         Handle GET requests to retrieve a list of all subjects.
@@ -494,14 +502,12 @@ class SubjectListCreateView(APIView):
         """
         serializer = SubjectSerializer(data=request.data)  # Deserialize Subject data
         if serializer.is_valid():
-            # Save the new Subject instance
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
 
 # API view to retrieve, update, or delete a specific subject
 class SubjectDetailView(APIView):
-
     def get(self, request, pk, format=None):
         """
         Handle GET requests to retrieve the details of a specific Subject by primary key.
@@ -517,7 +523,6 @@ class SubjectDetailView(APIView):
         subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
         serializer = SubjectSerializer(subject, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
-            # Save the updated Subject instance
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
@@ -529,97 +534,56 @@ class SubjectDetailView(APIView):
         subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
         subject.delete()  # Delete the Subject instance
         return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
- 
 
+# API view to list all classes or create a new class
 class ClassListCreateView(APIView):
-    """
-    API view to list all classes or create a new class.
-    """
-
     def get(self, request, format=None):
         """
         Handle GET requests to retrieve a list of all classes.
         """
-        # Retrieve all instances of the Class model
-        classes = Class.objects.all()
-        
-        # Serialize the list of Class instances into JSON format
-        serializer = ClassSerializer(classes, many=True)
-        
-        # Return the serialized data with an HTTP 200 OK status
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        classes = Class.objects.all()  # Retrieve all Class instances
+        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
     def post(self, request, format=None):
         """
         Handle POST requests to create a new Class instance.
         """
-        # Deserialize incoming data into a ClassSerializer instance
-        serializer = ClassSerializer(data=request.data)
-        
-        # Check if the provided data is valid according to the ClassSerializer
+        serializer = ClassSerializer(data=request.data)  # Deserialize Class data
         if serializer.is_valid():
-            # Save the new Class instance to the database
             serializer.save()
-            
-            # Return the serialized data for the created instance with HTTP 201 Created status
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        # Return validation errors with HTTP 400 Bad Request status if data is invalid
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
 
-
+# API view to retrieve, update, or delete a specific class
 class ClassDetailView(APIView):
-    """
-    API view to retrieve, update, or delete a specific class by primary key.
-    """
-
     def get(self, request, pk, format=None):
         """
         Handle GET requests to retrieve the details of a specific Class by primary key.
         """
-        # Retrieve the Class instance by primary key or return 404 if not found
-        class_instance = get_object_or_404(Class, pk=pk)
-        
-        # Serialize the retrieved Class instance into JSON format
-        serializer = ClassSerializer(class_instance)
-        
-        # Return the serialized data with HTTP 200 OK status
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        serializer = ClassSerializer(class_instance)  # Serialize the Class instance
+        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
     def put(self, request, pk, format=None):
         """
         Handle PUT requests to update a specific Class by primary key.
         """
-        # Retrieve the Class instance by primary key or return 404 if not found
-        class_instance = get_object_or_404(Class, pk=pk)
-        
-        # Deserialize and validate the provided data for updating the Class instance
-        serializer = ClassSerializer(class_instance, data=request.data)
-        
-        # Check if the provided data is valid according to the ClassSerializer
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
-            # Save the updated Class instance to the database
             serializer.save()
-            
-            # Return the serialized data for the updated instance with HTTP 200 OK status
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        # Return validation errors with HTTP 400 Bad Request status if data is invalid
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
 
     def delete(self, request, pk, format=None):
         """
         Handle DELETE requests to remove a specific Class by primary key.
         """
-        # Retrieve the Class instance by primary key or return 404 if not found
-        class_instance = get_object_or_404(Class, pk=pk)
-        
-        # Delete the retrieved Class instance from the database
-        class_instance.delete()
-        
-        # Return a success message with HTTP 204 No Content status, as no further content is needed
-        return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
-    
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        class_instance.delete()  # Delete the Class instance
+        return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
+
 
 
 # Daily Attendance API View

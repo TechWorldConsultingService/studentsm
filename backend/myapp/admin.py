@@ -12,6 +12,15 @@ class TeacherAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ('date_of_joining', 'gender')
 
+# Custom display methods for Many-to-Many fields
+    def get_subjects(self, obj):
+        return ", ".join([subject.subject_name for subject in obj.subjects.all()])
+    get_subjects.short_description = 'Subjects'
+
+    def get_classes(self, obj):
+        return ", ".join([class_obj.class_name for class_obj in obj.classes.all()])
+    get_classes.short_description = 'Classes'
+
 # Principal admin customization
 class PrincipalAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'phone', 'address', 'gender')
@@ -32,14 +41,13 @@ class LeaveApplicationAdmin(admin.ModelAdmin):
 
 # Subject admin customization
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'teacher')
-    search_fields = ('name', 'teacher__user__username')
+    list_display = ('id', 'subject_name', 'subject_code')
+    search_fields = ('subject_name', 'subject_code')
 
 # Class admin customization
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name')
-    filter_horizontal = ('teachers', 'subjects')
-    search_fields = ('name',)
+    list_display = ('id', 'class_name', 'class_code')
+    search_fields = ('class_name', 'class_code')
 
 # DailyAttendance admin customization
 class DailyAttendanceAdmin(admin.ModelAdmin):
