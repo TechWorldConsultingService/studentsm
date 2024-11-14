@@ -11,9 +11,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.decorators import method_decorator
 
-
 # View for handling user login
-# @csrf_exempt
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     def post(self, request):
         # Deserialize the request data using LoginSerializer
@@ -52,7 +51,7 @@ class LoginAPIView(APIView):
 
         # If serializer is invalid, return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+       
 
 # View for handling user logout
 class LogoutAPIView(APIView):
