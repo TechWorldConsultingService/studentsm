@@ -9,9 +9,6 @@ urlpatterns = [
     # Admin site URL
     path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
 
-    # Login page URL
-    # path('', views.login, name='login'),  # URL for the login page, mapped to the `login` view function
-    path('api/login/', views.login, name='login'),  # URL for the login page, mapped to the `login` view function
 
     # API endpoints for user registration
     path('api/register/teacher/', RegisterTeacherView.as_view(), name='register-teacher'),  # URL for teacher registration API
