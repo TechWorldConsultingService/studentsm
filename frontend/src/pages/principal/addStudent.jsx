@@ -45,7 +45,7 @@ const addStudentSchema = Yup.object().shape({
   parents: Yup.string()
   .required("Parent name is required"),
 
-  class_assigned: Yup.string()
+  classes: Yup.string()
   .required("Class is required"),
 
   date_of_birth: Yup.date()
@@ -72,7 +72,7 @@ const AddStudent = () => {
       phone: "",
       address: "",
       gender: "",
-      class_assigned: "",
+      classes: "",
       date_of_birth: null,  
       parents: "",
     },
@@ -106,19 +106,26 @@ const AddStudent = () => {
   });
 
 
-
-  const handleDateChange = (date) => {
-    formik.setFieldValue("date_of_birth", date);
-  };
-
   return (
-    <div className="flex flex-col bg-purple-400 text-white  w-full px-32 pt-5 pb-10  items-center justify-center">
+    <div className="flex ">
+         
+         
+           {/* Back button */}
+           <button
+          className="bg-purple-800 text-white p-2 rounded-md shadow-md mb-4 flex absolute top-5 left-5 "
+          onClick={() => navigate(-1)} // navigate to previous page
+        >
+          Back
+        </button>
+<div className="flex flex-col px-32 pt-5 pb-10 w-full items-center justify-center  bg-purple-400 text-white">
+
       <div className="flex flex-col items-center justify-center  bg-purple-800 rounded-sm shadow-2xl w-[80%] p-3">
         <h2 className=" text-3xl font-bold">Student Details</h2>
         <span>Enter the details of Student</span>
       </div>
 
       <div className="bg-white text-purple-900 w-[80%]">
+       
         <form
           onSubmit={formik.handleSubmit}
           className="flex flex-col p-8 gap-y-4 justify-center"
@@ -246,6 +253,7 @@ const AddStudent = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Parents Name</label>
             <div className="flex flex-col w-1/2">
@@ -265,6 +273,7 @@ const AddStudent = () => {
             )}
             </div>
           </div>
+
 
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Email</label>
@@ -286,6 +295,7 @@ const AddStudent = () => {
             </div>
           </div>
 
+
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Class</label>
             <div className="flex flex-col w-1/2">
@@ -294,17 +304,18 @@ const AddStudent = () => {
               placeholder="Class"
               className="p-2 border w-full rounded-sm"
               id="class"
-              name="class_assigned"
+              name="classes"
               onChange={formik.handleChange}
-              value={formik.values.class_assigned}
+              value={formik.values.classes}
             />
-            {formik.touched.class_assigned && formik.errors.class_assigned && (
+            {formik.touched.classes && formik.errors.classes && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.class_assigned}
+                {formik.errors.classes}
               </div>
             )}
             </div>
           </div>
+
 
           <div className="flex items-center gap-x-5">
             <label className="w-1/6">Date of Birth</label>
@@ -374,6 +385,7 @@ const AddStudent = () => {
           </button>
         </form>
       </div>
+    </div>
     </div>
   );
 };

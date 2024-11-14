@@ -6,7 +6,6 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
-import Calendar from "./pages/calendar";
 import Reports from "./pages/reports";
 import MyBus from "./pages/mybus";
 import Leave from "./pages/leave";
@@ -26,6 +25,7 @@ import Homework from "./pages/homework";
 import MyStudents from "./pages/myStudents";
 import AddStudent from "./pages/principal/addStudent";
 import AddTeacher from "./pages/principal/addTeacher";
+import AcademicCalendar from "./pages/calendar";
 
 const router = createBrowserRouter([
   {
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
 
   {
     path: "/calendar",
-    element: <Calendar />,
+    element: <AcademicCalendar />,
   },
 
   {
@@ -129,9 +129,9 @@ root.render(
 
       <Toaster position="top-center" reverseOrder={false} />
 
-      <div className="mainFooterr">
+      {/* <div className="mainFooterr">
         &nbsp; &nbsp; &nbsp; &nbsp; &copy; Copyright by Akash Singh.{" "}
-      </div>
+      </div> */}
     </ReduxProvider>
   </React.StrictMode>
 );

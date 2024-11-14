@@ -7,7 +7,7 @@ from .views import *
 
 urlpatterns = [
     # Admin site URL
-    path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
+    # path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
 
 
     # API endpoints for user registration
@@ -53,6 +53,8 @@ urlpatterns = [
     path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/', LessonAttendanceView.as_view(), name='lesson-attendance-create'),
     path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/<str:date>/', LessonAttendanceView.as_view(), name='lesson-attendance-list'),
 
+    path('api/events/', EventListView.as_view(), name='event-list'),
+    path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
 ]
 
