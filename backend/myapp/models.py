@@ -1,8 +1,20 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.contrib.auth.models import User
 
+class Subject(models.Model):
+    subject_code = models.CharField(max_length=50, unique=True)
+    subject_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.subject_name
+    
+class Class(models.Model):
+    class_code = models.CharField(max_length=50, unique=True)
+    class_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.class_name
     
 class Teacher(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -10,7 +22,9 @@ class Teacher(models.Model):
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-    
+    subjects = models.ManyToManyField(Subject, related_name='teachers')
+    classes = models.ManyToManyField(Class, related_name='teachers')
+   
     def __str__(self):
         return self.user.username
 
@@ -23,23 +37,7 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
-
     
-class Subject(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='subjects')
-
-    def __str__(self):
-        return self.name
-    
-class Class(models.Model):
-    name = models.CharField(max_length=50)
-    teachers = models.ManyToManyField(Teacher, related_name='classes')  # Many-to-many relationship for teachers
-    subjects = models.ManyToManyField(Subject, related_name='classes')  # Many-to-many relationship for subjects
-
-    def __str__(self):
-        return self.name
 
 class Student(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
