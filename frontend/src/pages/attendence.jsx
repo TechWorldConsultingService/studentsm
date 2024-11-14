@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import { Select, Space, Table, DatePicker } from "antd";
+import axios from "axios";
 
 const columns = [
   {
@@ -94,6 +95,9 @@ const data = [
 
 const Attendence = () => {
   const [selectClass, setSelectClass] = useState(null);
+  const [attendanceData, setAttendanceData] = useState([]);
+
+  const [loading, setLoading] = useState(false); // For loading state
 
   const selectedClass = (value) => {
     setSelectClass(value);
@@ -105,14 +109,43 @@ const Attendence = () => {
   };
 
   const classData = {
-    one: "http://localhost:3000/myStudents?class_id=9",
-    two: "http://localhost:3000/myStudents?class_id=10",
-    three: "http://localhost:3000/myStudents?class_id=11",
-    four: "http://localhost:3000/myStudents?class_id=11",
-    five: "http://localhost:3000/myStudents?class_id=12",
-    six: "http://localhost:3000/myStudents?class_id=13",
-    seven: "http://localhost:3000/myStudents?class_id=14",
+    one: "http://localhost:8000/api/students/?class_id=9",
+    two: "http://localhost:8000/myStudents?class_id=10",
+    three: "http://localhost:8000/myStudents?class_id=11",
+    four: "http://localhost:8000/myStudents?class_id=11",
+    five: "http://localhost:8000/myStudents?class_id=12",
+    six: "http://localhost:8000/myStudents?class_id=13",
+    seven: "http://localhost:8000/myStudents?class_id=14",
   };
+
+  useEffect(() => {
+    if (selectClass) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const response = await axios.get(classData[selectClass]);
+          const fetchedData = response.data; // Assuming the API returns data in the expected format
+
+          // Format the data if needed, and then set it to state
+          const formattedData = fetchedData.map((item, index) => ({
+            key: index + 1,
+            class: item.class, // Assuming 'class' exists in the response
+            type: item.type, // Assuming 'type' exists
+            present: item.present, // Assuming 'present' exists
+            absent: item.absent, // Assuming 'absent' exists
+          }));
+
+          setAttendanceData(formattedData);
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [selectClass]);
 
   return (
     <MainLayout>
@@ -143,7 +176,11 @@ const Attendence = () => {
         </div>
 
         {selectClass ? (
-          <div>{classData[selectClass]}</div>
+          loading ? (
+            <div>Loading...</div>
+          ) : (
+            <Table columns={columns} dataSource={attendanceData} />
+          )
         ) : (
           <Table columns={columns} dataSource={data} />
         )}

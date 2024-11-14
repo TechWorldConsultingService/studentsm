@@ -32,6 +32,7 @@ class RegisterTeacherView(APIView):
             
             subjects_data = request.data.get('subjects', [])
             classes_data = request.data.get('classes', [])
+            class_teacher_data = request.data.get('class_teacher')
             teacher_data = request.data
         else:
             # Handle form-data
@@ -44,15 +45,17 @@ class RegisterTeacherView(APIView):
             }
             subjects_data = request.data.getlist('subjects')  # Expecting a list of subject IDs
             classes_data = request.data.getlist('classes')  # Expecting a list of class IDs
-            
+            class_teacher_data = request.data.get('class_teacher')
+
             teacher_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_joining': request.data.get('date_of_joining'),
                 'gender': request.data.get('gender'),
                 'user': user_data,
-                'subjects': subjects_data,
-                'classes': classes_data,
+                'subjects': request.data.get('subjects'),
+                'classes': request.data.get('classes') ,
+                'class_teacher': request.data.get('class_teacher')
             }
         
         # Serialize teacher data and validate
@@ -62,7 +65,7 @@ class RegisterTeacherView(APIView):
             # Save the teacher instance and return success response
             teacher = teacher_serializer.save()
             teacher.user.is_teacher = True
-            teacher.user.save()
+            teacher.user.save()  # Ensure the is_teacher flag is saved
 
             return Response(teacher_serializer.data, status=status.HTTP_201_CREATED)
         else:
