@@ -52,6 +52,16 @@ const Login = () => {
       const response = await axios.post("http://localhost:8000/api/login/", values);
       const data = response.data;
 
+      const token = response.data.access;
+      console.log('Token:', token);
+      if (token) {
+        localStorage.setItem('token', token);
+        console.log('Token stored:', token); // Verify token storage
+        // Dispatch to Redux (if applicable)
+        dispatch(setLoginDetails({ token, ...response.data }));
+      }
+
+
       if (response.status === 200) {
         const successMessage = data.msg || "Login successful";
         toast.success(successMessage);

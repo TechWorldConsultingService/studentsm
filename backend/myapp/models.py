@@ -24,7 +24,8 @@ class Teacher(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     subjects = models.ManyToManyField(Subject, related_name='teachers')
     classes = models.ManyToManyField(Class, related_name='teachers')
-   
+    class_teacher = models.ForeignKey(Class, related_name="class_teacher", on_delete=models.SET_NULL, null=True, blank=True)
+
     def __str__(self):
         return self.user.username
 
@@ -56,7 +57,7 @@ class Student(models.Model):
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    applied_on = models.DateTimeField(default=timezone.now)
+    applied_on = models.DateField(default=timezone.now)
     leave_date = models.DateField()
     message = models.TextField()
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Disapproved', 'Disapproved')], default='Pending')
