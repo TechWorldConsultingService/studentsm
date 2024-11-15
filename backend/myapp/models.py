@@ -56,6 +56,7 @@ class Student(models.Model):
 
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
+    applicant_name = models.CharField(max_length=10)
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     applied_on = models.DateField(default=timezone.now)
     leave_date = models.DateField()
