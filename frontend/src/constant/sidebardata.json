@@ -49,6 +49,7 @@
         "icon": "MdCoPresent",
         "link": "/myLeave"
       }
+      
     ],
     "teacher": [
       {
@@ -102,7 +103,14 @@
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 8,
+        "title": "My Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
+
     ],
     "principal": [
       {
@@ -172,6 +180,12 @@
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 8,
+        "title": "All Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
     ],
     "master": [
@@ -192,6 +206,12 @@
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 4,
+        "title": "All Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
     ]
   }
