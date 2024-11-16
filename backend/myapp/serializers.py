@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # Define which fields should be included in the serialized output
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student')
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_staff')
         # Ensure the password field is write-only (won't be returned in API responses)
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -112,6 +112,32 @@ class StudentSerializer(serializers.ModelSerializer):
         else:
             # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
+        
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # Nested serializer for the user associated with the staff
+
+    class Meta:
+        model = Staff
+        fields = ['user', 'phone', 'address', 'date_of_joining', 'gender', 'role']
+        extra_kwargs = {'user.password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')  # Extract user data
+        # Mark the user as a student
+        user_data['is_staff'] = True
+        # Serialize the user data
+        user_serializer = UserSerializer(data=user_data)
+
+        if user_serializer.is_valid():
+            # Save the user and get the created user instance
+            user = user_serializer.save()
+            # Create and save the Student instance
+            staff = Staff.objects.create(user=user, **validated_data)  # Create staff profile
+            return staff
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
 
 
 # Serializer for the leave application model
@@ -154,3 +180,11 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['id', 'title', 'description', 'start_time', 'end_time', 'created_by', 'created_at']
+
+
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignment
+        fields = ['id', 'student', 'title', 'file', 'subject', 'submitted_at']
+        read_only_fields = ['student', 'submitted_at']

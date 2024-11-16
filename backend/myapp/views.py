@@ -15,6 +15,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 import json
 from django.utils.dateparse import parse_date
+from rest_framework.exceptions import NotFound
 
 
 
@@ -163,6 +164,53 @@ class RegisterStudentView(APIView):
             # Return error response if validation fails
             return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# View for handling staff registration
+class RegisterStaffView(APIView):
+    def post(self, request, format=None):
+        # Determine if the request data is in JSON format or form-data
+        if request.content_type == 'application/json':
+            # Handle JSON data
+            user_data = request.data.get('user')
+            if not user_data:
+                # Return an error if user data is missing
+                return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+            staff_data = request.data
+        else:
+            # Handle form-data
+            user_data = {
+                'username': request.data.get('user.username'),
+                'password': request.data.get('user.password'),
+                'email': request.data.get('user.email'),
+                'first_name': request.data.get('user.first_name'),
+                'last_name': request.data.get('user.last_name'),
+            }
+
+            staff_data = {
+                'phone': request.data.get('phone'),
+                'address': request.data.get('address'),
+                'date_of_joining': request.data.get('date_of_joining'),
+                'gender': request.data.get('gender'),
+                'role': request.data.get('role'),
+                'user': user_data,
+            }
+
+        # Serialize staff data and validate
+        staff_serializer = StaffSerializer(data=staff_data)
+
+        if staff_serializer.is_valid():
+            # Save the staff instance and return success response
+            staff = staff_serializer.save()
+            staff.user.is_staff = True
+            staff.user.save()
+
+            return Response(staff_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            # Return error response if validation fails
+            return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 # API view to list all teachers
 class TeacherListView(APIView):
     def get(self, request, format=None):
@@ -194,7 +242,16 @@ class StudentListView(APIView):
         # students = Student.objects.all()  # Retrieve all student instances
         serializer = StudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-    
+
+# List all staff members
+class StaffListView(APIView):
+    """
+    Handle GET requests to list all staff members.
+    """
+    def get(self, request, format=None):
+        staff = Staff.objects.all()  # Retrieve all staff records
+        serializer = StaffSerializer(staff, many=True)  # Serialize the data for multiple staff records
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # API view to see specific teacher
 class TeacherDetailView(APIView):
@@ -248,6 +305,22 @@ class StudentDetailView(APIView):
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
+# Retrieve specific staff member details
+class StaffDetailView(APIView):
+    """
+    Handle GET requests to retrieve details of a specific staff member by primary key.
+    """
+    def get(self, request, pk, format=None):
+        try:
+            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
+            serializer = StaffSerializer(staff)  # Serialize the staff data
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Staff.DoesNotExist:
+            # Return an error response if staff member is not found
+            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        
+
 # API view to delete specific teacher
 class TeacherDeleteView(APIView):
     def delete(self, request, pk, format=None):
@@ -298,6 +371,22 @@ class StudentDeleteView(APIView):
         except Student.DoesNotExist:
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+# Delete a specific staff member
+class StaffDeleteView(APIView):
+    """
+    Handle DELETE requests to delete a specific staff member by primary key.
+    """
+    def delete(self, request, pk, format=None):
+        try:
+            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
+            staff.delete()  # Delete the staff record
+            return Response({"message": "Staff deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Staff.DoesNotExist:
+            # Return an error response if staff member is not found
+            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+
         
 # API view to list all leave applications for the principal
 class TotalLeaveApplicationListView(APIView):
@@ -609,3 +698,53 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
+
+
+class AssignmentUploadView(APIView):
+
+    def post(self, request, format=None):
+        """
+        Handle POST requests to upload an assignment.
+        Automatically assigns the logged-in student.
+        """
+        serializer = AssignmentSerializer(data=request.data)
+        if serializer.is_valid():
+            # Automatically assign the student based on the logged-in user
+            serializer.save(student=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AssignmentListView(APIView):
+
+    def get(self, request, format=None):
+        """
+        Retrieve a list of all assignments, optionally filtered by subject or student.
+        """
+        subject = request.query_params.get('subject', None)
+        student = request.query_params.get('student', None)
+        
+        assignments = Assignment.objects.all()
+
+        if subject:
+            assignments = assignments.filter(subject=subject)
+
+        if student:
+            assignments = assignments.filter(student__id=student)
+
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class AssignmentDetailView(APIView):
+    def get(self, request, pk, format=None):
+        """
+        Retrieve a specific assignment by its primary key.
+        """
+        try:
+            assignment = Assignment.objects.get(pk=pk)
+        except Assignment.DoesNotExist:
+            raise NotFound("Assignment not found.")
+
+        serializer = AssignmentSerializer(assignment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
