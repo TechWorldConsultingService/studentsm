@@ -37,12 +37,16 @@ __pycache__/
 *.sqlite3
 
 # Django migrations
+migrations/
 */migrations/*
 !*/migrations/__init__.py
 **/migrations/**
 !**/migrations
 !**/migrations/__init__.py
 **/**/migrations
+
+#database
+db.sqlite3
 
 
 # environment variables
