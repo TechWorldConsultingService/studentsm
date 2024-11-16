@@ -30,6 +30,7 @@ class Teacher(models.Model):
         return self.user.username
 
 
+
 class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
@@ -52,6 +53,16 @@ class Student(models.Model):
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
 
+class Staff(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15, unique=True)
+    address = models.CharField(max_length=255)
+    date_of_joining = models.DateField()
+    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
+    role = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"User ID: {self.user.id}, Username: {self.user.username}, Role: {self.role}"
 
 
 class LeaveApplication(models.Model):
@@ -128,3 +139,14 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+    
+
+class Assignment(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to='assignments/')
+    subject = models.CharField(max_length=255)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.student.username}"

@@ -66,6 +66,12 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ('title', 'description')
     # search_fields = ('student__user__username', 'subject__name')
 
+class StaffAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'phone', 'address', 'gender', 'role', 'date_of_joining')
+    search_fields = ('user__username', 'phone', 'address', 'role')
+    list_filter = ('gender', 'role', 'date_of_joining')
+
+
 
 # Registering models
 admin.site.register(Teacher, TeacherAdmin)
@@ -77,4 +83,5 @@ admin.site.register(Class, ClassAdmin)
 admin.site.register(DailyAttendance, DailyAttendanceAdmin)
 admin.site.register(LessonAttendance, LessonAttendanceAdmin)
 admin.site.register(Event, EventAdmin)
+admin.site.register(Staff, StaffAdmin)
 

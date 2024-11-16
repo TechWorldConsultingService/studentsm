@@ -36,7 +36,7 @@ class LoginAPIView(APIView):
             response_data = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else None,
+                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,
                 'username': username,
                 'password': password  # Note: Including the password in the response is not recommended
             }
