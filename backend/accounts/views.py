@@ -11,47 +11,121 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils.decorators import method_decorator
 
-# View for handling user login
+
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     def post(self, request):
         # Deserialize the request data using LoginSerializer
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            # Extract username and password from validated data
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
 
             # Authenticate the user
             user = authenticate(request, username=username, password=password)
-
-            # If authentication fails, return an error response
             if user is None:
                 return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
             # Generate JWT tokens for the authenticated user
             refresh = RefreshToken.for_user(user)
 
+            # Determine the role and retrieve the role-specific data
+            if hasattr(user, 'teacher'):
+                role_data = {
+                    'role': 'teacher',
+                    'phone': user.teacher.phone,
+                    'address': user.teacher.address,
+                    'date_of_joining': user.teacher.date_of_joining,
+                    'gender': user.teacher.gender,
+                    'subjects': [subject.subject_name for subject in user.teacher.subjects.all()],
+                    'classes': [cls.class_name for cls in user.teacher.classes.all()],
+                    'class_teacher': user.teacher.class_teacher.class_name if user.teacher.class_teacher else None,
+                }
+            elif hasattr(user, 'principal'):
+                role_data = {
+                    'role': 'principal',
+                    'phone': user.principal.phone,
+                    'address': user.principal.address,
+                    'gender': user.principal.gender,
+                }
+            elif hasattr(user, 'student'):
+                role_data = {
+                    'role': 'student',
+                    'phone': user.student.phone,
+                    'address': user.student.address,
+                    'date_of_birth': user.student.date_of_birth,
+                    'gender': user.student.gender,
+                    'parents': user.student.parents,
+                    'class': user.student.classes.name,
+                }
+            else:
+                return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
+
             # Prepare the response data
             response_data = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else None,
                 'username': username,
-                'password': password  # Note: Including the password in the response is not recommended
+                **role_data,  # Include role-specific data
+                'email': user.email,  # User's email (assuming it exists in your user model)
+                'first_name': user.first_name,  # User's first name
+                'last_name': user.last_name,
             }
 
-            # If user has no role assigned, return an error response
-            if response_data['role'] is None:
-                return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Add role-specific data
+            if hasattr(user, 'teacher'):
+                teacher = user.teacher
+                response_data.update({
+                    'role': 'teacher',
+                    'phone': teacher.phone,
+                    'address': teacher.address,
+                    'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
+                    'gender': teacher.gender,
+                    'subjects': [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'classes': [{'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
+                    'class_teacher': {
+                        'class_code': teacher.class_teacher.class_code,
+                        'class_name': teacher.class_teacher.class_name
+                    } if teacher.class_teacher else None,
+                })
+            elif hasattr(user, 'principal'):
+                principal = user.principal
+                response_data.update({
+                    'role': 'principal',
+                    'phone': principal.phone,
+                    'address': principal.address,
+                    'gender': principal.gender,
+                })
+            elif hasattr(user, 'student'):
+                student = user.student
+                response_data.update({
+                    'role': 'student',
+                    'phone': student.phone,
+                    'address': student.address,
+                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
+                    'gender': student.gender,
+                    'parents': student.parents,
+                    'class': {
+                        'class_code': student.classes.class_code,
+                        'class_name': student.classes.class_name
+                    },
+                })
+            else:
+                # Handle case where user has no specific role
+                response_data.update({
+                    'role': None,
+                    'error': 'User has no role assigned',
+                })
+
+            # Print response data to terminal
+            print("\n=== LOGIN RESPONSE DATA ===\n", response_data, "\n")
 
             # Log the user in
             login(request, user)
             return Response(response_data, status=status.HTTP_200_OK)
 
-        # If serializer is invalid, return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-       
 
 # View for handling user logout
 class LogoutAPIView(APIView):
