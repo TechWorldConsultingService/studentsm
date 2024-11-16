@@ -70,8 +70,8 @@ class LoginAPIView(APIView):
                 'email': user.email,  # User's email (assuming it exists in your user model)
                 'first_name': user.first_name,  # User's first name
                 'last_name': user.last_name,
+            
             }
-
 
             # Add role-specific data
             if hasattr(user, 'teacher'):
@@ -118,13 +118,15 @@ class LoginAPIView(APIView):
                     'error': 'User has no role assigned',
                 })
 
-            # Print response data to terminal
-            print("\n=== LOGIN RESPONSE DATA ===\n", response_data, "\n")
+            
 
             # Log the user in
-            login(request, user)
+            # login(request, user)
             return Response(response_data, status=status.HTTP_200_OK)
-
+        
+        # If serializer is invalid
+        print("\n=== INVALID DATA ===")
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling user logout
@@ -145,6 +147,7 @@ class LogoutAPIView(APIView):
 
             # Log the user out
             logout(request)
+
             return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
         
         # If serializer is invalid, return validation errors
