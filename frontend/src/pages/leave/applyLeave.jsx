@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import MainLayout from '../layout/MainLayout';
+import MainLayout from '../../layout/MainLayout';
 
 const ApplyLeave = () => {
   const [leaveDate, setLeaveDate] = useState('');

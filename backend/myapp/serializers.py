@@ -149,7 +149,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Ensure the applicant and applicant_type are set from the view
         return LeaveApplication.objects.create(**validated_data)
-    
+
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:

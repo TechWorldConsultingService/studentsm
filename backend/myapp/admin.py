@@ -6,13 +6,32 @@ from .models import *
 from django.contrib import admin
 from .models import Teacher, Principal, Student, LeaveApplication, Subject, Class, DailyAttendance,Event, LessonAttendance
 
-# Teacher admin customization
+# # Teacher admin customization
+# class TeacherAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'user', 'user__first_name', 'phone', 'address', 'gender','class_teacher')
+#     search_fields = ('user__username', 'phone', 'address')
+#     list_filter = ('date_of_joining', 'gender')
+
+# # Custom display methods for Many-to-Many fields
+#     def get_subjects(self, obj):
+#         return ", ".join([subject.subject_name for subject in obj.subjects.all()])
+#     get_subjects.short_description = 'Subjects'
+
+#     def get_classes(self, obj):
+#         return ", ".join([class_obj.class_name for class_obj in obj.classes.all()])
+#     get_classes.short_description = 'Classes'
+
+
 class TeacherAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'user__first_name', 'phone', 'address', 'gender','class_teacher')
+    list_display = ('id', 'user', 'get_first_name', 'phone', 'address', 'gender', 'class_teacher')
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ('date_of_joining', 'gender')
 
-# Custom display methods for Many-to-Many fields
+    def get_first_name(self, obj):
+        return obj.user.first_name  # Fetch first_name from the related User model
+    get_first_name.short_description = 'First Name'
+
+    # Custom display methods for Many-to-Many fields
     def get_subjects(self, obj):
         return ", ".join([subject.subject_name for subject in obj.subjects.all()])
     get_subjects.short_description = 'Subjects'

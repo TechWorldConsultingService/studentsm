@@ -47,8 +47,9 @@
         "id": 7,
         "title": "Leave",
         "icon": "MdCoPresent",
-        "link": "/leave"
+        "link": "/myLeave"
       }
+      
     ],
     "teacher": [
       {
@@ -92,14 +93,24 @@
         "id": 6,
         "title": "Leave",
         "icon": "MdCoPresent",
-        "link": "/leave"
+        "subSidebar": [
+          { "id": 1, "title": "View", "link": "/viewLeave" },
+          { "id": 2, "title": "Apply", "link": "/myleave" }
+        ]
       },
       {
         "id": 7,
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 8,
+        "title": "My Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
+
     ],
     "principal": [
       {
@@ -145,7 +156,8 @@
         "icon": "IoIosGitPullRequest",
         "subSidebar": [
           { "id": 1, "title": "All Request", "link": "/allrequest" },
-          { "id": 2, "title": "My request", "link": "/myrequest" }
+          { "id": 2, "title": "My request", "link": "/myrequest" },
+            { "id": 1, "title": "View", "link": "/viewLeave" }
         ]
       },
       {
@@ -159,9 +171,21 @@
       },
       {
         "id": 7,
+        "title": "Leave",
+        "icon": "MdCoPresent",
+        "link": "/viewLeave"
+      },
+      {
+        "id": 7,
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 8,
+        "title": "All Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
     ],
     "master": [
@@ -182,6 +206,12 @@
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
         "link": "/attendence"
+      },
+      {
+        "id": 4,
+        "title": "All Buses",
+        "icon": "LuFileSpreadsheet",
+        "link": "/mybus"
       }
     ]
   }
