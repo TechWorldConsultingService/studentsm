@@ -144,7 +144,7 @@ class StaffSerializer(serializers.ModelSerializer):
 class LeaveApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
-        fields = ['applicant', 'applicant_type', 'applied_on', 'leave_date', 'message', 'status', 'created_at', 'updated_at']
+        fields = ['applicant','applicant_name', 'applicant_type', 'applied_on', 'leave_date', 'message', 'status', 'created_at', 'updated_at']
 
     def create(self, validated_data):
         # Ensure the applicant and applicant_type are set from the view

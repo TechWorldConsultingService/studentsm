@@ -428,6 +428,7 @@ class LeaveApplicationCreateView(APIView):
         """
         leave_date = request.data.get('leave_date')
         message = request.data.get('message')
+        applicant_name = request.user.first_name
 
         if not leave_date or not message:
             # Return error message if 'leave_date' or 'message' is not provided
@@ -436,6 +437,7 @@ class LeaveApplicationCreateView(APIView):
         # Determine applicant_type based on user role
         if request.user.is_student:
             applicant_type = 'Student'
+            
         elif request.user.is_teacher:
             applicant_type = 'Teacher'
         else:
@@ -448,7 +450,8 @@ class LeaveApplicationCreateView(APIView):
             'message': message,
             'applicant': request.user.id,
             'applied_on': timezone.now().date(),
-            'applicant_type': applicant_type
+            'applicant_type': applicant_type,
+            'applicant_name': applicant_name
         }
 
         # Create a new leave application for the current user
