@@ -35,7 +35,7 @@ class StudentAdmin(admin.ModelAdmin):
 
 # LeaveApplication admin customization
 class LeaveApplicationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'applicant', 'applicant_type', 'applied_on', 'leave_date', 'status')
+    list_display = ('id', 'applicant','applicant_name', 'applicant_type', 'applied_on', 'leave_date', 'status')
     search_fields = ('applicant__username', 'message')
     list_filter = ('status', 'applied_on', 'leave_date')
 
