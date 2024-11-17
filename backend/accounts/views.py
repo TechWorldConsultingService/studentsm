@@ -65,6 +65,7 @@ class LoginAPIView(APIView):
             response_data = {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,
                 'username': username,
                 **role_data,  # Include role-specific data
                 'email': user.email,  # User's email (assuming it exists in your user model)
