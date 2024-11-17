@@ -90,7 +90,10 @@ class StaffAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'phone', 'address', 'role')
     list_filter = ('gender', 'role', 'date_of_joining')
 
-
+class AssignmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'student', 'subject', 'submitted_at')  # Columns to display in the list view
+    list_filter = ('subject', 'submitted_at')  # Filters for the sidebar
+    search_fields = ('title', 'student__username', 'subject')  # Searchable fields
 
 # Registering models
 admin.site.register(Teacher, TeacherAdmin)
@@ -103,4 +106,5 @@ admin.site.register(DailyAttendance, DailyAttendanceAdmin)
 admin.site.register(LessonAttendance, LessonAttendanceAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(Staff, StaffAdmin)
+admin.site.register(Assignment, AssignmentAdmin)
 

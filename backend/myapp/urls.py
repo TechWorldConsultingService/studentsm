@@ -2,7 +2,8 @@
 from django.contrib import admin
 from django.urls import path,include
 from . import views
-
+from django.conf import settings
+from django.conf.urls.static import static
 from .views import *
 
 urlpatterns = [
@@ -40,6 +41,7 @@ urlpatterns = [
     path('api/leave-applications/create/', LeaveApplicationCreateView.as_view(), name='leave-application-create'),  # Endpoint for creating a new leave application
     path('api/leave-applications/<int:pk>/', LeaveApplicationDetailView.as_view(), name='leave-application-detail'),  # Endpoint for retrieving details of a specific leave application by ID
     path('api/leave-applications/<int:pk>/delete/', LeaveApplicationDeleteView.as_view(), name='leave-application-delete'),  # Endpoint for deleting a specific leave application by ID
+    path('api/leave-applications/<int:pk>/update-status/', LeaveApplicationStatusUpdateView.as_view(), name='leave-application-update-status'), # Endpoint for updating status of a leave application
 
     # API endpoints for subjects
     path('api/subjects/', SubjectListCreateView.as_view(), name='subject-list-create'),  # Endpoint for listing and creating subjects
@@ -66,6 +68,6 @@ urlpatterns = [
     path('api/assignments/', AssignmentListView.as_view(), name='assignment-list'),  # To list all assignments
     path('api/assignments/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),  # For viewing a specific assignment
 
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
