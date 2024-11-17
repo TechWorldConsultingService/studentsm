@@ -506,6 +506,38 @@ class LeaveApplicationDeleteView(APIView):
         return Response({"message": "Leave application successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
+# API view to update the status of a leave application
+class LeaveApplicationStatusUpdateView(APIView):
+
+    def patch(self, request, pk, format=None):
+        """
+        Handle PATCH requests to update the status of a leave application.
+        """
+        try:
+            # Retrieve the LeaveApplication instance by primary key
+            application = LeaveApplication.objects.get(pk=pk)
+        except LeaveApplication.DoesNotExist:
+            # Return error message if leave application does not exist
+            return Response({"error": "Leave application not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if 'status' is provided in the request data
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({"error": "'status' field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate the new status
+        if new_status not in ['Pending', 'Approved', 'Disapproved']:
+            return Response({"error": "Invalid status. Must be 'Pending', 'Approved', or 'Disapproved'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the status and save
+        application.status = new_status
+        application.save()
+
+        # Serialize the updated instance and return it
+        serializer = LeaveApplicationSerializer(application)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 # API view to list all subjects or create a new subject
 class SubjectListCreateView(APIView):
     def get(self, request, format=None):
