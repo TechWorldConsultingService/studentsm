@@ -1,6 +1,7 @@
 
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -145,3 +146,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 CSRF_COOKIE_HTTPONLY = False  # Ensure the frontend can access it via JS
 CSRF_COOKIE_SAMESITE = 'Lax'  # Lax or Strict depending on your use case
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=6),  # Adjust the time to your desired session duration
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Adjust the refresh token duration
+    'ROTATE_REFRESH_TOKENS': True,  # Optionally rotate refresh tokens upon use
+    'BLACKLIST_AFTER_ROTATION': True,  # Optionally blacklist old refresh tokens
+}
