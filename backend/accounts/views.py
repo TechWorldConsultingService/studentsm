@@ -56,7 +56,7 @@ class LoginAPIView(APIView):
                     'date_of_birth': user.student.date_of_birth,
                     'gender': user.student.gender,
                     'parents': user.student.parents,
-                    'class': user.student.classes.name,
+                    'class': user.student.classes.class_name,
                 }
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
