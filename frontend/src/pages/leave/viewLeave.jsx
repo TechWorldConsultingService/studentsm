@@ -39,9 +39,10 @@ const [updatedRequests, setUptatedRequests] = useState([]);
         );
 
         const newRequest = data.filter((leave) => leave.status === "Pending");
-        const updatedRequest = data.filter(
-          (leave) => leave.status === "Approved" || leave.status === "Disapproved"
-        );
+        const updatedRequest = data
+          .filter((leave) => leave.status === "Approved" || leave.status === "Disapproved")
+          .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)); // Sort by updated_at
+        
 
         if (data) {
           setLeaveData(data);
