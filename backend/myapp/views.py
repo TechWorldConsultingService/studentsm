@@ -437,7 +437,6 @@ class LeaveApplicationCreateView(APIView):
         # Determine applicant_type based on user role
         if request.user.is_student:
             applicant_type = 'Student'
-            
         elif request.user.is_teacher:
             applicant_type = 'Teacher'
         else:
@@ -459,13 +458,24 @@ class LeaveApplicationCreateView(APIView):
         
         if serializer.is_valid():
             # Save the leave application
-            leave_application = serializer
-            leave_application.save()
-            # Return the serialized data
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # Return validation errors
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            leave_application = serializer.save()  # Save the leave application to get the instance with an ID
+            
+            # Prepare the response data, including the ID of the created leave application
+            response_data = {
+                'id': leave_application.id,  # Now you can access the ID of the saved leave application
+                'leave_date': leave_application.leave_date,
+                'message': leave_application.message,
+                'applicant': leave_application.applicant.id,
+                'applied_on': leave_application.applied_on,
+                'applicant_type': leave_application.applicant_type,
+                'applicant_name': leave_application.applicant_name
+            }
 
+            # Return the response with the leave application's details, including the ID
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        # Return validation errors if the serializer is not valid
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # API view to retrieve details of a specific leave application
 class LeaveApplicationDetailView(APIView):
     permission_classes = [IsAuthenticated]

@@ -36,6 +36,7 @@ const [isLoading, setIsLoading] = useState(false)
 
         if (data) {
           setLeaveData(data);
+          console.log (data)
         }
 
       } catch (error) {
