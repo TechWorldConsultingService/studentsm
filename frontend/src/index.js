@@ -28,6 +28,7 @@ import AcademicCalendar from "./pages/calendar";
 import ApplyLeave from "./pages/leave/applyLeave";
 import ViewLeave from "./pages/leave/viewLeave";
 import Myleave from "./pages/leave/myleave";
+import LeaveDetail from "./pages/leave/leaveDetails";
 
 const router = createBrowserRouter([
   {
@@ -102,6 +103,10 @@ const router = createBrowserRouter([
   {
     path: "/viewLeave",
     element: <ViewLeave />,
+  },
+  {
+    path:"/leave-view/:id",
+    element:<LeaveDetail />
   },
   {
     path: "/myLeave",
