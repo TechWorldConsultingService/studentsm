@@ -93,9 +93,6 @@ class LessonAttendance(models.Model):
     def __str__(self):
         return f"{self.student.user.username} - {self.subject.name} - {self.date}"
 
-
-
-
 class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
@@ -103,8 +100,6 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f'{self.student} in {self.class_assigned}'
-
-
 
 class Grade(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
