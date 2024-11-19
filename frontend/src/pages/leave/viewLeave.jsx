@@ -58,7 +58,7 @@ const [isLoading, setIsLoading] = useState(false)
       }
 
       const response = await axios.patch(
-        `http://localhost:8000/api/leave-applications/${leaveId}/`,
+        `http://localhost:8000/api/leave-applications/${leaveId}/update-status/`,
         {status:newStatus},
         {
           headers: {
@@ -86,7 +86,7 @@ const [isLoading, setIsLoading] = useState(false)
   const columns = [
     {
       title: "ID",
-      dataIndex: "applicant",
+      dataIndex: "id",
     },
     {
       title: "Applicant Name",
@@ -120,7 +120,7 @@ const [isLoading, setIsLoading] = useState(false)
           {record.status ==="Pending" && (
             <>
              <button
-                onClick={() => handleStatusChange(record.id, "Accepted")}
+                onClick={() => handleStatusChange(record.id, "Approved")}
                 className="bg-green-700 text-white rounded-md shadow-md p-1 text-sm"
               >
                  Accept
