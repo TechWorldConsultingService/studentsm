@@ -19,6 +19,15 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+    
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
@@ -51,6 +60,27 @@ class TeacherSerializer(serializers.ModelSerializer):
             return teacher
         else:
             raise serializers.ValidationError(user_serializer.errors)
+        
+    def update(self, instance, validated_data):
+        # Extract and update user data
+        user_data = validated_data.pop('user', {})
+        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user = user_serializer.save()
+            # Ensure the user is marked as a teacher
+            user.is_teacher = True
+            user.save()
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+        # Update the Teacher instance
+        for attr, value in validated_data.items():
+            if attr in ['subjects', 'classes']:
+                getattr(instance, attr).set(value)  # Update many-to-many relationships
+            else:
+                setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 # Serializer for the Principal model
@@ -80,6 +110,21 @@ class PrincipalSerializer(serializers.ModelSerializer):
         else:
             # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
+        
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user = user_serializer.save()
+            user.is_principal = True  # Ensure is_principal is set to True on update
+            user.save()
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
@@ -113,6 +158,21 @@ class StudentSerializer(serializers.ModelSerializer):
             # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
         
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user = user_serializer.save()
+            user.is_student = True  # Ensure is_student is set to True on update
+            user.save()
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+        for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+        instance.save()
+        return instance
+        
 
 
 class StaffSerializer(serializers.ModelSerializer):
@@ -138,6 +198,21 @@ class StaffSerializer(serializers.ModelSerializer):
             return staff
         else:
             raise serializers.ValidationError(user_serializer.errors)
+        
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user = user_serializer.save()
+            user.is_staff = True  # Ensure is_staff is set to True on update
+            user.save()
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 # Serializer for the leave application model
@@ -182,8 +257,10 @@ class EventSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'start_time', 'end_time', 'created_by', 'created_at']
 
 
-
 class AssignmentSerializer(serializers.ModelSerializer):
+    # You can either use the default representation of the ForeignKey (which will be the primary key of the related model)
+    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())  # This will handle the ForeignKey
+
     class Meta:
         model = Assignment
         fields = ['id', 'student', 'title', 'file', 'subject', 'submitted_at']

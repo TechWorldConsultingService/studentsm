@@ -35,12 +35,16 @@ urlpatterns = [
     path('api/students/<int:pk>/delete/', StudentDeleteView.as_view(), name='student-delete'),  # Endpoint for deleting a specific student
     path('api/staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'), # Endpoint for deleting a specific staff
 
+    path('api/teacher/<int:pk>/update/', TeacherUpdateAPIView.as_view(), name='teacher-update'),
+    path('api/principal/<int:pk>/update/', PrincipalUpdateAPIView.as_view(), name='principal-update'),
+    path('api/student/<int:pk>/update/', StudentUpdateAPIView.as_view(), name='student-update'),
+    path('api/staff/<int:pk>/update/', StaffUpdateAPIView.as_view(), name='staff-update'),
+
     # API endpoints for leave applications
     path('api/total-leave-applications/', TotalLeaveApplicationListView.as_view(), name='total-leave-application-list'),  # Endpoint for listing all leave applications for the principal
     path('api/leave-applications/', LeaveApplicationListView.as_view(), name='leave-application-list'),  # Endpoint for listing all leave applications for the current user
     path('api/leave-applications/create/', LeaveApplicationCreateView.as_view(), name='leave-application-create'),  # Endpoint for creating a new leave application
-    path('api/leave-applications/<int:pk>/', LeaveApplicationDetailView.as_view(), name='leave-application-detail'),  # Endpoint for retrieving details of a specific leave application by ID
-    path('api/leave-applications/<int:pk>/delete/', LeaveApplicationDeleteView.as_view(), name='leave-application-delete'),  # Endpoint for deleting a specific leave application by ID
+    path('api/leave-applications/<int:pk>/', LeaveApplicationDetailView.as_view(), name='leave-application-detail'),  # Endpoint for   details, update, and delete of a specific leave application by ID
     path('api/leave-applications/<int:pk>/update-status/', LeaveApplicationStatusUpdateView.as_view(), name='leave-application-update-status'), # Endpoint for updating status of a leave application
 
     # API endpoints for subjects
@@ -50,7 +54,7 @@ urlpatterns = [
     # API endpoints for classes
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
-
+    
     # Daily Attendance URLs
     path('api/classes/<int:class_id>/daily-attendance/', DailyAttendanceView.as_view(), name='daily-attendance-create'),
     path('api/classes/<int:class_id>/daily-attendance/<str:date>/', DailyAttendanceView.as_view(), name='daily-attendance-list'),
@@ -64,9 +68,9 @@ urlpatterns = [
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
 
-     path('api/assignments/upload/', AssignmentUploadView.as_view(), name='assignment-upload'),  # For students to upload assignments
+    path('api/assignments/upload/', AssignmentUploadView.as_view(), name='assignment-upload'),  # For students to upload assignments
     path('api/assignments/', AssignmentListView.as_view(), name='assignment-list'),  # To list all assignments
-    path('api/assignments/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),  # For viewing a specific assignment
+    path('api/assignments/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),  # For  details, update, and delete of a specific assignment
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

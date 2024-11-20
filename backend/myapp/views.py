@@ -386,6 +386,88 @@ class StaffDeleteView(APIView):
         except Staff.DoesNotExist:
             # Return an error response if staff member is not found
             return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+# API view to update teacher info
+class TeacherUpdateAPIView(APIView):
+    def put(self, request, pk):
+        try:
+            # Try to retrieve the teacher object by primary key (pk)
+            teacher = Teacher.objects.get(pk=pk)
+        except Teacher.DoesNotExist:
+            # Return an error response if the teacher does not exist
+            return Response({"error": "Teacher not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the incoming data, allowing partial updates (some fields can be omitted)
+        serializer = TeacherSerializer(teacher, data=request.data, partial=True)
+        if serializer.is_valid():
+            # If the data is valid, save the updated teacher instance
+            teacher = serializer.save()
+            # Return the updated teacher's data in the response
+            return Response(TeacherSerializer(teacher).data)
+        # If validation fails, return the errors in the response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API view to update principal info
+class PrincipalUpdateAPIView(APIView):
+    def put(self, request, pk):
+        try:
+            # Try to retrieve the principal object by primary key (pk)
+            principal = Principal.objects.get(pk=pk)
+        except Principal.DoesNotExist:
+            # Return an error response if the principal does not exist
+            return Response({"error": "Principal not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the incoming data, allowing partial updates
+        serializer = PrincipalSerializer(principal, data=request.data, partial=True)
+        if serializer.is_valid():
+            # If the data is valid, save the updated principal instance
+            principal = serializer.save()
+            # Return the updated principal's data in the response
+            return Response(PrincipalSerializer(principal).data)
+        # If validation fails, return the errors in the response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API view to update student info
+class StudentUpdateAPIView(APIView):
+    def put(self, request, pk):
+        try:
+            # Try to retrieve the student object by primary key (pk)
+            student = Student.objects.get(pk=pk)
+        except Student.DoesNotExist:
+            # Return an error response if the student does not exist
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the incoming data, allowing partial updates
+        serializer = StudentSerializer(student, data=request.data, partial=True)
+        if serializer.is_valid():
+            # If the data is valid, save the updated student instance
+            student = serializer.save()
+            # Return the updated student's data in the response
+            return Response(StudentSerializer(student).data)
+        # If validation fails, return the errors in the response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API view to update staff info
+class StaffUpdateAPIView(APIView):
+    def put(self, request, pk):
+        try:
+            # Try to retrieve the staff object by primary key (pk)
+            staff = Staff.objects.get(pk=pk)
+        except Staff.DoesNotExist:
+            # Return an error response if the staff does not exist
+            return Response({"error": "Staff not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the incoming data, allowing partial updates
+        serializer = StaffSerializer(staff, data=request.data, partial=True)
+        if serializer.is_valid():
+            # If the data is valid, save the updated staff instance
+            staff = serializer.save()
+            # Return the updated staff's data in the response
+            return Response(StaffSerializer(staff).data)
+        # If validation fails, return the errors in the response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
         
 # API view to list all leave applications for the principal
@@ -476,7 +558,9 @@ class LeaveApplicationCreateView(APIView):
         
         # Return validation errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-# API view to retrieve details of a specific leave application
+    
+
+# API view to retrieve, update, or delete a specific leave application
 class LeaveApplicationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -494,10 +578,49 @@ class LeaveApplicationDetailView(APIView):
         serializer = LeaveApplicationSerializer(application)
         # Return the serialized data
         return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        """
+        Handle PUT requests to update a specific leave application by primary key.
+        """
+        try:
+            application = LeaveApplication.objects.get(pk=pk)
+        except LeaveApplication.DoesNotExist:
+            return Response({"error": "Leave application not found"}, status=status.HTTP_404_NOT_FOUND)
 
-# API view to delete a specific leave application
-class LeaveApplicationDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
+        # Ensure the logged-in user is the applicant
+        if application.applicant != request.user:
+            return Response({"error": "You do not have permission to edit this application"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Only allow updating specific fields
+        data = request.data
+        update_data = {}
+
+        if 'leave_date' in data:
+            update_data['leave_date'] = data['leave_date']
+
+        if 'message' in data:
+            update_data['message'] = data['message']
+
+        # Serialize and validate the update data
+        serializer = LeaveApplicationSerializer(application, data=update_data, partial=True)
+
+        if serializer.is_valid():
+            updated_application = serializer.save()
+            return Response(
+                {
+                    "id": updated_application.id,
+                    "leave_date": updated_application.leave_date,
+                    "message": updated_application.message,
+                    "status": updated_application.status,
+                    "applied_on": updated_application.applied_on,
+                    "updated_at": updated_application.updated_at,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
     def delete(self, request, pk, format=None):
         """
@@ -596,6 +719,7 @@ class SubjectDetailView(APIView):
         subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
         subject.delete()  # Delete the Subject instance
         return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
+
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):
@@ -778,6 +902,7 @@ class AssignmentListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
+# API view to retrieve, update, or delete a specific assignment
 class AssignmentDetailView(APIView):
     def get(self, request, pk, format=None):
         """
@@ -790,3 +915,38 @@ class AssignmentDetailView(APIView):
 
         serializer = AssignmentSerializer(assignment)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request, pk, format=None):
+        """
+        Update an existing assignment by its primary key (pk).
+        Only the owner of the assignment can update it.
+        """
+        try:
+            # Fetch the assignment by ID, ensuring the current user is the owner
+            assignment = Assignment.objects.get(pk=pk, student=request.user)
+        except Assignment.DoesNotExist:
+            return Response(
+                {"error": "Assignment not found or you are not authorized to edit it."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Deserialize the request data
+        serializer = AssignmentSerializer(assignment, data=request.data, partial=True)  # Allow partial updates
+        if serializer.is_valid():
+            serializer.save()  # Save the updated instance
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        # Return validation errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk, format=None):
+        """
+        Handle DELETE requests to remove a specific assignment by primary key.
+        """
+        assignment = get_object_or_404(Assignment, pk=pk)  # Retrieve the Assignment instance by primary key
+        assignment.delete()  # Delete the Assignment instance
+        return Response(
+            {"message": "Assignment successfully deleted"},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
