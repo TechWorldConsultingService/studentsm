@@ -71,6 +71,8 @@ const ApplyLeave = () => {
               value={leaveDate}
               onChange={(e) => setLeaveDate(e.target.value)}
               required
+              min={new Date().toISOString().split("T")[0]} // Set the minimum date to today
+
             />
           </div>
           

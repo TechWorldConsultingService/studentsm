@@ -221,6 +221,11 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         model = LeaveApplication
         fields = ['id','applicant','applicant_name', 'applicant_type', 'applied_on', 'leave_date', 'message', 'status', 'created_at', 'updated_at']
 
+    def validate_leave_date(self, value):
+        if value < timezone.now().date():
+            raise serializers.ValidationError("Leave date cannot be in the past.")
+        return value
+
     def create(self, validated_data):
         # Ensure the applicant and applicant_type are set from the view
         return LeaveApplication.objects.create(**validated_data)
