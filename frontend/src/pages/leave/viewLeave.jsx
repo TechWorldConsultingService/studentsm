@@ -5,20 +5,17 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { format } from 'date-fns';
 
-
-
-
 const ViewLeave = () => {
   const [leaveData, setLeaveData] = useState([]);
   const [leaveError, setLeaveError] = useState(null);
-const [isLoading, setIsLoading] = useState(false)
-
-const [newRequests, setNewRequests] = useState([]);
-const [updatedRequests, setUptatedRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(false)
+  const [newRequests, setNewRequests] = useState([]);
+  const [updatedRequests, setUptatedRequests] = useState([]);
 
 
 
   useEffect(() => {
+
     async function getLeaveData() {
       try {
         setIsLoading(true);
@@ -58,7 +55,13 @@ const [updatedRequests, setUptatedRequests] = useState([]);
         setIsLoading(false);
       }
     }
+
     getLeaveData();
+    // Set an interval to refresh data every 10 seconds
+    const intervalId = setInterval(getLeaveData, 9000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleStatusChange = async (leaveId,newStatus) => {
@@ -211,7 +214,7 @@ const [updatedRequests, setUptatedRequests] = useState([]);
 
           <h4 className="text-purple-800 font-semibold text-lg">Approved/Disapproved Requests</h4>
           {updatedRequests.length > 0 && (
-            <Table className="w-full" columns={updatedRequestsColumns} dataSource={updatedRequests} />
+            <Table className="w-full" columns={updatedRequestsColumns} dataSource={updatedRequests.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))} />
           )}
         </>
       )}
