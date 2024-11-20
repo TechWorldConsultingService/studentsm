@@ -141,7 +141,7 @@ class Assignment(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to='assignments/')
-    subject = models.CharField(max_length=255)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignment')
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
