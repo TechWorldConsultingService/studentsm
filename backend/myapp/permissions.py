@@ -1,4 +1,9 @@
+from rest_framework import generics, permissions
 from rest_framework.permissions import BasePermission
+from .models import Post
+from .serializers import PostSerializer
+from django.core.exceptions import PermissionDenied
+
 
 # Custom permission to check if the user is a student or teacher
 class IsStudentOrTeacher(BasePermission):
@@ -15,3 +20,11 @@ class IsPrincipal(BasePermission):
         Return True if the user is a principal.
         """
         return request.user.is_principal
+    
+
+class IsPrincipalOrTeacher(BasePermission):
+    """
+    Custom permission to allow only principals and teachers to create posts.
+    """
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'principal') or hasattr(request.user, 'teacher')

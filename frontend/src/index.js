@@ -29,13 +29,17 @@ import ApplyLeave from "./pages/leave/applyLeave";
 import ViewLeave from "./pages/leave/viewLeave";
 import Myleave from "./pages/leave/myleave";
 import LeaveDetail from "./pages/leave/leaveDetails";
+import HomePage from  "./pages/homepage";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
   },
-
+  {
+    path: "/homepage",
+    element: <HomePage />,
+  },
   {
     path: "/studentdashboard",
     element: <StudentHomePage />,

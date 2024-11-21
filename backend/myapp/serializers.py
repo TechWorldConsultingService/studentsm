@@ -2,6 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from accounts.models import *
+from .models import Post
+
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
@@ -214,6 +216,11 @@ class StaffSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'creator', 'title', 'caption', 'image', 'video', 'created_at']
+        read_only_fields = ['id', 'creator', 'created_at']
 
 # Serializer for the leave application model
 class LeaveApplicationSerializer(serializers.ModelSerializer):

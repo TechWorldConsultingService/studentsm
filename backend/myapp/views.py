@@ -19,6 +19,25 @@ from rest_framework.exceptions import NotFound
 
 
 
+class PostListCreateView(generics.ListCreateAPIView):
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            # Only principals and teachers can create posts
+            return [permissions.IsAuthenticated(), IsPrincipalOrTeacher()]
+        # Any authenticated user can view posts
+        return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        # Only principals and teachers are allowed to create posts
+        if hasattr(user, 'principal') or hasattr(user, 'teacher'):
+            serializer.save(creator=user)
+        else:
+            raise PermissionDenied("You do not have permission to create posts.")
+        
 # View for handling teacher registration
 # @csrf_exempt
 class RegisterTeacherView(APIView):
