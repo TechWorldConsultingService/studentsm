@@ -4,7 +4,7 @@ from .models import *
 
 # Register your models here.
 from django.contrib import admin
-from .models import Teacher, Principal, Student, LeaveApplication, Subject, Class, DailyAttendance,Event, LessonAttendance
+from .models import Teacher, Principal, Student, LeaveApplication, Subject, Class, DailyAttendance,Event, LessonAttendance, Post
 
 # # Teacher admin customization
 # class TeacherAdmin(admin.ModelAdmin):
@@ -20,6 +20,14 @@ from .models import Teacher, Principal, Student, LeaveApplication, Subject, Clas
 #     def get_classes(self, obj):
 #         return ", ".join([class_obj.class_name for class_obj in obj.classes.all()])
 #     get_classes.short_description = 'Classes'
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'creator', 'title', 'caption', 'created_at')  # Fields to display in the list view
+    list_filter = ('creator', 'created_at')  # Add filters for easy navigation
+    search_fields = ('title', 'caption', 'creator__username')  # Enable search by title, caption, or creator username
+    ordering = ('-created_at',)  # Default ordering (newest posts first)
+    date_hierarchy = 'created_at'  # Adds a date-based drill-down for `created_at`
 
 
 class TeacherAdmin(admin.ModelAdmin):

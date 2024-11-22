@@ -2,6 +2,28 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+# For creating Post/reel type content
+class Post(models.Model):
+    POST_TYPES = [
+        ('Congratulation', 'Congratulation'),
+        ('Notice', 'Notice'),
+        ('Event', 'Event'),
+        ('General', 'General'),
+    ]
+    
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="posts")  #post to the user who created it.
+    title = models.CharField(max_length=255)  #A concise title for the post
+    caption = models.TextField(null=True, blank=True)  #Optional description for the post.
+    post_type = models.CharField(max_length=50, choices=POST_TYPES, default='General')  #Categorizes the post (e.g., Congratulation, Notice, Event, General).
+    image = models.ImageField(upload_to='posts/images/', null=True, blank=True) #Allows uploading of multimedia content (optional).
+    video = models.FileField(upload_to='posts/videos/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True) # Automatically managed timestamps for auditing purposes
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.creator.username}"
+
+
 class Subject(models.Model):
     subject_code = models.CharField(max_length=50, unique=True)
     subject_name = models.CharField(max_length=100)

@@ -10,6 +10,8 @@ urlpatterns = [
     # Admin site URL
     # path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
 
+    # API endpoint for posts
+    path('api/posts/', PostListCreateView.as_view(), name='post-list-create'),
 
     # API endpoints for user registration
     path('api/register/teacher/', RegisterTeacherView.as_view(), name='register-teacher'),  # URL for teacher registration API
