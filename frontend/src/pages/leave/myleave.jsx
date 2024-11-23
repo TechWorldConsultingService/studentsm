@@ -165,9 +165,12 @@ const Myleave = () => {
             <p>No new leave requests found.</p>
           )}
 
-          <h4 className="text-purple-800 font-semibold text-lg">Reviewed Requests</h4>
           {updatedRequests.length > 0 && (
-            <Table className="w-full" columns={updatedRequestsColumns} dataSource={updatedRequests.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))} />
+            <>
+             <h4 className="text-purple-800 font-semibold text-lg">Reviewed Requests</h4>
+             <Table className="w-full" columns={updatedRequestsColumns} dataSource={updatedRequests.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))} />
+            </>
+
           )}
         </>
       )}
