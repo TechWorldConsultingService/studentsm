@@ -54,6 +54,8 @@ class PrincipalAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ('gender',)
 
+
+
 # Student admin customization
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'phone', 'address', 'date_of_birth', 'gender', 'classes')
