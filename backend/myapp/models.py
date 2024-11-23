@@ -169,31 +169,3 @@ class Assignment(models.Model):
     def __str__(self):
         return f"{self.title} by {self.student.username}"
     
-
-class test(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, unique=True)
-    address = models.CharField(max_length=255)
-    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-
-    def __str__(self):
-        return self.user.username
-    
-class test2(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, unique=True)
-    address = models.CharField(max_length=255)
-    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-
-    def __str__(self):
-        return self.user.username
-    
-class test3(models.Model):
-    student = models.ForeignKey(test2, on_delete=models.CASCADE)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, unique=True)
-    address = models.CharField(max_length=255)
-    gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-
-    def __str__(self):
-        return self.user.username
