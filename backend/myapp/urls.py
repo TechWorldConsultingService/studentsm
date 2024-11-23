@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/staff/<int:pk>/update/', StaffUpdateAPIView.as_view(), name='staff-update'),
 
     # API endpoints for leave applications
+    path("api/role/", get_user_role, name="get_user_role"), # to get the role
     path('api/total-leave-applications/', TotalLeaveApplicationListView.as_view(), name='total-leave-application-list'),  # Endpoint for listing all leave applications for the principal
     path('api/leave-applications/', LeaveApplicationListView.as_view(), name='leave-application-list'),  # Endpoint for listing all leave applications for the current user
     path('api/leave-applications/create/', LeaveApplicationCreateView.as_view(), name='leave-application-create'),  # Endpoint for creating a new leave application
