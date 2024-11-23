@@ -487,22 +487,65 @@ class StaffUpdateAPIView(APIView):
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+from rest_framework.decorators import api_view, permission_classes
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_role(request):
+    user = request.user
+    role = (
+        "master" if user.is_master else
+        "principal" if user.is_principal else
+        "teacher" if user.is_teacher else
+        "student" if user.is_student else
+        "staff" if user.is_staff else
+        "unknown"
+    )
+    return JsonResponse({"role": role})
         
 # API view to list all leave applications for the principal
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import LeaveApplication
+from .serializers import LeaveApplicationSerializer
+
 class TotalLeaveApplicationListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve all leave applications for the current user.
-        """
-        # Get all leave applications for the current user
-        applications = LeaveApplication.objects.all()
+    def get(self, request):
+        user = request.user
+
+        # If the user is a principal, they can see all leave applications
+        if user.is_principal:
+            leave_applications = LeaveApplication.objects.all()
+        # If the user is a teacher, they can see their own requests and all student requests
+        elif user.is_teacher:
+            leave_applications = LeaveApplication.objects.filter(
+                applicant=user
+            ) | LeaveApplication.objects.filter(applicant__is_student=True)
+        # If the user is a student, they can only see their own leave requests
+        elif user.is_student:
+            leave_applications = LeaveApplication.objects.filter(applicant=user)
+        else:
+            leave_applications = LeaveApplication.objects.none()
+
         # Serialize the leave applications
-        serializer = LeaveApplicationSerializer(applications, many=True)
-        # Return the serialized data
+        serializer = LeaveApplicationSerializer(leave_applications, many=True)
         return Response(serializer.data)
+
+# class TotalLeaveApplicationListView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request, format=None):
+#         """
+#         Handle GET requests to retrieve all leave applications for the current user.
+#         """
+#         # Get all leave applications for the current user
+#         applications = LeaveApplication.objects.all()
+#         # Serialize the leave applications
+#         serializer = LeaveApplicationSerializer(applications, many=True)
+#         # Return the serialized data
+#         return Response(serializer.data)
 
 # API view to list all leave applications for the current user
 class LeaveApplicationListView(APIView):
@@ -660,7 +703,7 @@ class LeaveApplicationDetailView(APIView):
 
 # API view to update the status of a leave application
 class LeaveApplicationStatusUpdateView(APIView):
-
+    permission_classes = [IsAuthenticated]
     def patch(self, request, pk, format=None):
         """
         Handle PATCH requests to update the status of a leave application.
@@ -671,6 +714,18 @@ class LeaveApplicationStatusUpdateView(APIView):
         except LeaveApplication.DoesNotExist:
             # Return error message if leave application does not exist
             return Response({"error": "Leave application not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Ensure the logged-in user is authorized to update the status
+        if request.user.is_principal:
+            # Principals can update both student and teacher leave applications
+            pass
+        elif request.user.is_teacher:
+            # Teachers can only update student leave applications
+            if application.applicant != request.user and not application.applicant.is_student:
+                return Response({"error": "Teachers can only update student leave applications."}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            # Non-principal and non-teacher users cannot update the status
+            return Response({"error": "You do not have permission to update this application"}, status=status.HTTP_403_FORBIDDEN)
 
         # Check if 'status' is provided in the request data
         new_status = request.data.get('status')
@@ -688,7 +743,6 @@ class LeaveApplicationStatusUpdateView(APIView):
         # Serialize the updated instance and return it
         serializer = LeaveApplicationSerializer(application)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 # API view to list all subjects or create a new subject
 class SubjectListCreateView(APIView):

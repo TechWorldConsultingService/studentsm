@@ -7,13 +7,46 @@ from .models import Post
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
+    # Optionally include a derived role field
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        # Define which fields should be included in the serialized output
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_staff')
+        fields = (
+            'username',
+            'email',
+            'password',
+            'first_name',
+            'last_name',
+            'is_master',
+            'is_principal',
+            'is_teacher',
+            'is_student',
+            'is_staff',
+            'role'
+            )
         # Ensure the password field is write-only (won't be returned in API responses)
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'is_master': {'read_only': True},
+            'is_principal': {'read_only': True},
+            'is_teacher': {'read_only': True},
+            'is_student': {'read_only': True},
+            'is_staff': {'read_only': True},
+        }
+
+    def get_role(self, obj):
+        if obj.is_master:
+            return "Master"
+        elif obj.is_principal:
+            return "Principal"
+        elif obj.is_teacher:
+            return "Teacher"
+        elif obj.is_student:
+            return "Student"
+        elif obj.is_staff:
+            return "Staff"
+        return "Unknown"
 
     def create(self, validated_data):
         password = validated_data.pop('password')
