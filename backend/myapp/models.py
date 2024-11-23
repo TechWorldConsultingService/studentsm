@@ -23,6 +23,8 @@ class Post(models.Model):
     def __str__(self):
         return f"{self.title} by {self.creator.username}"
 
+class Policies(models.Model):
+    policies = models.CharField(max_length=2000, unique=True)
 
 class Subject(models.Model):
     subject_code = models.CharField(max_length=50, unique=True)
