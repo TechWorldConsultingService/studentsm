@@ -3,12 +3,18 @@ import axios from "axios";
 import MainLayout from "../../layout/MainLayout";
 import { DatePicker } from "antd";
 import moment from "moment";
+import toast, { Toaster } from 'react-hot-toast';
+import {  useNavigate } from "react-router-dom";
+
+
+
 
 const ApplyLeave = () => {
   const [leaveDate, setLeaveDate] = useState("");
   const [message, setMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,33 +36,34 @@ const ApplyLeave = () => {
         }
       );
 
-      setSuccessMessage("Leave application submitted successfully!");
+     toast.success('Sucessfully Submitted')
       setErrorMessage("");
       setLeaveDate("");
-      setMessage("");
+      setMessage("")
+      navigate("/myLeave");
     } catch (error) {
       const errorMsg =
         error.response?.data?.error ||
         "Error submitting leave application. Please try again.";
       setErrorMessage(errorMsg);
-      setSuccessMessage("");
     }
   };
 
   const handleDateChange = (date, dateString) => {
     setLeaveDate(dateString);
-    console.log(leaveDate)
   };
+
+  
 
   return (
     <MainLayout>
       <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
+      <Toaster position="top-center" reverseOrder={false} />
         <div className="flex flex-col items-center justify-center w-full rounded-md  ">
           <h2 className="bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
             Apply for Leave
           </h2>
 
-          {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
           {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
 
           <form
