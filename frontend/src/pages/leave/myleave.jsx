@@ -6,6 +6,8 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { RiDeleteBin5Line } from "react-icons/ri";
+import toast from 'react-hot-toast';
+
 
 const Myleave = () => {
   const navigate = useNavigate();
@@ -45,20 +47,10 @@ const Myleave = () => {
 
       if (data) {
         setLeaveData(data);
-        console.log(leaveData);
         setNewRequests(newRequest);
         setUptatedRequests(updatedRequest);
       }
 
-      // const formattedData = response.data.map((item, index) => ({
-      //   key: index + 1, // Serial number
-      //   leaveDate: item.leave_date,
-      //   // reviewedDate: item.reviewed_date || "Not Reviewed", // Assume reviewed_date might be null
-      //   message: item.message,
-      //   status: item.status || "Pending", // Fallback to Pending if status is undefined
-      //   // action: item.status === "Pending" ? "Edit" : "View",
-      // }));
-      // setLeaveData(formattedData);
     } catch (error) {
       console.error("Error fetching leave data:", error);
       setErrorMessage("Error fetching leave data.");
@@ -71,12 +63,15 @@ const Myleave = () => {
     fetchLeaveData();
   }, [token]);
 
+  console.log(leaveData)
+
   // Handle  to apply leave page
   const handleApplyLeave = () => {
     navigate("/applyLeave");
   };
 
   const newRequestscolumns = [
+
     {
       title: "Applied Date",
       dataIndex: "applied_on",
@@ -99,10 +94,10 @@ const Myleave = () => {
           >
             View
           </Link>
-          <button className="bg-blue-700 text-white rounded-md shadow-md p-1.5 text-sm">
+          <button  className="bg-blue-700 text-white rounded-md shadow-md p-1.5 text-sm">
             Edit
           </button>
-          <button className="bg-red-700 text-white rounded-md shadow-md p-1.5 text-lg">
+          <button onClick={()=>hanldeDeleteLeave(record.id)} className="bg-red-700 text-white rounded-md shadow-md p-1.5 text-lg">
             <RiDeleteBin5Line />
           </button>
         </Space>
@@ -149,6 +144,40 @@ const Myleave = () => {
     },
   ];
 
+  const hanldeDeleteLeave = async (id) => {
+    if (!id) {
+      toast.error("Leave ID is missing or invalid.");
+      return;
+    }
+
+      if (!token) {
+        setErrorMessage("User is not authenticated. Please Login.");
+        return;
+      }
+      try {
+        await axios.delete(
+          `http://localhost:8000/api/leave-applications/${id}/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast.success(" Deleted successfully.");
+        fetchLeaveData()
+      } catch (error) {
+        const errorMsg = error.response?.data?.message || error.message || 'An unknown error occurred';
+        toast.error(errorMsg);
+      }
+    
+
+    
+  }
+
+
+  
+
   return (
     <MainLayout>
       <div className="flex flex-col items-center gap-2 w-full">
@@ -168,7 +197,7 @@ const Myleave = () => {
         ) : (
           <>
             <h4 className="text-purple-800 font-semibold text-lg">
-              New Requests{" "}
+              New Requests
             </h4>
             {newRequests.length > 0 ? (
               <Table
