@@ -3,7 +3,7 @@ import axios from "axios";
 import MainLayout from "../../layout/MainLayout";
 import { DatePicker } from "antd";
 import moment from "moment";
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import {  useNavigate } from "react-router-dom";
 
 
@@ -58,7 +58,6 @@ const ApplyLeave = () => {
   return (
     <MainLayout>
       <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
-      <Toaster position="top-center" reverseOrder={false} />
         <div className="flex flex-col items-center justify-center w-full rounded-md  ">
           <h2 className="bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
             Apply for Leave
