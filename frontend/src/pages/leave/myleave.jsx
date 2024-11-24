@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../layout/MainLayout";
-import { Space, Table } from "antd";
+import { Space, Table, Input, Button, DatePicker } from "antd";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { RiDeleteBin5Line } from "react-icons/ri";
-import toast from 'react-hot-toast';
-
+import toast from "react-hot-toast";
+import moment from "moment"; // Import moment.js for date handling
 
 const Myleave = () => {
   const navigate = useNavigate();
@@ -15,7 +15,10 @@ const Myleave = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [newRequests, setNewRequests] = useState([]);
-  const [updatedRequests, setUptatedRequests] = useState([]);
+  const [updatedRequests, setUpdatedRequests] = useState([]);
+  const [editLeaveId, setEditLeaveId] = useState(null); // Store the leave ID to edit
+  const [editedLeaveDate, setEditedLeaveDate] = useState(null); // Store the new leave date
+  const [editedMessage, setEditedMessage] = useState(""); // Store the new message
 
   const token = localStorage.getItem("token"); // Get token from localStorage
 
@@ -48,9 +51,8 @@ const Myleave = () => {
       if (data) {
         setLeaveData(data);
         setNewRequests(newRequest);
-        setUptatedRequests(updatedRequest);
+        setUpdatedRequests(updatedRequest);
       }
-
     } catch (error) {
       console.error("Error fetching leave data:", error);
       setErrorMessage("Error fetching leave data.");
@@ -63,15 +65,12 @@ const Myleave = () => {
     fetchLeaveData();
   }, [token]);
 
-  console.log(leaveData)
-
   // Handle  to apply leave page
   const handleApplyLeave = () => {
     navigate("/applyLeave");
   };
 
   const newRequestscolumns = [
-
     {
       title: "Applied Date",
       dataIndex: "applied_on",
@@ -94,10 +93,18 @@ const Myleave = () => {
           >
             View
           </Link>
-          <button  className="bg-blue-700 text-white rounded-md shadow-md p-1.5 text-sm">
+          <button
+            onClick={() =>
+              handleEditLeave(record.id, record.leave_date, record.message)
+            }
+            className="bg-blue-700 text-white rounded-md shadow-md p-1.5 text-sm"
+          >
             Edit
           </button>
-          <button onClick={()=>hanldeDeleteLeave(record.id)} className="bg-red-700 text-white rounded-md shadow-md p-1.5 text-lg">
+          <button
+            onClick={() => handleDeleteLeave(record.id)}
+            className="bg-red-700 text-white rounded-md shadow-md p-1.5 text-lg"
+          >
             <RiDeleteBin5Line />
           </button>
         </Space>
@@ -117,7 +124,6 @@ const Myleave = () => {
     {
       title: "Reviewed Date",
       render: (_, record) => {
-        // Format the date using date-fns
         return format(new Date(record.updated_at), "yyyy-MM-dd");
       },
     },
@@ -144,83 +150,174 @@ const Myleave = () => {
     },
   ];
 
-  const hanldeDeleteLeave = async (id) => {
+  const handleDeleteLeave = async (id) => {
     if (!id) {
       toast.error("Leave ID is missing or invalid.");
       return;
     }
 
-      if (!token) {
-        setErrorMessage("User is not authenticated. Please Login.");
-        return;
-      }
-      try {
-        await axios.delete(
-          `http://localhost:8000/api/leave-applications/${id}/`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        toast.success(" Deleted successfully.");
-        fetchLeaveData()
-      } catch (error) {
-        const errorMsg = error.response?.data?.message || error.message || 'An unknown error occurred';
-        toast.error(errorMsg);
-      }
-    
+    if (!token) {
+      setErrorMessage("User is not authenticated. Please Login.");
+      return;
+    }
+    try {
+      await axios.delete(
+        `http://localhost:8000/api/leave-applications/${id}/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Deleted successfully.");
+      fetchLeaveData();
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "An unknown error occurred";
+      toast.error(errorMsg);
+    }
+  };
 
-    
-  }
+  const handleEditLeave = (id, leaveDate, message) => {
+    // Set the leave ID to constant (once clicked, it should not change)
+    setEditLeaveId(id);
+    setEditedLeaveDate(leaveDate);
+    setEditedMessage(message);
+  };
 
+  const handleUpdateLeave = async () => {
+    if (!editedLeaveDate || !editedMessage) {
+      toast.error("Please fill in both fields.");
+      return;
+    }
+
+    if (!token) {
+      setErrorMessage("User is not authenticated. Please Login.");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:8000/api/leave-applications/${editLeaveId}/`,
+        {
+          leave_date: editedLeaveDate,
+          message: editedMessage,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Leave updated successfully.");
+      setEditLeaveId(null); // Reset the edit state after update
+    } catch (error) {
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "An unknown error occurred";
+      toast.error(errorMsg);
+    }
+  };
 
   
-
   return (
     <MainLayout>
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="flex justify-end items-center mr-24 w-full ">
-          <button
-            onClick={handleApplyLeave}
-            className="  bg-purple-800 p-2 rounded-md shadow-lg  text-white"
-          >
-            Applied For Leave
-          </button>
-        </div>
-
         {errorMessage ? (
           <p>{errorMessage}</p>
         ) : isLoading ? (
           <p>Loading...</p>
         ) : (
           <>
-            <h4 className="text-purple-800 font-semibold text-lg">
-              New Requests
-            </h4>
-            {newRequests.length > 0 ? (
-              <Table
-                className="w-full"
-                columns={newRequestscolumns}
-                dataSource={newRequests}
-              />
-            ) : (
-              <p>No new leave requests found.</p>
-            )}
+            {editLeaveId ? (
+              <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
+                <div className="flex flex-col items-center justify-center w-full rounded-md  ">
+                  <h2 className="bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
+                    Edit Leave Request
+                  </h2>
 
-            {updatedRequests.length > 0 && (
-              <>
-                <h4 className="text-purple-800 font-semibold text-lg">
-                  Reviewed Requests
-                </h4>
-                <Table
-                  className="w-full"
-                  columns={updatedRequestsColumns}
-                  dataSource={updatedRequests.sort(
-                    (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+                  {errorMessage && (
+                    <p style={{ color: "red" }}>{errorMessage}</p>
                   )}
-                />
+
+                  <form
+                    onSubmit={handleUpdateLeave}
+                    className="flex flex-col items-center w-full "
+                  >
+                    <div className="flex flex-col  gap-4 m-5 p-5 w-full">
+                      <div className="flex gap-3 items-center ">
+                        <label className={`text-purple-900`}>Leave Date:</label>
+                        <DatePicker
+                          value={
+                            editedLeaveDate ? moment(editedLeaveDate) : null
+                          }
+                          onChange={(date) => setEditedLeaveDate(date)}
+                          format="YYYY-MM-DD"
+                          className="w-full"
+                          disabledDate={(current) =>
+                            current && current < moment().startOf("day")
+                          }
+                        />
+                      </div>
+
+                      <div className="flex gap-3 items-center ">
+                        <label className="text-purple-900">Message:</label>
+                        <textarea
+                          className="w-full rounded-md p-1"
+                          value={editedMessage}
+                          onChange={(e) => setEditedMessage(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <button
+                      className="bg-purple-800 text-white p-2  rounded-md mb-10"
+                      type="submit"
+                    >
+                      Update Leave
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-end items-center mr-24 w-full ">
+                  <button
+                    onClick={handleApplyLeave}
+                    className="bg-purple-800 p-2 rounded-md shadow-lg text-white"
+                  >
+                    Apply For Leave
+                  </button>
+                </div>
+                <h4 className="text-purple-800 font-semibold text-lg">
+                  New Requests
+                </h4>
+                {newRequests.length > 0 ? (
+                  <Table
+                    className="w-full"
+                    columns={newRequestscolumns}
+                    dataSource={newRequests}
+                  />
+                ) : (
+                  <p>No new leave requests found.</p>
+                )}
+
+                {updatedRequests.length > 0 && (
+                  <>
+                    <h4 className="text-purple-800 font-semibold text-lg">
+                      Reviewed Requests
+                    </h4>
+                    <Table
+                      className="w-full"
+                      columns={updatedRequestsColumns}
+                      dataSource={updatedRequests}
+                    />
+                  </>
+                )}
               </>
             )}
           </>
