@@ -38,7 +38,8 @@ const ViewLeave = () => {
         setUserRole(role);
 
         const data = leaveResponse.data;
-        const newRequest = data.filter((leave) => leave.status === "Pending");
+
+        const newRequest = data.filter((leave) => leave.status === "Pending").sort((a, b) => new Date(b.applied_on) - new Date(a.applied_on));
         const updatedRequest = data
           .filter((leave) => leave.status !== "Pending")
           .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
