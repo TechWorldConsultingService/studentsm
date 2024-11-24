@@ -503,11 +503,11 @@ def get_user_role(request):
     return JsonResponse({"role": role})
         
 # API view to list all leave applications for the principal
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import LeaveApplication
-from .serializers import LeaveApplicationSerializer
+# from rest_framework.permissions import IsAuthenticated
+# from rest_framework.response import Response
+# from rest_framework.views import APIView
+# from .models import LeaveApplication
+# from .serializers import LeaveApplicationSerializer
 
 class TotalLeaveApplicationListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -515,23 +515,54 @@ class TotalLeaveApplicationListView(APIView):
     def get(self, request):
         user = request.user
 
-        # If the user is a principal, they can see all leave applications
-        if user.is_principal:
+        # Determine user role
+        role = self.get_user_role(user)
+
+        # Default assignment of leave_applications to an empty queryset
+        leave_applications = LeaveApplication.objects.none()
+
+        if role == 'Principal':
+            # Principals can view all leave applications
             leave_applications = LeaveApplication.objects.all()
-        # If the user is a teacher, they can see their own requests and all student requests
-        elif user.is_teacher:
+        elif role == 'Teacher':
+            # Teachers can view leave applications from their class
+            teacher = getattr(user, 'teacher', None)
+            if not teacher or not teacher.class_teacher:
+                return Response(
+                    {"error": "Teacher does not have a class assigned."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            print(f"Teacher's class_teacher: {teacher.class_teacher}")
+
+            # Filter leave applications for students in the teacher's class
             leave_applications = LeaveApplication.objects.filter(
-                applicant=user
-            ) | LeaveApplication.objects.filter(applicant__is_student=True)
-        # If the user is a student, they can only see their own leave requests
-        elif user.is_student:
+                applicant_type="Student", 
+                applicant__student__classes=teacher.class_teacher
+            )
+            print(f"Leave applications for teacher: {leave_applications}")
+            
+        elif role == 'Student':
+            # Students can view only their leave applications
             leave_applications = LeaveApplication.objects.filter(applicant=user)
         else:
-            leave_applications = LeaveApplication.objects.none()
+            raise PermissionDenied("You do not have permission to view leave applications.")
 
-        # Serialize the leave applications
+        # Serialize and return the data
         serializer = LeaveApplicationSerializer(leave_applications, many=True)
         return Response(serializer.data)
+
+    @staticmethod
+    def get_user_role(user):
+        """
+        Determine the role of the user.
+        """
+        if getattr(user, 'is_principal', False):
+            return 'Principal'
+        if hasattr(user, 'teacher'):
+            return 'Teacher'
+        if getattr(user, 'is_student', False):
+            return 'Student'
+        return 'Unknown'
 
 # class TotalLeaveApplicationListView(APIView):
 #     permission_classes = [IsAuthenticated]
