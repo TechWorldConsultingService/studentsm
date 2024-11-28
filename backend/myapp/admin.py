@@ -58,9 +58,9 @@ class PrincipalAdmin(admin.ModelAdmin):
 
 # Student admin customization
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'phone', 'address', 'date_of_birth', 'gender', 'classes')
+    list_display = ('id', 'user', 'phone', 'address', 'date_of_birth', 'gender', 'class_code')
     search_fields = ('user__username', 'phone', 'address')
-    list_filter = ('classes', 'gender')
+    list_filter = ['class_code']
 
 # LeaveApplication admin customization
 class LeaveApplicationAdmin(admin.ModelAdmin):

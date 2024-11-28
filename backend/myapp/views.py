@@ -157,18 +157,26 @@ class RegisterStudentView(APIView):
                 'last_name': request.data.get('user.last_name'),
             }
             
-            
             student_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_birth': request.data.get('date_of_birth'),
                 'parents': request.data.get('parents'),
                 'gender': request.data.get('gender'),
-                'classes': request.data.get('classes'),
+                'class_code': request.data.get('class_code'),
                 'user': user_data,
-                
             }
         
+        #  # Validate and retrieve Class instance based on class_code
+        # class_code = student_data.get('class_code')
+        # try:
+        #     class_instance = Class.objects.get(class_code=class_code)  # Retrieve Class instance
+        # except Class.DoesNotExist:
+        #     return Response({"error": "Class with provided class_code does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # # Add class_instance to student_data
+        # student_data['class_code'] = class_instance
+
         # Serialize student data and validate
         student_serializer = StudentSerializer(data=student_data)
         

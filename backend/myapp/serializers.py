@@ -63,6 +63,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -70,6 +71,58 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'subject_code', 'subject_name']
 
 
+class ClassSerializer(serializers.ModelSerializer):
+    # subjects = SubjectSerializer(many=True)
+    subjects = serializers.ListField(
+        child = serializers.DictField(), # Accept a list of dictionaries
+        write_only=True  # Only for input, won't include in the response
+    )
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+
+    class Meta:
+        model = Class
+        fields = ['id', 'class_code', 'class_name', 'subjects','subject_details']  # Define fields to include in the serialized output
+    
+    def create(self, validated_data):
+        # Extract the nested subjects data
+        subjects_data = validated_data.pop('subjects', [])
+
+        # Create the class instance
+        class_instance = Class.objects.create(**validated_data)
+
+        # Create or get Subject instances and add them to the class
+        for subject_data in subjects_data:
+            # Find or create the subject
+            # subject, created = Subject.objects.get_or_create(**subject_data)
+            subject, _ = Subject.objects.get_or_create(
+                subject_code=subject_data['subject_code'],
+                defaults={'subject_name': subject_data['subject_name']}
+            )
+
+            class_instance.subjects.add(subject)
+
+        return class_instance
+    def update(self, instance, validated_data):
+        subjects_data = validated_data.pop('subjects', [])
+        instance.class_code = validated_data.get('class_code', instance.class_code)
+        instance.class_name = validated_data.get('class_name', instance.class_name)
+        instance.save()
+
+        if subjects_data:
+            # Clear existing subjects if updating
+            instance.subjects.clear()
+            # Add new subjects to the class
+            for subject_data in subjects_data:
+                # Find or create the subject
+                subject, _ = Subject.objects.get_or_create(
+                    subject_code=subject_data['subject_code'],
+                    defaults={'subject_name': subject_data['subject_name']}
+                )
+                # Associate subject with the class
+                instance.subjects.add(subject)
+
+        return instance
+    
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the teacher
@@ -166,42 +219,61 @@ class PrincipalSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
+    
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the student
-    subjects = SubjectSerializer(many=True, source='classes.subjects')  # Dynamically get subjects from the associated class
+    subjects = SubjectSerializer(many=True, source='classes.subjects', read_only=True)  # Dynamically get subjects from the associated class
     #parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
-
-
+    class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
+    
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'classes','subjects']
+        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender',
+                'class_code','subjects'
+                ]
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
+
+    def validate_classes(self, value):
+        """
+        Validate the `classes` value and retrieve the corresponding class instance.
+        """
+        try:
+            class_instance = Class.objects.get(classes=value)
+            return class_instance
+        except Class.DoesNotExist:
+            raise serializers.ValidationError(f"Class with code '{value}' does not exist.")
+        # return class_instance
 
     def create(self, validated_data):
         # Extract user and parents data from the validated data
         user_data = validated_data.pop('user')
+        class_instance = validated_data.pop('class_code')
         # Mark the user as a student
         user_data['is_student'] = True
+
         # Serialize the user data
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
             # Save the user and get the created user instance
             user = user_serializer.save()
+
             # Create and save the Student instance
-            student = Student.objects.create(user=user, **validated_data)
-
-
+            student = Student.objects.create(user=user, class_code=class_instance, **validated_data)
+            # student.classes.add(class_instance) # Use `add()` to associate the class
             return student
         else:
             # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
         
     def update(self, instance, validated_data):
+        # Extract user data and classes
         user_data = validated_data.pop('user', {})
+        class_instance = validated_data.pop('classes', None)
+
+        # Update user data
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
@@ -210,13 +282,16 @@ class StudentSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
+        # Update other fields of the Student instance
         for attr, value in validated_data.items():
-                setattr(instance, attr, value)
+            setattr(instance, attr, value)
         instance.save()
+
+        if class_instance:
+            # instance.classes.set([class_instances])  # Update associated classes
+            instance.classes = class_instance  # Update associated class
         return instance
-        
-
-
+       
 class StaffSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the staff
 
@@ -278,11 +353,6 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         return LeaveApplication.objects.create(**validated_data)
 
 
-
-class ClassSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Class
-        fields = ['id', 'class_code', 'class_name','subjects']  # Define fields to include in the serialized output
 
 
 class DailyAttendanceSerializer(serializers.ModelSerializer):

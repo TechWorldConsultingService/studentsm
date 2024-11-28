@@ -73,7 +73,7 @@ class Student(models.Model):
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
-    classes = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='students')
+    class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
    
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
