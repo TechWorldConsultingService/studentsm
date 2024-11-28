@@ -45,7 +45,7 @@ const addStudentSchema = Yup.object().shape({
   parents: Yup.string()
   .required("Parent name is required"),
 
-  classes: Yup.string()
+  class_code: Yup.string()
   .required("Class is required"),
 
   date_of_birth: Yup.date()
@@ -72,7 +72,7 @@ const AddStudent = () => {
       phone: "",
       address: "",
       gender: "",
-      classes: "",
+      class_code: "",
       date_of_birth: null,  
       parents: "",
     },
@@ -304,13 +304,13 @@ const AddStudent = () => {
               placeholder="Class"
               className="p-2 border w-full rounded-sm"
               id="class"
-              name="classes"
+              name="class_code"
               onChange={formik.handleChange}
-              value={formik.values.classes}
+              value={formik.values.class_code}
             />
-            {formik.touched.classes && formik.errors.classes && (
+            {formik.touched.class_code && formik.errors.class_code && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.classes}
+                {formik.errors.class_code}
               </div>
             )}
             </div>

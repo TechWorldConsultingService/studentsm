@@ -56,7 +56,7 @@ class LoginAPIView(APIView):
                     'date_of_birth': user.student.date_of_birth,
                     'gender': user.student.gender,
                     'parents': user.student.parents,
-                    'class': user.student.classes.class_name,
+                    'class': user.student.class_code.class_name if user.student.class_code else None,
                 }
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
@@ -100,6 +100,9 @@ class LoginAPIView(APIView):
                 })
             elif hasattr(user, 'student'):
                 student = user.student
+                student_class = student.class_code
+                subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+
                 response_data.update({
                     'role': 'student',
                     'phone': student.phone,
@@ -108,9 +111,10 @@ class LoginAPIView(APIView):
                     'gender': student.gender,
                     'parents': student.parents,
                     'class': {
-                        'class_code': student.classes.class_code,
-                        'class_name': student.classes.class_name
-                    },
+                        'class_code': student.class_code.class_code,
+                        'class_name': student.class_code.class_name
+                    } if student.class_code else None,
+                    'subjects': subjects  # Add subjects related to the student's class
                 })
             else:
                 # Handle case where user has no specific role
