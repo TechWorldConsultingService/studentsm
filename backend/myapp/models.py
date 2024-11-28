@@ -36,6 +36,7 @@ class Subject(models.Model):
 class Class(models.Model):
     class_code = models.CharField(max_length=50, unique=True)
     class_name = models.CharField(max_length=100)
+    subjects = models.ManyToManyField(Subject, related_name='classes')
 
     def __str__(self):
         return self.class_name
@@ -44,7 +45,7 @@ class Teacher(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
-    date_of_joining = models.DateField()
+    date_of_joining = models.DateField() 
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     subjects = models.ManyToManyField(Subject, related_name='teachers')
     classes = models.ManyToManyField(Class, related_name='teachers')
