@@ -4,7 +4,6 @@ from .models import *
 from accounts.models import *
 from .models import Post
 
-
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
     # Optionally include a derived role field
@@ -63,6 +62,13 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+# Serializer for the subjects
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ['id', 'subject_code', 'subject_name']
+
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
@@ -164,13 +170,14 @@ class PrincipalSerializer(serializers.ModelSerializer):
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the student
+    subjects = SubjectSerializer(many=True, source='classes.subjects')  # Dynamically get subjects from the associated class
     #parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
 
 
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'classes']
+        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'classes','subjects']
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
@@ -270,17 +277,12 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         # Ensure the applicant and applicant_type are set from the view
         return LeaveApplication.objects.create(**validated_data)
 
-# Serializer for the subjects
-class SubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subject
-        fields = ['id', 'subject_code', 'subject_name']
 
 
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name']  # Define fields to include in the serialized output
+        fields = ['id', 'class_code', 'class_name','subjects']  # Define fields to include in the serialized output
 
 
 class DailyAttendanceSerializer(serializers.ModelSerializer):
