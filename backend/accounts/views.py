@@ -30,33 +30,52 @@ class LoginAPIView(APIView):
             refresh = RefreshToken.for_user(user)
 
             # Determine the role and retrieve the role-specific data
+            # Determine the role and retrieve the role-specific data
+            role_data = {}
             if hasattr(user, 'teacher'):
                 role_data = {
                     'role': 'teacher',
-                    'phone': user.teacher.phone,
-                    'address': user.teacher.address,
-                    'date_of_joining': user.teacher.date_of_joining,
-                    'gender': user.teacher.gender,
-                    'subjects': [subject.subject_name for subject in user.teacher.subjects.all()],
-                    'classes': [cls.class_name for cls in user.teacher.classes.all()],
-                    'class_teacher': user.teacher.class_teacher.class_name if user.teacher.class_teacher else None,
+                    'phone': teacher.phone,
+                    'address': teacher.address,
+                    'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
+                    'gender': teacher.gender,
+                    'subjects': [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'classes': [{'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
+                    'class_teacher': {
+                        'class_code': teacher.class_teacher.class_code,
+                        'class_name': teacher.class_teacher.class_name
+                    } if teacher.class_teacher else None,
                 }
             elif hasattr(user, 'principal'):
+                principal = user.principal
                 role_data = {
                     'role': 'principal',
-                    'phone': user.principal.phone,
-                    'address': user.principal.address,
-                    'gender': user.principal.gender,
+                    'phone': principal.phone,
+                    'address': principal.address,
+                    'gender': principal.gender,
                 }
             elif hasattr(user, 'student'):
+                student = user.student
+                student_class = student.class_code
+
+                # Prepare the subjects based on whether the class_code exists or not
+                if student_class:
+                    subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+                else:
+                    subjects = []  # If no class_code exists, return an empty list for subjects
+
                 role_data = {
                     'role': 'student',
-                    'phone': user.student.phone,
-                    'address': user.student.address,
-                    'date_of_birth': user.student.date_of_birth,
-                    'gender': user.student.gender,
-                    'parents': user.student.parents,
-                    'class': user.student.class_code.class_name if user.student.class_code else None,
+                    'phone': student.phone,
+                    'address': student.address,
+                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
+                    'gender': student.gender,
+                    'parents': student.parents,
+                    'class': {
+                        'class_code': student_class.class_code  if student_class else None,
+                        'class_name': student_class.class_name if student_class else None,
+                    } if student_class else None,
+                    'subjects': subjects  # Add subjects related to the student's class
                 }
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
@@ -71,7 +90,6 @@ class LoginAPIView(APIView):
                 'email': user.email,  # User's email (assuming it exists in your user model)
                 'first_name': user.first_name,  # User's first name
                 'last_name': user.last_name,
-            
             }
 
             # Add role-specific data
@@ -101,7 +119,13 @@ class LoginAPIView(APIView):
             elif hasattr(user, 'student'):
                 student = user.student
                 student_class = student.class_code
-                subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+                # subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+            
+                # Check if the student_class is None before accessing its attributes
+                if student_class:
+                    subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+                else:
+                    subjects = []  # If no class_code exists, return an empty list for subjects
 
                 response_data.update({
                     'role': 'student',
@@ -122,9 +146,6 @@ class LoginAPIView(APIView):
                     'role': None,
                     'error': 'User has no role assigned',
                 })
-
-            
-
             # Log the user in
             # login(request, user)
             return Response(response_data, status=status.HTTP_200_OK)
@@ -133,6 +154,8 @@ class LoginAPIView(APIView):
         print("\n=== INVALID DATA ===")
         print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+ 
 
 # View for handling user logout
 class LogoutAPIView(APIView):
