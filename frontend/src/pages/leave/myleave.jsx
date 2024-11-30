@@ -20,11 +20,11 @@ const Myleave = () => {
   const [editedLeaveDate, setEditedLeaveDate] = useState(null); // Store the new leave date
   const [editedMessage, setEditedMessage] = useState(""); // Store the new message
 
-  const token = localStorage.getItem("token"); // Get token from localStorage
+  const {access} = useSelector((state) => state.user);
 
   // Fetch self-applied leave data
   const fetchLeaveData = async () => {
-    if (!token) {
+    if (!access) {
       setErrorMessage("User is not authenticated. Please Login.");
       return;
     }
@@ -35,7 +35,7 @@ const Myleave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${access}`,
           },
         }
       );
@@ -63,7 +63,7 @@ const Myleave = () => {
 
   useEffect(() => {
     fetchLeaveData();
-  }, [token]);
+  }, [access]);
 
   // Handle  to apply leave page
   const handleApplyLeave = () => {
@@ -156,7 +156,7 @@ const Myleave = () => {
       return;
     }
 
-    if (!token) {
+    if (!access) {
       setErrorMessage("User is not authenticated. Please Login.");
       return;
     }
@@ -166,7 +166,7 @@ const Myleave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${access}`,
           },
         }
       );
@@ -194,7 +194,7 @@ const Myleave = () => {
       return;
     }
 
-    if (!token) {
+    if (!access) {
       setErrorMessage("User is not authenticated. Please Login.");
       return;
     }
@@ -209,7 +209,7 @@ const Myleave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${access}`,
           },
         }
       );

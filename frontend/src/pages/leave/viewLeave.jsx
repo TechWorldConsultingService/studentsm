@@ -13,12 +13,14 @@ const ViewLeave = () => {
   const [updatedRequests, setUpdatedRequests] = useState([]);
   const [role, setUserRole] = useState("");
 
+  const {access} = useSelector((state) => state.user);
+
+
   useEffect(() => {
     async function getLeaveData() {
       try {
         setIsLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!access) {
           throw new Error("User is not authenticated. Please log in.");
         }
 
@@ -26,11 +28,11 @@ const ViewLeave = () => {
           axios.get("http://localhost:8000/api/total-leave-applications/", {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${access}`,
             },
           }),
           axios.get("http://localhost:8000/api/role/", {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { Authorization: `Bearer ${access}` },
           }),
         ]);
 
@@ -61,8 +63,7 @@ const ViewLeave = () => {
 
   const handleStatusChange = async (leaveId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      if (!access) {
         throw new Error("User is not authenticated. Please log in.");
       }
 
@@ -72,7 +73,7 @@ const ViewLeave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${access}`,
           },
         }
       );
