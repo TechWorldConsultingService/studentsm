@@ -1,12 +1,27 @@
 import React from "react";
-// import axios from "axios";
 import MainLayout from "../layout/MainLayout";
+import { Link } from "react-router-dom";
 
 
 const StudentHomePage = () => {
   return (
     <MainLayout>
-      <div>StudentHomePage studentdashboard</div>
+      <div className="flex flex-col items-center justify-center w-full">
+        <h1>StudentHomePage studentdashboard</h1>
+
+        <div className="w-full flex">
+
+        <Link to='/lms'> 
+          <div className="flex flex-col items-center justify-center gap-2 bg-purple-200 text-purple-800  w-[20%] p-5  rounded-md shadow-lg">
+            <img src="/books.webp" alt='Subjects' className='h-[55%] w-[55%]' />
+            <p className='text-sm'>Start your study  here</p>
+          <h3 className='font-semibold text-lg'>Subjects</h3>
+          </div>
+          </Link>
+
+
+        </div>
+      </div>
     </MainLayout>
   );
 };
