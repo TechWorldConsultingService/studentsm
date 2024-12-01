@@ -4,7 +4,7 @@ import SubjectLayout from '../../layout/SubjectLayout'
 const LearningManagemanetSystem = () => {
   return (
 <SubjectLayout>
-  <div>Learning Management System</div>
+  <div>Home of Learning management system</div>
 </SubjectLayout>
   )
 }
