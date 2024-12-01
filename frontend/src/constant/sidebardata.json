@@ -19,16 +19,6 @@
         "link": "/calendar"
       },
       {
-        "id": 4,
-        "title": "Subject",
-        "icon": "PiStudent",
-        "subSidebar": [
-          { "id": 1, "title": "Math", "link": "/mathSubject" },
-          { "id": 2, "title": "Science", "link": "/scienceSubject" },
-          { "id": 3, "title": "Computer", "link": "/computerSubject" }
-        ]
-      },
-      {
         "id": 5,
         "title": "Reports",
         "icon": "TbReportSearch",

@@ -30,10 +30,8 @@ import ViewLeave from "./pages/leave/viewLeave";
 import Myleave from "./pages/leave/myleave";
 import LeaveDetail from "./pages/leave/leaveDetails";
 import HomePage from  "./pages/homepage";
-import MathSubject from "./pages/subject/mathSubject";
-import ScienceSubject from "./pages/subject/Science";
-import ComputerSubject from "./pages/subject/Computer";
 import LearningManagemanetSystem from "./pages/LMS/lms";
+import SubjectPage from "./pages/LMS/subjectPage";
 
 
 
@@ -145,20 +143,13 @@ const router = createBrowserRouter([
     element: <AddTeacher />,
   },
   {
-    path:"/mathSubject",
-    element:<MathSubject />
-  },
-  {
-    path:"/scienceSubject",
-    element:<ScienceSubject />
-  },
-  {
-    path:"/computerSubject",
-    element:<ComputerSubject />
-  },
-  {
     path:"/lms",
     element:<LearningManagemanetSystem />
+  },
+  {
+    path: "/lms/:subjectName",
+    element: <SubjectPage />
+
   }
 ]);
 

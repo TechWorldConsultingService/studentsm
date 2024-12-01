@@ -14,6 +14,14 @@ const SubjectSidebar = () => {
                 </div>
             </Link>
 
+            <Link
+                to="/lms"
+                className="gap-2 flex items-center hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5"
+                tabIndex={0}
+            >
+                <span>Home</span>
+            </Link>
+
             {subjects.length > 0 && subjects.map((item) => {
                 return (
                     <div key={item.subject_code}>
