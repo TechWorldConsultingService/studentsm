@@ -6,21 +6,6 @@ from .models import *
 from django.contrib import admin
 from .models import Teacher, Principal, Student, LeaveApplication, Subject, Class, DailyAttendance,Event, LessonAttendance, Post
 
-# # Teacher admin customization
-# class TeacherAdmin(admin.ModelAdmin):
-#     list_display = ('id', 'user', 'user__first_name', 'phone', 'address', 'gender','class_teacher')
-#     search_fields = ('user__username', 'phone', 'address')
-#     list_filter = ('date_of_joining', 'gender')
-
-# # Custom display methods for Many-to-Many fields
-#     def get_subjects(self, obj):
-#         return ", ".join([subject.subject_name for subject in obj.subjects.all()])
-#     get_subjects.short_description = 'Subjects'
-
-#     def get_classes(self, obj):
-#         return ", ".join([class_obj.class_name for class_obj in obj.classes.all()])
-#     get_classes.short_description = 'Classes'
-
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'creator', 'title', 'caption', 'created_at')  # Fields to display in the list view
@@ -28,7 +13,6 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ('title', 'caption', 'creator__username')  # Enable search by title, caption, or creator username
     ordering = ('-created_at',)  # Default ordering (newest posts first)
     date_hierarchy = 'created_at'  # Adds a date-based drill-down for `created_at`
-
 
 class TeacherAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'get_first_name', 'phone', 'address', 'gender', 'class_teacher')
@@ -53,8 +37,6 @@ class PrincipalAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'phone', 'address', 'gender')
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ('gender',)
-
-
 
 # Student admin customization
 class StudentAdmin(admin.ModelAdmin):

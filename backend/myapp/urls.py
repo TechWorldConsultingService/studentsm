@@ -75,6 +75,12 @@ urlpatterns = [
     path('api/assignments/', AssignmentListView.as_view(), name='assignment-list'),  # To list all assignments
     path('api/assignments/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),  # For  details, update, and delete of a specific assignment
 
+    path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
+    path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
+    path('api/syllabus/<int:pk>/update/', SyllabusUpdateView.as_view(), name='syllabus-update'),
+
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
