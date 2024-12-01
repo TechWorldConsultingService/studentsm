@@ -1,12 +1,3 @@
-// import React from 'react'
-
-// const ComputerSyllabus = () => {
-//   return (
-//     <div>ComputerSyllabus</div>
-//   )
-// }
-
-// export default ComputerSyllabus
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 

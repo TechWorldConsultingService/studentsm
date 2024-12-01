@@ -33,6 +33,7 @@ class LoginAPIView(APIView):
             # Determine the role and retrieve the role-specific data
             role_data = {}
             if hasattr(user, 'teacher'):
+                teacher = user.teacher
                 role_data = {
                     'role': 'teacher',
                     'phone': teacher.phone,

@@ -172,3 +172,21 @@ class Assignment(models.Model):
     def __str__(self):
         return f"{self.title} by {self.student.username}"
     
+class Syllabus(models.Model):
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
+    topics = models.TextField()  # A comma-separated list of topics/chapters
+    completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def get_completion_percentage(self):
+        all_topics = [topic.strip() for topic in self.topics.split(",") if topic.strip()]
+        completed = [topic.strip() for topic in self.completed_topics.split(",") if topic.strip()]
+        if not all_topics:
+            return 0
+        return round((len(completed) / len(all_topics)) * 100, 2)
+
+    def __str__(self):
+        return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"

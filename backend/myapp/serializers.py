@@ -126,6 +126,9 @@ class ClassSerializer(serializers.ModelSerializer):
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the teacher
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+    class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = Teacher
@@ -137,21 +140,29 @@ class TeacherSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user')
         subjects_data = validated_data.pop('subjects', [])
         classes_data = validated_data.pop('classes', [])
+        class_teacher = validated_data.pop('class_teacher', None)
 
         # Create the user associated with the teacher
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
             user = user_serializer.save()
+            user.is_teacher = True
+            user.save()
             # Create the Teacher instance without subjects and classes
             teacher = Teacher.objects.create(user=user, **validated_data)
             
-            # Assign subjects and classes using .set() to handle many-to-many relationships
+            #using .set() to handle many-to-many relationships
+            # Assign many-to-many relationships
             if subjects_data:
                 teacher.subjects.set(subjects_data)
-            if classes_data:
-                teacher.classes.set(classes_data)
+            teacher.classes.set(classes_data)
 
-            return teacher
+            # Assign class_teacher if provided
+            if class_teacher:
+                teacher.class_teacher = class_teacher
+            teacher.save()
+
+            return teacher 
         else:
             raise serializers.ValidationError(user_serializer.errors)
         
@@ -382,3 +393,22 @@ class AssignmentSerializer(serializers.ModelSerializer):
         model = Assignment
         fields = ['id', 'student', 'title', 'file', 'subject', 'submitted_at']
         read_only_fields = ['student', 'submitted_at']
+
+
+class SyllabusSerializer(serializers.ModelSerializer):
+    completion_percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Syllabus
+        fields = '__all__'
+        # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'class_assigned': {'read_only': True},
+            'subject': {'read_only': True},
+            'teacher': {'read_only': True},
+            'topics': {'required': True}
+        }
+
+
+    def get_completion_percentage(self, obj):
+        return obj.get_completion_percentage()
