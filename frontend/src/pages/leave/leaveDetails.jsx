@@ -4,6 +4,7 @@ import axios from "axios";
 import MainLayout from "../../layout/MainLayout";
 import { ImCross } from "react-icons/im";
 import { useNavigate} from "react-router-dom";
+import { useSelector } from "react-redux";
 
 
 
@@ -14,12 +15,14 @@ const LeaveDetail = () => {
   const [leaveError, setLeaveError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const {access} = useSelector((state) => state.user);
+
+
   useEffect(() => {
     async function getLeaveDetail() {
       try {
         setIsLoading(true);
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!access) {
           setLeaveError("User is not authenticated. Please log in.");
           return;
         }
@@ -29,7 +32,7 @@ const LeaveDetail = () => {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${access}`,
             },
           }
         );

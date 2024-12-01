@@ -3,24 +3,24 @@ import { UserOutlined } from "@ant-design/icons";
 import { Button, Input } from "antd";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
-import * as Yup from 'yup';
+import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import toast from 'react-hot-toast';
-import { setLoginDetails } from '../redux/reducerSlices/userSlice';
-import { useDispatch } from 'react-redux';
+import toast from "react-hot-toast";
+import { setLoginDetails } from "../redux/reducerSlices/userSlice";
+import { useDispatch } from "react-redux";
 
 // Validation Schema
 const loginSchema = Yup.object().shape({
   // email: Yup.string()
   //   .email("Invalid email format")
   //   .required("Email is required."),
-  
+
   username: Yup.string()
-  .min(3,"Username must be at least 3 letter")
-  .required("Username is required."),
-  
+    .min(3, "Username must be at least 3 letter")
+    .required("Username is required."),
+
   password: Yup.string()
     .min(8, "Password must be at least 8 characters long.")
     .required("Password is required."),
@@ -30,7 +30,6 @@ const Login = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const dispatch = useDispatch();
-
 
   const toggleVisibility = () => {
     setIsVisible(!isVisible);
@@ -49,25 +48,28 @@ const Login = () => {
 
   const loginUser = async (values) => {
     try {
-      const response = await axios.post("http://localhost:8000/api/login/", values);
+      const response = await axios.post(
+        "http://localhost:8000/api/login/",
+        values
+      );
+
       const data = response.data;
-
-      const token = response.data.access;
-      console.log('Token:', token);
-      if (token) {
-        localStorage.setItem('token', token);
-        console.log('Token stored:', token); // Verify token storage
-        // Dispatch to Redux (if applicable)
-        dispatch(setLoginDetails({ token, ...response.data }));
-      }
-
+      // const token = response.data.access;
+      // console.log("Token:", token);
+      // if (token) {
+      //   localStorage.setItem("token", token);
+      //   console.log("Token stored:", token); // Verify token storage
+      //   // Dispatch to Redux (if applicable)
+      //   dispatch(setLoginDetails({ token, ...response.data }));
+      // }
 
       if (response.status === 200) {
         const successMessage = data.msg || "Login successful";
         toast.success(successMessage);
         dispatch(setLoginDetails(data));
 
-        
+
+
         // Redirect based on role
         switch (data.role) {
           case "student":
@@ -109,7 +111,9 @@ const Login = () => {
         <img src="/logo.jpeg" alt="Logo" className="h-10 w-24" />
         <span className="font-semibold text-purple-800">Satyam Xaviers</span>
         <span className="text-3xl text-purple-800 mt-3">Welcome!</span>
-        <span className="text-sm text-purple-800">Please Enter Your Details</span>
+        <span className="text-sm text-purple-800">
+          Please Enter Your Details
+        </span>
         <form
           className="w-full flex flex-col items-center justify-center  pt-5"
           onSubmit={formik.handleSubmit}
@@ -147,7 +151,13 @@ const Login = () => {
                 type="text"
                 onClick={toggleVisibility}
                 className="flex items-center"
-                icon={isVisible ? <FaRegEyeSlash className="text-purple-800" /> : <FaRegEye className="text-purple-800" />}
+                icon={
+                  isVisible ? (
+                    <FaRegEyeSlash className="text-purple-800" />
+                  ) : (
+                    <FaRegEye className="text-purple-800" />
+                  )
+                }
               />
             }
           />
@@ -158,7 +168,7 @@ const Login = () => {
           )}
 
           <Button
-           htmlType="submit"
+            htmlType="submit"
             className="bg-purple-600 text-white mt-8 px-7 py-4 hover:font-semibold"
           >
             Log In

@@ -33,6 +33,7 @@ import HomePage from  "./pages/homepage";
 import MathSubject from "./pages/subject/mathSubject";
 import ScienceSubject from "./pages/subject/Science";
 import ComputerSubject from "./pages/subject/Computer";
+import LearningManagemanetSystem from "./pages/LMS/lms";
 
 
 
@@ -154,6 +155,10 @@ const router = createBrowserRouter([
   {
     path:"/computerSubject",
     element:<ComputerSubject />
+  },
+  {
+    path:"/lms",
+    element:<LearningManagemanetSystem />
   }
 ]);
 

@@ -5,6 +5,7 @@ import { DatePicker } from "antd";
 import moment from "moment";
 import toast from 'react-hot-toast';
 import {  useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 
 
@@ -15,12 +16,13 @@ const ApplyLeave = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
+  const {access} = useSelector((state) => state.user);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!access) {
       setErrorMessage("User is not authenticated. Please log in.");
       return;
     }
@@ -31,7 +33,7 @@ const ApplyLeave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Assuming token is stored in local storage
+            Authorization: `Bearer ${access}`, // Assuming token is stored in local storage
           },
         }
       );
