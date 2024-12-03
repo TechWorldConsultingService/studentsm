@@ -77,8 +77,10 @@ urlpatterns = [
 
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
-    path('api/syllabus/<int:pk>/update/', SyllabusUpdateView.as_view(), name='syllabus-update'),
-
+    path('api/syllabus/class/<str:class_code>/', SyllabusPerClassView.as_view(), name='syllabus-per-class'), # to view syllabus as per class
+    path('api/syllabus/update/<int:pk>/', SyllabusUpdateView.as_view(), name='syllabus-update'), #to update syllabus as per id
+    path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
+    path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

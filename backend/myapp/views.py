@@ -1061,38 +1061,63 @@ class SyllabusView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-        # Ensure the logged-in user is a teacher
+    # Ensure the logged-in user is a teacher
         if not hasattr(request.user, 'teacher'):
             return Response({"error": "Only teachers can create a syllabus."}, status=status.HTTP_403_FORBIDDEN)
 
         # Automatically set the teacher field to the logged-in user
         teacher = request.user.teacher
 
+        # Fetch class and subject based on the provided IDs
+        class_assigned_id = request.data.get('class_assigned')
+        subject_id = request.data.get('subject')
+
+        if not class_assigned_id or not subject_id:
+            return Response(
+                {"error": "Both 'class_assigned' and 'subject' fields are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            # Fetch class and subject based on the provided IDs
-            class_assigned = Class.objects.get(id=request.data.get('class_assigned'))
-            subject = Subject.objects.get(id=request.data.get('subject'))
-            
-            # teacher = Teacher.objects.get(id=request.data.get('teacher'))
+            class_assigned = Class.objects.get(id=class_assigned_id)
+            subject = Subject.objects.get(id=subject_id)
         except (Class.DoesNotExist, Subject.DoesNotExist) as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Merge the teacher into the request data
+
+        # Prepare data for serialization
         data = request.data.copy()
         data['teacher'] = teacher.id
 
-        serializer = SyllabusSerializer(data=request.data)
-        print("Topics received:", request.data.get('topics'))
-        if serializer.is_valid():
-            serializer.save(class_assigned=class_assigned,
-                subject=subject,
-                teacher=teacher)
+        serializer = SyllabusSerializer(data=data)
 
+        if serializer.is_valid():
+            serializer.save(class_assigned=class_assigned, subject=subject, teacher=teacher)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
- 
-class SyllabusDetailView(APIView):
+
+class SyllabusPerClassView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, class_code, *args, **kwargs):
+        try:
+            # Fetch the Class object using the class_code
+            class_instance = Class.objects.get(class_code=class_code)
+            
+            # Fetch the syllabus related to the class
+            syllabus = Syllabus.objects.filter(class_assigned=class_instance)
+            
+            if not syllabus:
+                return Response({"error": "Syllabus not found for this class."}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = SyllabusSerializer(syllabus, many=True)
+            return Response(serializer.data)
+
+        except Class.DoesNotExist:
+            return Response({"error": "Class with this code not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class SyllabusDetailView(APIView):
+#     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk, *args, **kwargs):
         try:
@@ -1128,3 +1153,38 @@ class SyllabusUpdateView(UpdateAPIView):
             raise PermissionDenied("You do not have permission to update this syllabus.")
         serializer.save()
 
+class SyllabusDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk=None, *args, **kwargs):
+        # Check if a specific syllabus ID is provided
+        if pk:
+            try:
+                syllabus = Syllabus.objects.get(pk=pk)
+                # Ensure only the teacher who created the syllabus can delete it
+                if request.user != syllabus.teacher.user:
+                    return Response(
+                        {"error": "You do not have permission to delete this syllabus."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                syllabus.delete()
+                return Response(
+                    {"message": "Syllabus deleted successfully."},
+                    status=status.HTTP_200_OK
+                )
+            except Syllabus.DoesNotExist:
+                return Response({"error": "Syllabus not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # For bulk delete, ensure the user is a teacher
+            if not hasattr(request.user, 'teacher'):
+                return Response(
+                    {"error": "Only teachers can delete all syllabi."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            # Delete all syllabi created by the logged-in teacher
+            teacher_syllabi = Syllabus.objects.filter(teacher=request.user.teacher)
+            count = teacher_syllabi.delete()[0]  # delete() returns a tuple (number of objects deleted, _)
+            return Response(
+                {"message": f"Deleted {count} syllabus entries."},
+                status=status.HTTP_200_OK
+            )
