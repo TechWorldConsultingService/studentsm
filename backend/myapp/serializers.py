@@ -397,10 +397,27 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
 class SyllabusSerializer(serializers.ModelSerializer):
     completion_percentage = serializers.SerializerMethodField()
+    subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
+    teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
+    class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
 
     class Meta:
         model = Syllabus
-        fields = '__all__'
+        # fields = '__all__'
+        fields = [
+            'id',
+            'class_assigned',
+            'class_name',
+            'subject',
+            'subject_name',
+            'teacher',
+            'teacher_name',
+            'topics',
+            'completed_topics',
+            'completion_percentage',
+            'created_at',
+            'updated_at'
+        ]
         # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
         extra_kwargs = {
             'class_assigned': {'read_only': True},
@@ -408,7 +425,6 @@ class SyllabusSerializer(serializers.ModelSerializer):
             'teacher': {'read_only': True},
             'topics': {'required': True}
         }
-
 
     def get_completion_percentage(self, obj):
         return obj.get_completion_percentage()

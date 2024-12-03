@@ -87,6 +87,16 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_filter = ('subject', 'submitted_at')  # Filters for the sidebar
     search_fields = ('title', 'student__username', 'subject')  # Searchable fields
 
+class SyllabusAdmin(admin.ModelAdmin):
+    list_display = ('class_assigned', 'subject', 'teacher', 'completion_percentage', 'created_at', 'updated_at')
+    search_fields = ('class_assigned__class_name', 'subject__subject_name', 'teacher__user__username', 'topics')
+    list_filter = ('class_assigned', 'subject', 'teacher', 'created_at', 'updated_at')
+    readonly_fields = ('completion_percentage', 'created_at', 'updated_at')
+
+    def completion_percentage(self, obj):
+        return obj.get_completion_percentage()
+    completion_percentage.short_description = 'Completion (%)'
+
 # Registering models
 admin.site.register(Teacher, TeacherAdmin)
 admin.site.register(Principal, PrincipalAdmin)
@@ -99,4 +109,5 @@ admin.site.register(LessonAttendance, LessonAttendanceAdmin)
 admin.site.register(Event, EventAdmin)
 admin.site.register(Staff, StaffAdmin)
 admin.site.register(Assignment, AssignmentAdmin)
+admin.site.register(Syllabus, SyllabusAdmin)
 
