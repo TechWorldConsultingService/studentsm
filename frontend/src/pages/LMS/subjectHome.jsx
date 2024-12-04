@@ -1,6 +1,4 @@
 import React from 'react'
-import SubjectLayout from '../../layout/SubjectLayout'
-import TaskForSubject from "../../components/taskForSubject";
 import { useParams } from "react-router-dom";
 
 
