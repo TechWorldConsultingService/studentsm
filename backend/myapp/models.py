@@ -173,9 +173,10 @@ class Assignment(models.Model):
         return f"{self.title} by {self.student.username}"
     
 class Syllabus(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=True, blank=True)
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False,default=1)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False, default=1)
+    # teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, default=1)
     topics = models.TextField()  # A comma-separated list of topics/chapters
     completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
     created_at = models.DateTimeField(auto_now_add=True)
@@ -189,4 +190,6 @@ class Syllabus(models.Model):
         return round((len(completed) / len(all_topics)) * 100, 2)
 
     def __str__(self):
-        return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
+        teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
+        # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
+        return f"{self.class_assigned} - {self.subject} - {teacher_name}"
