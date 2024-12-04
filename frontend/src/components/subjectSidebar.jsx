@@ -19,7 +19,7 @@ const SubjectSidebar = () => {
                 className="gap-2 flex items-center hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md p-5"
                 tabIndex={0}
             >
-                <span>Home</span>
+                <span>Dashboard</span>
             </Link>
 
             {subjects.length > 0 && subjects.map((item) => {

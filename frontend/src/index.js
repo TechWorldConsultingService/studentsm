@@ -1,11 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-
 import Reports from "./pages/reports";
 import MyBus from "./pages/mybus";
 import Attendence from "./pages/attendence";
@@ -18,9 +16,6 @@ import TeacherHomePage from "./pages/teacherdashboard";
 import ReduxProvider from "./redux/ReduxProvider";
 import { Toaster } from "react-hot-toast";
 import Profile from "./pages/profile";
-import Notes from "./pages/notes";
-import Syllabus from "./pages/syllabus";
-import Homework from "./pages/homework";
 import MyStudents from "./pages/myStudents";
 import AddStudent from "./pages/principal/addStudent";
 import AddTeacher from "./pages/principal/addTeacher";
@@ -31,7 +26,7 @@ import Myleave from "./pages/leave/myleave";
 import LeaveDetail from "./pages/leave/leaveDetails";
 import HomePage from  "./pages/homepage";
 import LearningManagemanetSystem from "./pages/LMS/lms";
-import SubjectPage from "./pages/LMS/subjectPage";
+import Subject from "./pages/LMS/subject";
 
 
 
@@ -67,21 +62,6 @@ const router = createBrowserRouter([
   {
     path: "/calendar",
     element: <AcademicCalendar />,
-  },
-
-  {
-    path: "/notes",
-    element: <Notes />,
-  },
-
-  {
-    path: "/syllabus",
-    element: <Syllabus />,
-  },
-
-  {
-    path: "/homework",
-    element: <Homework />,
   },
 
   {
@@ -147,8 +127,8 @@ const router = createBrowserRouter([
     element:<LearningManagemanetSystem />
   },
   {
-    path: "/lms/:subjectName",
-    element: <SubjectPage />
+    path: "/lms/:subject",
+    element: <Subject />
 
   }
 ]);
