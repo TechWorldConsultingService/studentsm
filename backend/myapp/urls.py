@@ -82,6 +82,12 @@ urlpatterns = [
     path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
     path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
+    # API endpoints for fees management
+    path('api/fees/', FeeListCreateView.as_view(), name='fee-list-create'),  # List and create fees
+    path('api/fees/<int:pk>/', FeeDetailView.as_view(), name='fee-detail'),  # View, update, and delete specific fee
+    path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
+    path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

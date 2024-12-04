@@ -428,3 +428,45 @@ class SyllabusSerializer(serializers.ModelSerializer):
 
     def get_completion_percentage(self, obj):
         return obj.get_completion_percentage()
+
+class FeePaymentHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeePaymentHistory
+        fields = [
+            'id',
+            'fee_record',
+            'amount_paid',
+            'payment_date',
+            'mode_of_payment',
+            'transaction_id',
+            'notes'
+        ]
+        read_only_fields = ['id', 'payment_date']
+
+class FeesSerializer(serializers.ModelSerializer):
+    payment_history = FeePaymentHistorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Fees
+        fields = [
+            'id',
+            'student',
+            'total_amount',
+            'amount_paid',
+            'pending_amount',
+            'due_date',
+            'last_payment_date',
+            'status',
+            'created_at',
+            'updated_at',
+            'payment_history',
+        ]
+        read_only_fields = ['id', 'pending_amount', 'status', 'created_at', 'updated_at']
+
+    def update(self, instance, validated_data):
+        """
+        Override the update method to handle updating the amount_paid and recalculate pending_amount.
+        """
+        instance.amount_paid = validated_data.get('amount_paid', instance.amount_paid)
+        instance.save()
+        return instance

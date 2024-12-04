@@ -5,7 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from django.contrib.auth.models import User
 from .models import *
-from .serializers import *
+from .models import Fees
+from .serializers import * 
+from .serializers import FeesSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import *
 from django.contrib.auth import get_user_model
@@ -17,6 +19,7 @@ import json
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import UpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 
 
 class PostListCreateView(generics.ListCreateAPIView):
@@ -1188,3 +1191,64 @@ class SyllabusDeleteView(APIView):
                 {"message": f"Deleted {count} syllabus entries."},
                 status=status.HTTP_200_OK
             )
+        
+# List and Create Fees
+class FeeListCreateView(ListCreateAPIView):
+    queryset = Fees.objects.all()
+    serializer_class = FeesSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Retrieve, Update, and Delete Specific Fee
+class FeeDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Fees.objects.all()
+    serializer_class = FeesSerializer
+
+    def get(self, request, pk, *args, **kwargs):
+        fee = get_object_or_404(Fees, pk=pk)
+        serializer = self.serializer_class(fee)
+        return Response(serializer.data)
+
+    def put(self, request, pk, *args, **kwargs):
+        fee = get_object_or_404(Fees, pk=pk)
+        serializer = self.serializer_class(fee, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, *args, **kwargs):
+        fee = get_object_or_404(Fees, pk=pk)
+        fee.delete()
+        return Response({"message": "Fee record deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# List Fees for a Specific Student
+class StudentFeeListView(ListAPIView):
+    serializer_class = FeesSerializer
+
+    def get_queryset(self):
+        student_id = self.kwargs['student_id']
+        return Fees.objects.filter(student_id=student_id)
+
+    def get(self, request, student_id, *args, **kwargs):
+        fees = self.get_queryset()
+        serializer = self.serializer_class(fees, many=True)
+        return Response(serializer.data)
+
+# List Pending Fees for a Specific Student
+class StudentPendingFeesView(ListAPIView):
+    serializer_class = FeesSerializer
+
+    def get_queryset(self):
+        student_id = self.kwargs['student_id']
+        return Fees.objects.filter(student_id=student_id, status='pending')
+
+    def get(self, request, student_id, *args, **kwargs):
+        pending_fees = self.get_queryset()
+        serializer = self.serializer_class(pending_fees, many=True)
+        return Response(serializer.data)

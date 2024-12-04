@@ -97,6 +97,33 @@ class SyllabusAdmin(admin.ModelAdmin):
         return obj.get_completion_percentage()
     completion_percentage.short_description = 'Completion (%)'
 
+class FeePaymentHistoryInline(admin.TabularInline):
+    model = FeePaymentHistory
+    extra = 0
+    readonly_fields = ['payment_date']
+    fields = ['amount_paid', 'payment_date', 'mode_of_payment', 'transaction_id', 'notes']
+
+@admin.register(Fees)
+class FeesAdmin(admin.ModelAdmin):
+    list_display = ['student', 'total_amount', 'amount_paid', 'pending_amount', 'due_date', 'status']
+    list_filter = ['status', 'due_date']
+    search_fields = ['student__user__username', 'student__user__email']
+    readonly_fields = ['pending_amount', 'status', 'created_at', 'updated_at']
+    inlines = [FeePaymentHistoryInline]
+
+    def get_queryset(self, request):
+        """
+        Customize queryset to prefetch related student data for efficiency.
+        """
+        queryset = super().get_queryset(request)
+        return queryset.select_related('student__user')
+
+@admin.register(FeePaymentHistory)
+class FeePaymentHistoryAdmin(admin.ModelAdmin):
+    list_display = ['fee_record', 'amount_paid', 'payment_date', 'mode_of_payment', 'transaction_id']
+    list_filter = ['mode_of_payment', 'payment_date']
+    search_fields = ['fee_record__student__user__username', 'transaction_id']
+
 # Registering models
 admin.site.register(Teacher, TeacherAdmin)
 admin.site.register(Principal, PrincipalAdmin)
