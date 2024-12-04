@@ -193,3 +193,40 @@ class Syllabus(models.Model):
         teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
+
+
+class Fees(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Total fee amount
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total amount paid
+    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)  # Computed field for pending fees
+    due_date = models.DateField()  # The last date for fee payment
+    last_payment_date = models.DateField(null=True, blank=True)  # Date of the last payment
+    status = models.CharField(max_length=20, choices=[('Paid', 'Paid'), ('Pending', 'Pending')], default='Pending')
+    created_at = models.DateTimeField(auto_now_add=True)  # Record creation timestamp
+    updated_at = models.DateTimeField(auto_now=True)  # Record update timestamp
+
+    def save(self, *args, **kwargs):
+        # Automatically calculate the pending amount
+        self.pending_amount = self.total_amount - self.amount_paid
+        self.status = 'Paid' if self.pending_amount <= 0 else 'Pending'
+        super(Fees, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.student.user.username} - Total: {self.total_amount} - Pending: {self.pending_amount}"
+
+
+class FeePaymentHistory(models.Model):
+    fee_record = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='payment_history')
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
+    payment_date = models.DateField(default=timezone.now)  # Date of payment
+    mode_of_payment = models.CharField(
+        max_length=20, 
+        choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Online', 'Online')], 
+        default='Online'
+    )
+    transaction_id = models.CharField(max_length=255, null=True, blank=True)  # Transaction ID for reference
+    notes = models.TextField(null=True, blank=True)  # Additional notes about the payment
+
+    def __str__(self):
+        return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}"
