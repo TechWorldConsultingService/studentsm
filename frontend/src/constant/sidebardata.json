@@ -67,16 +67,6 @@
         "link": "/calendar"
       },
       {
-        "id": 4,
-        "title": "Class",
-        "icon": "PiStudent",
-        "subSidebar": [
-          { "id": 1, "title": "Syllabus", "link": "/syllabus" },
-          { "id": 2, "title": "Homework" , "link": "/homework" },
-          { "id": 3, "title": "Notes", "link": "/notes" }
-        ]
-      },
-      {
         "id": 5,
         "title": "Reports",
         "icon": "TbReportSearch",
