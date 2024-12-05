@@ -45,42 +45,45 @@ const SubjectSyllabus = () => {
   );
 
   return (
-    <div className="w-full p-4 bg-gray-100 min-h-screen">
+    <div className="w-full p-4 bg-purple-50 min-h-screen">
       {errorMessage ? (
-        <p className="text-red-500 text-center">{errorMessage}</p>
+        <p className="text-red-500 text-center font-semibold">{errorMessage}</p>
       ) : isLoading ? (
-        <p className="text-center text-blue-500">Loading...</p>
+        <p className="text-center text-blue-500 font-semibold">Loading...</p>
       ) : filteredSyllabus.length > 0 ? (
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold text-center text-gray-700">
+          <h2 className="text-3xl font-extrabold text-center text-purple-800 mb-8 animate__animated animate__fadeIn">
             Syllabus for {subject.charAt(0).toUpperCase() + subject.slice(1)}
           </h2>
 
           {filteredSyllabus.map((item) => (
-            <div key={item.id} className="bg-white p-6 rounded-lg shadow-lg">
+            <div
+              key={item.id}
+              className="bg-white p-6 rounded-lg shadow-lg border border-purple-300"
+            >
               <p className="text-gray-600 mt-2">
-                <strong>Teacher: </strong>
+                <strong className="text-purple-700">Teacher: </strong>
                 {item.teacher_name}
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Class: </strong>
+                <strong className="text-purple-700">Class: </strong>
                 {item.class_name}
               </p>
 
               <div className="mt-4">
-                <h4 className="text-lg font-medium text-gray-800">Topics</h4>
+                <h4 className="text-lg font-medium text-purple-700">Topics</h4>
                 <p className="text-gray-600">{item.topics}</p>
               </div>
 
               <div className="mt-4">
-                <h4 className="text-lg font-medium text-gray-800">
+                <h4 className="text-lg font-medium text-purple-700">
                   Completed Topics
                 </h4>
                 <p className="text-gray-600">{item.completed_topics}</p>
               </div>
 
               <div className="mt-4">
-                <h4 className="text-lg font-medium text-gray-800">
+                <h4 className="text-lg font-medium text-purple-700">
                   Completion Percentage
                 </h4>
                 <p className="text-gray-600">{item.completion_percentage}%</p>
@@ -100,9 +103,7 @@ const SubjectSyllabus = () => {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500">
-          No syllabus found for this subject.
-        </p>
+        <p className="text-center text-gray-500">No syllabus found for this subject.</p>
       )}
     </div>
   );

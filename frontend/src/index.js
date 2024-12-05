@@ -27,6 +27,7 @@ import LeaveDetail from "./pages/leave/leaveDetails";
 import HomePage from  "./pages/homepage";
 import LearningManagemanetSystem from "./pages/LMS/lms";
 import Subject from "./pages/LMS/subject";
+import AssignmentDetailPage from "./pages/LMS/AssignmentDetailPage"
 
 
 
@@ -130,6 +131,10 @@ const router = createBrowserRouter([
     path: "/lms/:subject",
     element: <Subject />
 
+  },
+  {
+    path:"/assignment/:assignmentId",
+     element:<AssignmentDetailPage />
   }
 ]);
 
