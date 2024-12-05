@@ -3,7 +3,6 @@ import { FaRegMessage } from "react-icons/fa6";
 import { IoMdNotificationsOutline } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { useDispatch, useSelector } from "react-redux";
-
 import { FaAngleDown } from "react-icons/fa6";
 import { Dropdown, Space } from "antd";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,7 +11,7 @@ import { logoutUser } from "../redux/reducerSlices/userSlice";
 const NavBar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { first_name,last_name , role } = useSelector((state) => state.user);
+  const { first_name, last_name, role } = useSelector((state) => state.user);
 
   const logout = () => {
     dispatch(logoutUser());
@@ -38,12 +37,12 @@ const NavBar = () => {
   ];
 
   return (
-    <div className="flex items-center justify-between shadow-md p-1  pl-7 pr-8 bg-purple-900 text-white rounded-sm">
-      <div className="flex gap-7 items-center">
-        <h4 className="font-semibold">Dashboard</h4>
+    <div className="flex items-center justify-between shadow-md p-2 pl-4 pr-6 bg-purple-900 text-white rounded-sm">
+      <div className="flex gap-4 items-center">
+        <h4 className="font-semibold text-sm sm:text-lg">Dashboard</h4>
       </div>
 
-      <div className="flex gap-6 text-xl items-center">
+      <div className="flex gap-4 text-xl items-center">
         <span>
           <FaRegMessage />
         </span>
@@ -54,16 +53,16 @@ const NavBar = () => {
         <Dropdown
           menu={{ items: dropdownItems }}
           trigger={["click"]}
-          className=" hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md"
+          className="hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md"
         >
           <Space>
             <div className="flex p-1 items-center text-sm">
-              <span className="m-2 text-2xl">
+              <span className="m-2 text-lg">
                 <CgProfile />
               </span>
               <div className="flex flex-col">
                 <span className="font-semibold">{first_name} {last_name}</span>
-                <span>{role}</span>
+                <span className="text-xs">{role}</span>
               </div>
             </div>
             <FaAngleDown />
