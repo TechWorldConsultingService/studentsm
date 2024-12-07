@@ -45,7 +45,7 @@ const SubjectSyllabus = () => {
   );
 
   return (
-    <div className="w-full p-4 bg-purple-50 min-h-screen">
+    <div className="w-full p-4 bg-purple-50 ">
       {errorMessage ? (
         <p className="text-red-500 text-center font-semibold">{errorMessage}</p>
       ) : isLoading ? (

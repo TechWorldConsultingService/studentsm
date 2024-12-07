@@ -3,7 +3,7 @@ import SubjectLayout from "../../layout/SubjectLayout";
 
 const SubjectNotes = () => {
   return (
-      <div className="bg-purple-50 p-6 min-h-screen">
+      <div className="bg-purple-50 p-6 ">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
           <h1 className="text-3xl font-extrabold text-purple-800">
             Subject Notes

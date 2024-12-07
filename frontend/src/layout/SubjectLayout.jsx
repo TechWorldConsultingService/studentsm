@@ -6,7 +6,7 @@ import SubjectSidebar from '../components/subjectSidebar'
 const SubjectLayout = ({children}) => {
   return (
     
-      <div className="flex h-full w-screen m-1">
+      <div className="flex h-full w-screen ">
       <SubjectSidebar />
       <div className=" flex w-full flex-col">
         <NavBar />

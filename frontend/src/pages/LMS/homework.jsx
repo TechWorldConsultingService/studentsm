@@ -39,7 +39,7 @@ const AssignmentPage = () => {
   const submittedAssignments = assignments.filter((assignment) => assignment.submitted);
 
   return (
-    <div className="min-h-screen bg-purple-100 py-8">
+    <div className=" bg-purple-100 py-8">
       <div className="container mx-auto p-4 bg-white shadow-xl rounded-lg">
         <h1 className="text-4xl font-extrabold text-center text-purple-800 mb-8 animate__animated animate__fadeIn">
           Your Assignments

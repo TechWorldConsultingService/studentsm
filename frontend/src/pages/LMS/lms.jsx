@@ -4,7 +4,7 @@ import SubjectLayout from '../../layout/SubjectLayout';
 const LearningManagementSystem = () => {
   return (
     <SubjectLayout>
-      <div className="p-6 bg-purple-50 min-h-screen">
+      <div className="p-6 bg-purple-50 ">
         <h1 className="text-3xl font-extrabold text-purple-800">Welcome to the Learning Management System</h1>
         <p className="mt-4 text-gray-600">
           This is the home of your LMS. Select a subject from the sidebar to start.
