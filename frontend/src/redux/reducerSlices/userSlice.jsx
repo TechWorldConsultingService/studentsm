@@ -13,10 +13,13 @@ const initialState = {
   gender: "",
   parents: "",
   class: {},
+  classes:[],
   subjects: [],
   email: "",
   first_name: "",
   last_name: "",
+  date_of_joining:"",
+  class_teacher:{}
 };
 
 const userSlice = createSlice({
@@ -35,10 +38,13 @@ const userSlice = createSlice({
         gender,
         parents,
         class: userClass,
+        classes,
         subjects,
         email,
         first_name,
         last_name,
+        class_teacher,
+        date_of_joining
       } = action.payload;
 
       return {
@@ -52,11 +58,14 @@ const userSlice = createSlice({
         date_of_birth,
         gender,
         parents,
-        class: userClass,  // Map class to state
+        class: userClass, // Map class to state
+        classes, 
         subjects,
         email,
         first_name,
         last_name,
+        class_teacher,
+        date_of_joining,
         isLoggedIn: true, 
       };
     },

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 
-const SubjectSyllabus = () => {
+const ClassSyllabus = () => {
   const [syllabusData, setSyllabusData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -109,4 +109,4 @@ const SubjectSyllabus = () => {
   );
 };
 
-export default SubjectSyllabus;
+export default ClassSyllabus;

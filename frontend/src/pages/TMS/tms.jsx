@@ -1,13 +1,13 @@
 import React from 'react';
-import SubjectLayout from '../../layout/SubjectLayout';
+import ClassLayout from '../../layout/ClassLayout';
 
-const LearningManagementSystem = () => {
+const TeachingManagementSystem = () => {
   return (
-    <SubjectLayout>
+    <ClassLayout>
       <div className="p-6 bg-purple-50 ">
-        <h1 className="text-3xl font-extrabold text-purple-800">Welcome to the Learning Management System</h1>
+        <h1 className="text-3xl font-extrabold text-purple-800">Welcome to the Teaching Management System</h1>
         <p className="mt-4 text-gray-600">
-          This is the home of your LMS. Select a subject from the sidebar to start.
+          This is the home of your TMS. Select a classes from the sidebar to start.
         </p>
 
         <div className="mt-8">
@@ -29,14 +29,14 @@ const LearningManagementSystem = () => {
 
             <div className="mt-6 text-center">
               <button className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none">
-                Explore Subjects
+                Explore Classes
               </button>
             </div>
           </div>
         </div>
       </div>
-    </SubjectLayout>
+    </ClassLayout>
   );
 };
 
-export default LearningManagementSystem;
+export default TeachingManagementSystem;
