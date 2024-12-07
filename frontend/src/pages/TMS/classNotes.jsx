@@ -1,6 +1,6 @@
 import React from "react";
 
-const SubjectNotes = () => {
+const ClassNotes = () => {
   return (
       <div className="bg-purple-50 p-6 ">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
@@ -28,4 +28,4 @@ const SubjectNotes = () => {
   );
 };
 
-export default SubjectNotes;
+export default ClassNotes;

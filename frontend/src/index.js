@@ -28,6 +28,8 @@ import HomePage from  "./pages/homepage";
 import LearningManagemanetSystem from "./pages/LMS/lms";
 import Subject from "./pages/LMS/subject";
 import AssignmentDetailPage from "./pages/LMS/AssignmentDetailPage"
+import TeachingManagementSystem from "./pages/TMS/tms"
+import Classes from "./pages/TMS/classes"
 
 
 
@@ -135,6 +137,14 @@ const router = createBrowserRouter([
   {
     path:"/assignment/:assignmentId",
      element:<AssignmentDetailPage />
+  },
+  {
+    path:"/tms",
+    element: <TeachingManagementSystem />
+  },
+  {
+    path:"/tms/:classes",
+    element:<Classes />
   }
 ]);
 
