@@ -353,6 +353,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
         fields = ['id','applicant','applicant_name', 'applicant_type', 'applied_on', 'leave_date', 'message', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['applicant', 'applicant_type', 'applicant_name', 'applied_on', 'status']
 
     def validate_leave_date(self, value):
         if value < timezone.now().date():
@@ -361,10 +362,11 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Ensure the applicant and applicant_type are set from the view
+        user = self.context['request'].user  # Extract the user from the serializer context
+        validated_data['applicant'] = user
+        validated_data['applicant_type'] = 'Student' if user.is_student else 'Teacher'
+        validated_data['applicant_name'] = user.get_full_name()
         return LeaveApplication.objects.create(**validated_data)
-
-
-
 
 class DailyAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -385,14 +387,19 @@ class EventSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'start_time', 'end_time', 'created_by', 'created_at']
 
 
-class AssignmentSerializer(serializers.ModelSerializer):
-    # You can either use the default representation of the ForeignKey (which will be the primary key of the related model)
-    subject = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all())  # This will handle the ForeignKey
 
+from .models import Assignment, AssignmentSubmission
+class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['assignment', 'student', 'submission_file']
+
+class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
-        fields = ['id', 'student', 'title', 'file', 'subject', 'submitted_at']
-        read_only_fields = ['student', 'submitted_at']
+        fields = ['id', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on', 'submitted']
+
+
 
 
 class SyllabusSerializer(serializers.ModelSerializer):

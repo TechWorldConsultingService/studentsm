@@ -109,8 +109,8 @@ const Attendence = () => {
   };
 
   const classData = {
-    one: "http://localhost:8000/api/students/?class_id=9",
-    two: "http://localhost:8000/myStudents?class_id=10",
+    one: "http://localhost:8000/api/students/?class_id=1",
+    two: "http://localhost:8000/myStudents?class_id=2",
     three: "http://localhost:8000/myStudents?class_id=11",
     four: "http://localhost:8000/myStudents?class_id=11",
     five: "http://localhost:8000/myStudents?class_id=12",

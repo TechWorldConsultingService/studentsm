@@ -515,13 +515,10 @@ class TotalLeaveApplicationListView(APIView):
 
     def get(self, request):
         user = request.user
-
         # Determine user role
         role = self.get_user_role(user)
-
         # Default assignment of leave_applications to an empty queryset
         leave_applications = LeaveApplication.objects.none()
-
         if role == 'Principal':
             # Principals can view all leave applications
             leave_applications = LeaveApplication.objects.all()
@@ -533,18 +530,27 @@ class TotalLeaveApplicationListView(APIView):
                     {"error": "Teacher does not have a class assigned."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            print(f"Teacher's class_teacher: {teacher.class_teacher}")
+            # print(f"Teacher's class_teacher: {teacher.class_teacher}")
 
             # Filter leave applications for students in the teacher's class
             leave_applications = LeaveApplication.objects.filter(
                 applicant_type="Student", 
-                applicant__student__classes=teacher.class_teacher
+                applicant__in=Student.objects.filter(class_code=teacher.class_teacher).values_list('user', flat=True)
+                # applicant__student__classes=teacher.class_teacher
             )
-            print(f"Leave applications for teacher: {leave_applications}")
+            # print(f"Leave applications for teacher: {leave_applications}")
             
         elif role == 'Student':
             # Students can view only their leave applications
-            leave_applications = LeaveApplication.objects.filter(applicant=user)
+            # leave_applications = LeaveApplication.objects.filter(applicant=user)
+            try:
+                student = Student.objects.get(user=user)
+            except Student.DoesNotExist:
+                return Response(
+                    {"error": "No student profile associated with the current user."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            leave_applications = LeaveApplication.objects.filter(applicant=student.user)
         else:
             raise PermissionDenied("You do not have permission to view leave applications.")
 
@@ -565,20 +571,6 @@ class TotalLeaveApplicationListView(APIView):
             return 'Student'
         return 'Unknown'
 
-# class TotalLeaveApplicationListView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request, format=None):
-#         """
-#         Handle GET requests to retrieve all leave applications for the current user.
-#         """
-#         # Get all leave applications for the current user
-#         applications = LeaveApplication.objects.all()
-#         # Serialize the leave applications
-#         serializer = LeaveApplicationSerializer(applications, many=True)
-#         # Return the serialized data
-#         return Response(serializer.data)
-
 # API view to list all leave applications for the current user
 class LeaveApplicationListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -587,8 +579,16 @@ class LeaveApplicationListView(APIView):
         """
         Handle GET requests to retrieve all leave applications for the current user.
         """
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "No student profile associated with the current user."},
+                status=404,
+            )
+
         # Get all leave applications for the current user
-        applications = LeaveApplication.objects.filter(applicant=request.user)
+        applications = LeaveApplication.objects.filter(applicant=student.user)
         # Serialize the leave applications
         serializer = LeaveApplicationSerializer(applications, many=True)
         # Return the serialized data
@@ -602,6 +602,7 @@ class LeaveApplicationCreateView(APIView):
         """
         Handle POST requests to create a new leave application.
         """
+        
         leave_date = request.data.get('leave_date')
         message = request.data.get('message')
         applicant_name = request.user.first_name
@@ -610,6 +611,8 @@ class LeaveApplicationCreateView(APIView):
             # Return error message if 'leave_date' or 'message' is not provided
             return Response({"error": "Both 'leave_date' and 'message' are required."}, status=status.HTTP_400_BAD_REQUEST)
         
+
+
         # Determine applicant_type based on user role
         if request.user.is_student:
             applicant_type = 'Student'
@@ -630,7 +633,7 @@ class LeaveApplicationCreateView(APIView):
         }
 
         # Create a new leave application for the current user
-        serializer = LeaveApplicationSerializer(data=data)
+        serializer = LeaveApplicationSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
             # Save the leave application
@@ -953,7 +956,7 @@ class LessonAttendanceView(APIView):
 
 
 from rest_framework import generics
-from .models import Event
+from .models import Event,Assignment
 from .serializers import EventSerializer
 from rest_framework.permissions import IsAuthenticated
 
@@ -970,91 +973,118 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
 
+from .serializers import AssignmentSerializer
 
-class AssignmentUploadView(APIView):
+    
+class AssignHomeworkView(APIView):
+    """
+    Allow teachers to assign homework to students of a specific class and subject.
+    """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
         """
-        Handle POST requests to upload an assignment.
-        Automatically assigns the logged-in student.
+        Assign homework to a specific class and subject.
         """
-        serializer = AssignmentSerializer(data=request.data)
-        if serializer.is_valid():
-            # Automatically assign the student based on the logged-in user
-            serializer.save(student=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        teacher = request.user
+        subject_id = request.data.get("subject")
+        class_id = request.data.get("class_assigned")
+        assignment_name = request.data.get("assignment_name")
+        description = request.data.get("description")
+        due_date = request.data.get("due_date")
 
-class AssignmentListView(APIView):
-
-    def get(self, request, format=None):
-        """
-        Retrieve a list of all assignments, optionally filtered by subject or student.
-        """
-        subject = request.query_params.get('subject', None)
-        student = request.query_params.get('student', None)
-        
-        assignments = Assignment.objects.all()
-
-        if subject:
-            assignments = assignments.filter(subject=subject)
-
-        if student:
-            assignments = assignments.filter(student__id=student)
-
-        serializer = AssignmentSerializer(assignments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-
-# API view to retrieve, update, or delete a specific assignment
-class AssignmentDetailView(APIView):
-    def get(self, request, pk, format=None):
-        """
-        Retrieve a specific assignment by its primary key.
-        """
-        try:
-            assignment = Assignment.objects.get(pk=pk)
-        except Assignment.DoesNotExist:
-            raise NotFound("Assignment not found.")
-
-        serializer = AssignmentSerializer(assignment)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    def put(self, request, pk, format=None):
-        """
-        Update an existing assignment by its primary key (pk).
-        Only the owner of the assignment can update it.
-        """
-        try:
-            # Fetch the assignment by ID, ensuring the current user is the owner
-            assignment = Assignment.objects.get(pk=pk, student=request.user)
-        except Assignment.DoesNotExist:
+        if not subject_id or not class_id or not assignment_name or not description or not due_date:
             return Response(
-                {"error": "Assignment not found or you are not authorized to edit it."},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "All fields (subject, class, assignment name, description, due date) are required."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Deserialize the request data
-        serializer = AssignmentSerializer(assignment, data=request.data, partial=True)  # Allow partial updates
-        if serializer.is_valid():
-            serializer.save()  # Save the updated instance
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        # Return validation errors
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk, format=None):
-        """
-        Handle DELETE requests to remove a specific assignment by primary key.
-        """
-        assignment = get_object_or_404(Assignment, pk=pk)  # Retrieve the Assignment instance by primary key
-        assignment.delete()  # Delete the Assignment instance
-        return Response(
-            {"message": "Assignment successfully deleted"},
-            status=status.HTTP_204_NO_CONTENT
+        subject_instance = get_object_or_404(Subject, id=subject_id)
+        class_instance = get_object_or_404(Class, id=class_id)
+
+        # Create the assignment
+        assignment = Assignment.objects.create(
+            subject=subject_instance,
+            class_assigned=class_instance,
+            assignment_name=assignment_name,
+            description=description,
+            due_date=due_date
         )
+
+        # Serialize and return the assignment
+        serializer = AssignmentSerializer(assignment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
+class SubmitAssignmentView(APIView):
+    """
+    View for students to submit their assignments.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        """
+        Submit an assignment for a student.
+        """
+        # Check if the student is trying to submit a valid assignment
+        assignment_id = request.data.get('assignment_id')
+        assignment = Assignment.objects.filter(id=assignment_id).first()
+
+        if not assignment:
+            return Response({"error": "Assignment not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if the assignment is already submitted
+        if assignment.submitted:
+            return Response({"error": "This assignment has already been submitted."}, status=status.HTTP_400_BAD_REQUEST)
+
+         # Validate student
+        student = request.user  # request.user is a CustomUser instance
+        if not hasattr(student, 'student'):
+            return Response({"error": "You are not a student."}, status=status.HTTP_403_FORBIDDEN)
+
+        if student.student.class_code != assignment.class_assigned:
+            return Response({"error": "You are not assigned to this class."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate submission file
+        submission_file = request.FILES.get('submission_file')
+        if not submission_file:
+            return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create submission
+        submission = AssignmentSubmission.objects.create(
+            assignment=assignment,
+            student=student,  # Use CustomUser instance
+            submission_file=submission_file
+        )
+
+        # Mark the assignment as submitted
+        assignment.submitted = True
+        assignment.save()
+
+        serializer = AssignmentSubmissionSerializer(submission)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class ReviewAssignmentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        # Ensure the user is a teacher
+        try:
+            teacher = user.teacher
+        except Teacher.DoesNotExist:
+            return Response({"error": "User is not a teacher."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if the teacher has any assigned subjects
+        if not teacher.subjects.exists():
+            return Response({"error": "No subjects assigned to this teacher."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch assignments related to the teacher's subjects
+        assignments = Assignment.objects.filter(subject__in=teacher.subjects.all())
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)    
+
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

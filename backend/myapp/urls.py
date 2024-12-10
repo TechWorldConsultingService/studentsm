@@ -70,10 +70,9 @@ urlpatterns = [
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
-
-    path('api/assignments/upload/', AssignmentUploadView.as_view(), name='assignment-upload'),  # For students to upload assignments
-    path('api/assignments/', AssignmentListView.as_view(), name='assignment-list'),  # To list all assignments
-    path('api/assignments/<int:pk>/', AssignmentDetailView.as_view(), name='assignment-detail'),  # For  details, update, and delete of a specific assignment
+    path('api/submit-assignment/', SubmitAssignmentView.as_view(), name='assignment-list'),
+    path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
+    path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
 
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
