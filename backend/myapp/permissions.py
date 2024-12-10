@@ -28,3 +28,21 @@ class IsPrincipalOrTeacher(BasePermission):
     """
     def has_permission(self, request, view):
         return hasattr(request.user, 'principal') or hasattr(request.user, 'teacher')
+
+class IsTeacher(BasePermission):
+    """
+    Custom permission to ensure only teachers can access certain views.
+    """
+
+    def has_permission(self, request, view):
+        # Allow only teachers
+        return request.user.subjects.exists()
+
+class IsStudent(BasePermission):
+    """
+    Allow only students to upload their assignments.
+    """
+
+    def has_permission(self, request, view):
+        # Allow only students
+        return hasattr(request.user, 'student')

@@ -83,9 +83,9 @@ class StaffAdmin(admin.ModelAdmin):
     list_filter = ('gender', 'role', 'date_of_joining')
 
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'student', 'subject', 'submitted_at')  # Columns to display in the list view
-    list_filter = ('subject', 'submitted_at')  # Filters for the sidebar
-    search_fields = ('title', 'student__username', 'subject')  # Searchable fields
+    list_display = ('id', 'description', 'subject')  # Columns to display in the list view
+    # list_filter = ('subject','student')  # Filters for the sidebar
+    search_fields = ('title', 'subject')  # Searchable fields
 
 class SyllabusAdmin(admin.ModelAdmin):
     list_display = ('class_assigned', 'subject', 'teacher', 'completion_percentage', 'created_at', 'updated_at')

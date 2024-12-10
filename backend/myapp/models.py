@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-
+from accounts.models import CustomUser
 # For creating Post/reel type content
 class Post(models.Model):
     POST_TYPES = [
@@ -89,7 +89,6 @@ class Staff(models.Model):
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}, Role: {self.role}"
 
-
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
     applicant_name = models.CharField(max_length=10)
@@ -163,15 +162,30 @@ class Event(models.Model):
     
 
 class Assignment(models.Model):
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
-    file = models.FileField(upload_to='assignments/')
+    # id = models.AutoField(primary_key=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignment')
-    submitted_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.title} by {self.student.username}"
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_assignments", null=True, blank=True)
+    assignment_name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    assigned_on = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField(null=True, blank=True)
+    submitted = models.BooleanField(default=False)  # To track whether a student has submitted their assignment
     
+    def __str__(self):
+        return f"{self.assignment_name} assigned to {self.student} due {self.due_date}"
+
+class AssignmentSubmission(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming `user` model is used for students
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='submissions')  # CustomUser reference
+    submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
+    submitted_on = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.student.username} - {self.assignment.assignment_name}"    
+
+
 class Syllabus(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False,default=1)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False, default=1)
@@ -214,7 +228,6 @@ class Fees(models.Model):
 
     def __str__(self):
         return f"{self.student.user.username} - Total: {self.total_amount} - Pending: {self.pending_amount}"
-
 
 class FeePaymentHistory(models.Model):
     fee_record = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='payment_history')
