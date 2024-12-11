@@ -1,13 +1,88 @@
-.ant-radio-button-checked{
+/* General styles */
+.ant-radio-button-checked {
     background-color: #581c87;
     border-color: #581c87;
 }
 
-
 :where(.css-dev-only-do-not-override-ccdg5a).ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
-border: 0cap;
+    border: 0;
 }
 
-.ant-radio-button-wrapper-block.css-dev-only-do-not-override-ccdg5a:hover{
-        color: #581c87;
+.ant-radio-button-wrapper-block.css-dev-only-do-not-override-ccdg5a:hover {
+    color: #581c87;
+}
+
+/* Layout for radio buttons */
+@media (max-width: 450px) {
+    /* Below 450px, radio buttons are displayed in a column (vertically) */
+    .ant-radio-group {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch; /* Ensure they take full width */
     }
+
+    .ant-radio-button-wrapper {
+        width: 100%; /* Ensure the radio buttons take full width */
+        margin-bottom: 10px;
+    }
+}
+
+@media (min-width: 451px) and (max-width: 768px) {
+    /* For screen sizes between 451px and 768px, hide the three-dot icon */
+    .task-icon {
+        display: none;
+    }
+
+    /* Display radio buttons in a dropdown on smaller devices */
+    .ant-radio-group {
+        display: block;
+    }
+}
+
+/* For larger screens (md and above), display radio buttons horizontally */
+@media (min-width: 768px) {
+    .ant-radio-group {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between; /* Adjust spacing between radio buttons */
+    }
+
+    .ant-radio-button-wrapper {
+        width: auto; /* Keep the width auto for row layout */
+        margin-bottom: 0;
+    }
+}
+
+/* For smaller screens (mobile phones), adjust the radio button layout further */
+@media (max-width: 576px) {
+    .ant-radio-button-wrapper {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .loading-spinner {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
+
+/* Content layout */
+.mt-6 {
+    margin-top: 1.5rem;
+    padding: 0 15px;
+}
+
+/* Responsive for content area */
+@media (max-width: 768px) {
+    .mt-6 {
+        padding: 0;
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 576px) {
+    .mt-6 {
+        padding: 0 10px;
+        margin-top: 5px;
+    }
+}

@@ -1,12 +1,13 @@
 import React from "react";
 import { FaRegMessage } from "react-icons/fa6";
-import { IoMdNotificationsOutline } from "react-icons/io";
+import { IoMdNotificationsOutline,IoMdSearch  } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { useDispatch, useSelector } from "react-redux";
 import { FaAngleDown } from "react-icons/fa6";
 import { Dropdown, Space } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../redux/reducerSlices/userSlice";
+
 
 const NavBar = () => {
   const dispatch = useDispatch();
@@ -37,16 +38,25 @@ const NavBar = () => {
   ];
 
   return (
-    <div className="flex items-center justify-between shadow-md p-2 pl-4 pr-6 bg-purple-900 text-white rounded-sm">
+    <div className="flex items-center justify-between shadow-md p-2  pl-6 pr-4 bg-gradient-to-b from-purple-800 to-purple-700 text-white ">
       <div className="flex gap-4 items-center">
-        <h4 className="font-semibold text-sm sm:text-lg">Dashboard</h4>
+        <span className="  font-semibold  ">Dashboard</span>
       </div>
 
-      <div className="flex gap-4 text-xl items-center">
-        <span>
+      <div className="flex gap-4  items-center">
+
+      <span className="flex items-center justify-center relative">
+  <input
+    placeholder="Search..."
+    className="border-none outline-none text-black p-0.5 pl-2 pr-8 rounded-md w-full md:block hidden"
+  />
+  <IoMdSearch className="text-white md:text-purple-800 text-lg  absolute right-2" />
+</span>
+        <span className="text-lg">
           <FaRegMessage />
         </span>
-        <span>
+
+        <span className="text-lg">
           <IoMdNotificationsOutline />
         </span>
 
@@ -56,12 +66,12 @@ const NavBar = () => {
           className="hover:text-white hover:bg-purple-800 text-sm hover:font-semibold rounded-md"
         >
           <Space>
-            <div className="flex p-1 items-center text-sm">
-              <span className="m-2 text-lg">
+            <div className="flex p-1 items-center text-sm ">
+              <span className="mr-2 text-2xl">
                 <CgProfile />
               </span>
-              <div className="flex flex-col">
-                <span className="font-semibold">{first_name} {last_name}</span>
+              <div className="hidden md:flex md:flex-col">
+                <span className="font-semibold ">{first_name} {last_name}</span>
                 <span className="text-xs">{role}</span>
               </div>
             </div>

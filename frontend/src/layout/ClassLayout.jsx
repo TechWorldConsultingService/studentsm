@@ -1,20 +1,21 @@
-import React from 'react'
-import NavBar from '../components/navBar'
-import ClassSidebar from '../components/classSidebar'
+import React, { useState } from "react";
+import NavBar from "../components/navBar";
+import ClassSidebar from "../components/classSidebar";
+import NavBelowMd from "../components/navBelowMd";
 
 
-const ClassLayout = ({children}) => {
+const ClassLayout = ({ children }) => {
   return (
-    
-      <div className="flex h-full w-screen ">
-      <ClassSidebar />
-      <div className=" flex w-full flex-col">
+    <div className="flex h-full w-screen flex-col md:flex-row ">
+      <div className="w-52 hidden md:block"> <ClassSidebar  /> </div>
+
+      <div className=" flex w-full flex-col ">
         <NavBar />
-        <div className='bg-gray-100 p-4'>{children}</div>
+        <NavBelowMd />
+        <div className="bg-gray-100 p-4 flex-1">{children}</div>
       </div>
     </div>
-      
-  )
-}
+  );
+};
 
-export default ClassLayout
+export default ClassLayout;

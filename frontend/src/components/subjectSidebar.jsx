@@ -9,10 +9,10 @@ const SubjectSidebar = () => {
     const { subjects } = useSelector((state) => state.user);
 
     return (
-        <div className="flex flex-col bg-gradient-to-b from-purple-800 to-purple-600 w-[15%] min-h-screen p-5 shadow-lg">
+        <div className="flex flex-col bg-gradient-to-b from-purple-800 to-purple-600  min-h-screen p-3 shadow-lg">
             {/* Logo and Name */}
             <NavLink to="/lms" className="flex flex-col items-center justify-center mb-6 text-center">
-                <img src="/logo.jpeg" className="h-16 w-32 mb-2" alt="Logo" />
+                <img src="/logo.jpeg" className="h-8 w-32 mb-2" alt="Logo" />
                 <span className="text-white">Satyam Xavier's</span>
             </NavLink>
 
