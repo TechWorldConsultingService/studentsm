@@ -17,7 +17,7 @@ const NavBelowMd = () => {
     )}  
     
       {toggleSidebar && (
-         <ClassSidebarMD setToggleSidebar={setToggleSidebar} toggleSidebar={toggleSidebar} />
+         <ClassSidebarMD setToggleSidebar={setToggleSidebar} />
         )}
     </div>
   );
