@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import NavBar from "../components/navBar";
 import ClassSidebar from "../components/classSidebar";
-import NavBelowMd from "../components/navBelowMd";
+import NavBelowMd from "../components/navClassBelowMd";
 
 
 const ClassLayout = ({ children }) => {

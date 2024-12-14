@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Radio } from "antd";
-import { PiDotsThreeBold } from "react-icons/pi";
 import "./taskForSubject.css";
 
 const ClassHome = lazy(() => import("../pages/TMS/classHome"));
@@ -29,22 +28,16 @@ const options = [
 
 const TaskForClass = () => {
   const [classTask, setClassTask] = useState("home");
-  const [showDropdown, setShowDropdown] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   const handleClassTask = (e) => {
     setClassTask(e.target.value);
   };
 
-  const handleIconClick = () => {
-    setShowDropdown(!showDropdown);
-  };
-
   // Handle screen resize
   useEffect(() => {
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth <= 768);
-      setShowDropdown(false); // Reset dropdown when resizing
     };
 
     window.addEventListener("resize", handleResize);
@@ -56,25 +49,11 @@ const TaskForClass = () => {
 
   return (
     <div className="task-for-class-container">
-      <div className="icon-container">
-        <PiDotsThreeBold
-          className="task-icon"
-          onClick={handleIconClick}
-          style={{ display: isSmallScreen && !showDropdown ? "block" : "none" }}
-        />
-      </div>
-
       {/* Dropdown for small screens */}
-      {showDropdown && isSmallScreen && (
+      {isSmallScreen && (
         <select
           value={classTask}
           onChange={handleClassTask}
-          style={{
-            padding: "8px",
-            width: "100%",
-            fontSize: "14px",
-            marginTop: "10px",
-          }}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
