@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from django.contrib.auth.models import User
 from .models import *
-from .models import Fees
+from .models import Class,Subject,Fees,Teacher
 from .serializers import * 
 from .serializers import FeesSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -993,6 +993,7 @@ class AssignHomeworkView(APIView):
         description = request.data.get("description")
         due_date = request.data.get("due_date")
 
+        # Check for missing fields
         if not subject_id or not class_id or not assignment_name or not description or not due_date:
             return Response(
                 {"error": "All fields (subject, class, assignment name, description, due date) are required."},
@@ -1001,10 +1002,24 @@ class AssignHomeworkView(APIView):
 
         subject_instance = get_object_or_404(Subject, id=subject_id)
         class_instance = get_object_or_404(Class, id=class_id)
+        
+        # if not subject_instance.teachers.filter(id=teacher.id).exists():
+        #     return Response({"error": "You are not authorized to assign this subject."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Ensure the teacher is authorized to assign to the class/subject
-        if not class_instance.teachers.filter(id=teacher.id).exists() or not subject_instance.teachers.filter(id=teacher.id).exists():
-            return Response({"error": "You are not authorized to assign this subject or class."}, status=status.HTTP_403_FORBIDDEN)
+        # Verify the subject is part of the class
+        if not class_instance.subjects.filter(id=subject_instance.id).exists():
+            return Response(
+                # {"error": "You are not authorized to assign this class."}, 
+                {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
+                status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Verify the teacher is authorized to assign to the class
+        if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
+            return Response(
+                {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Create the assignment
         assignment = Assignment.objects.create(
@@ -1019,12 +1034,40 @@ class AssignHomeworkView(APIView):
         serializer = AssignmentSerializer(assignment)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-class SubmitAssignmentView(APIView):
+class StudentAssignmentsView(APIView):
     """
-    View for students to submit their assignments.
+    View for students to fetch all assigned homework.
     """
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, format=None):
+        """
+        Retrieve all assignments assigned to the student's class.
+        """
+        try:
+            student = request.user.student  # Assuming a OneToOneField relationship
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Fetch all assignments for the student's class
+        assignments = Assignment.objects.filter(class_assigned=student.class_code)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for your class."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Serialize assignments and return the response
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class SubmitStudentAssignmentView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
     def post(self, request, format=None):
         """
         Submit an assignment for a student.
@@ -1034,20 +1077,30 @@ class SubmitAssignmentView(APIView):
         submission_file = request.FILES.get('submission_file')
 
         if not assignment_id:
-            return Response({"error": "Assignment ID are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Assignment ID are required."},
+                status=status.HTTP_400_BAD_REQUEST)
 
         if not submission_file:
-            return Response({"error": "Submission file are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Submission file are required."},
+                status=status.HTTP_400_BAD_REQUEST)
 
         assignment = get_object_or_404(Assignment, id=assignment_id)
         student = get_object_or_404(Student, user=request.user)
 
         if student.class_code != assignment.class_assigned:
-            return Response({"error": "This assignment is not for your class."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "This assignment is not for your class."}, 
+                status=status.HTTP_403_FORBIDDEN)
 
         # Check if the student has already submitted
-        if AssignmentSubmission.objects.filter(assignment=assignment,student=student).exists():
-            return Response({"error": "You have already submitted this assignment."}, status=status.HTTP_400_BAD_REQUEST)
+        if AssignmentSubmission.objects.filter(
+            assignment=assignment,student=student
+            ).exists():
+            return Response(
+                {"error": "You have already submitted this assignment."}, 
+                status=status.HTTP_400_BAD_REQUEST)
 
         # Create submission
         submission = AssignmentSubmission.objects.create(
