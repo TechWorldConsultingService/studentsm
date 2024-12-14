@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'myapp',
     'accounts',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'corsheaders',
 ]
@@ -102,7 +103,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
 
-    )
+    ) 
 }
 
 

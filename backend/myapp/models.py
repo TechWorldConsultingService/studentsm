@@ -177,7 +177,7 @@ class Assignment(models.Model):
 
 class AssignmentSubmission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
-    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming `user` model is used for students
+    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming user model is used for students
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="submissions")  # CustomUser reference
     submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
     submitted_on = models.DateTimeField(auto_now_add=True)
@@ -203,7 +203,7 @@ class Syllabus(models.Model):
             return 0
         return round((len(completed) / len(all_topics)) * 100, 2)
 
-    def __str__(self):
+    def ____str____(self):
         teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
@@ -225,7 +225,7 @@ class Fees(models.Model):
         self.status = 'Paid' if self.pending_amount <= 0 else 'Pending'
         super(Fees, self).save(*args, **kwargs)
 
-    def __str__(self):
+    def ____str____(self):
         return f"{self.student.user.username} - Total: {self.total_amount} - Pending: {self.pending_amount}"
 
 class FeePaymentHistory(models.Model):
@@ -240,5 +240,5 @@ class FeePaymentHistory(models.Model):
     transaction_id = models.CharField(max_length=255, null=True, blank=True)  # Transaction ID for reference
     notes = models.TextField(null=True, blank=True)  # Additional notes about the payment
 
-    def __str__(self):
+    def ____str____(self):
         return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}"

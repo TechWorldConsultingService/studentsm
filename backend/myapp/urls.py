@@ -70,8 +70,16 @@ urlpatterns = [
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
-    path('api/submit-assignment/', SubmitAssignmentView.as_view(), name='assignment-list'),
+    # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
+    
+    # Get assignments for students / to see all the assginments given by teacher
+    path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'),
+    
+    # Submit assignment by the student
+    path('api/submit-assignment/', SubmitStudentAssignmentView.as_view(), name='assignment-list'),
+    
+    # Review assignments by the teacher
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
 
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
