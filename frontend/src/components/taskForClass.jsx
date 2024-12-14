@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Radio } from "antd";
 import { PiDotsThreeBold } from "react-icons/pi";
 import "./taskForSubject.css";
@@ -30,6 +30,7 @@ const options = [
 const TaskForClass = () => {
   const [classTask, setClassTask] = useState("home");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth <= 768);
 
   const handleClassTask = (e) => {
     setClassTask(e.target.value);
@@ -39,19 +40,32 @@ const TaskForClass = () => {
     setShowDropdown(!showDropdown);
   };
 
+  // Handle screen resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth <= 768);
+      setShowDropdown(false); // Reset dropdown when resizing
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   return (
     <div className="task-for-class-container">
       <div className="icon-container">
-        {/* This icon will be displayed based on screen size */}
         <PiDotsThreeBold
           className="task-icon"
           onClick={handleIconClick}
-          style={{ display: showDropdown ? "none" : "block" }}
+          style={{ display: isSmallScreen && !showDropdown ? "block" : "none" }}
         />
       </div>
 
-      {/* Radio buttons as a dropdown below md screen size */}
-      {showDropdown && window.innerWidth <= 768 && (
+      {/* Dropdown for small screens */}
+      {showDropdown && isSmallScreen && (
         <select
           value={classTask}
           onChange={handleClassTask}
@@ -70,8 +84,8 @@ const TaskForClass = () => {
         </select>
       )}
 
-      {/* Radio buttons in a horizontal row above md screen size */}
-      {window.innerWidth > 768 && (
+      {/* Horizontal radio buttons for larger screens */}
+      {!isSmallScreen && (
         <Radio.Group
           block
           options={options}
@@ -95,5 +109,3 @@ const TaskForClass = () => {
 };
 
 export default TaskForClass;
-
-

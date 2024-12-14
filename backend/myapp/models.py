@@ -163,22 +163,22 @@ class Event(models.Model):
 
 class Assignment(models.Model):
     # id = models.AutoField(primary_key=True)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignment')
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True)
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_assignments", null=True, blank=True)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True, related_name="assignments")
+    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_assignments", null=True, blank=True)
     assignment_name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     assigned_on = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
-    submitted = models.BooleanField(default=False)  # To track whether a student has submitted their assignment
+    # submitted = models.BooleanField(default=False)  # To track whether a student has submitted their assignment
     
     def __str__(self):
-        return f"{self.assignment_name} assigned to {self.student} due {self.due_date}"
+        return f"{self.assignment_name} for {self.class_assigned.class_name} due {self.due_date}"
 
 class AssignmentSubmission(models.Model):
-    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
     # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming `user` model is used for students
-    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='submissions')  # CustomUser reference
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="submissions")  # CustomUser reference
     submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
     submitted_on = models.DateTimeField(auto_now_add=True)
     
@@ -207,7 +207,6 @@ class Syllabus(models.Model):
         teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
-
 
 class Fees(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')

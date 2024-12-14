@@ -389,16 +389,16 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 from .models import Assignment, AssignmentSubmission
-class AssignmentSubmissionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssignmentSubmission
-        fields = ['assignment', 'student', 'submission_file']
 
 class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
-        fields = ['id', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on', 'submitted']
+        fields = ['id', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
 
+class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignmentSubmission
+        fields = ['assignment', 'student', 'submission_file', 'submitted_on']
 
 
 
