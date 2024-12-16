@@ -30,6 +30,10 @@ import Subject from "./pages/LMS/subject";
 import AssignmentDetailPage from "./pages/LMS/AssignmentDetailPage"
 import TeachingManagementSystem from "./pages/TMS/tms"
 import Classes from "./pages/TMS/classes"
+import AssignmentSubmissions from "./pages/TMS/AssignmentSubmission";
+import NewAssignment from "./pages/TMS/NewAssignment";
+import AddNewNote from "./pages/TMS/AddNewNote";
+import ViewNotes from "./pages/TMS/ViewNotes";
 
 
 
@@ -145,6 +149,22 @@ const router = createBrowserRouter([
   {
     path:"/tms/:classes",
     element:<Classes />
+  },
+  {
+    path: "/submissions/:assignmentId",
+     element: <AssignmentSubmissions />
+  },
+  {
+    path: "/new-assignment" ,
+    element: <NewAssignment />
+  },
+  {
+    path:"/new-tip" ,
+    element:<AddNewNote />
+  },
+  {
+    path:"/view-tip/:id",
+     element:<ViewNotes />
   }
 ]);
 
