@@ -56,9 +56,9 @@ urlpatterns = [
 
     # API endpoints for classes
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
-    path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
+    path('api/classes/<str:class_code>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
     
-    # Daily Attendance URLs
+    # Daily Attendance URLs  (we may need to change class_id )
     path('api/classes/<int:class_id>/daily-attendance/', DailyAttendanceView.as_view(), name='daily-attendance-create'),
     path('api/classes/<int:class_id>/daily-attendance/<str:date>/', DailyAttendanceView.as_view(), name='daily-attendance-list'),
 

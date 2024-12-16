@@ -851,30 +851,34 @@ class ClassListCreateView(APIView):
 
 # API view to retrieve, update, or delete a specific class
 class ClassDetailView(APIView):
-    def get(self, request, pk, format=None):
+    # def get(self, request, pk, format=None):
+    def get(self, request, class_code, format=None):
         """
         Handle GET requests to retrieve the details of a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        # class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by class_code
+        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by class_code
         serializer = ClassSerializer(class_instance)  # Serialize the Class instance
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
-    def put(self, request, pk, format=None):
+    # def put(self, request, pk, format=None):
+    def put(self, request, class_code, format=None):
         """
         Handle PUT requests to update a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by primary key
         serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
 
-    def delete(self, request, pk, format=None):
+    # def delete(self, request, pk, format=None):
+    def delete(self, request, class_code, format=None):
         """
         Handle DELETE requests to remove a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
+        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by primary key
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
