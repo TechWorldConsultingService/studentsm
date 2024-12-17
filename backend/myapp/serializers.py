@@ -477,3 +477,11 @@ class FeesSerializer(serializers.ModelSerializer):
         instance.amount_paid = validated_data.get('amount_paid', instance.amount_paid)
         instance.save()
         return instance
+    
+from rest_framework import serializers
+from .models import StaffLocation
+
+class StaffLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffLocation
+        fields = ['staff', 'latitude', 'longitude', 'timestamp']

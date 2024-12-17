@@ -34,7 +34,7 @@ import AssignmentSubmissions from "./pages/TMS/AssignmentSubmission";
 import NewAssignment from "./pages/TMS/NewAssignment";
 import AddNewNote from "./pages/TMS/AddNewNote";
 import ViewNotes from "./pages/TMS/ViewNotes";
-
+import StaffMap from "./pages/mybus"
 
 
 const router = createBrowserRouter([
@@ -88,7 +88,7 @@ const router = createBrowserRouter([
 
   {
     path: "/mybus",
-    element: <MyBus />,
+    element: <StaffMap />,
   },
 
   {

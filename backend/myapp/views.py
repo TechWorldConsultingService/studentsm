@@ -1343,3 +1343,35 @@ class StudentPendingFeesView(ListAPIView):
         pending_fees = self.get_queryset()
         serializer = self.serializer_class(pending_fees, many=True)
         return Response(serializer.data)
+    
+from rest_framework.permissions import AllowAny
+class UpdateStaffLocationView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        # locations = StaffLocation.objects.all()  # Assuming all staff locations
+        # serializer = StaffLocationSerializer(locations, many=True)
+        # return Response({"locations": serializer.data})
+        staff_locations = StaffLocation.objects.all()
+        locations = [
+            {
+                'staff': location.staff.user.username,
+                'latitude': location.latitude,
+                'longitude': location.longitude,
+                'timestamp': location.timestamp
+            }
+            for location in staff_locations
+            # print(locations)
+        ]
+        # data = {"message": "Staff locations retrieved successfully"}
+        print(locations)
+
+        return Response({"locations":locations})
+
+    def post(self, request):
+        serializer = StaffLocationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(staff=request.user.staff)
+            return Response({"message": "Location updated successfully"})
+        return Response(serializer.errors, status=400)
