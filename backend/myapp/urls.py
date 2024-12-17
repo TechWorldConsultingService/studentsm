@@ -95,6 +95,7 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
 
+    path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
