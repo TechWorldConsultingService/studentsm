@@ -1,9 +1,10 @@
-// ClassHomework.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+
 const ClassHomework = () => {
-  // Sample data for previously given and running assignments
+
+ 
   const previousAssignments = [
     { id: 1, subject: 'Math', topics: 'Algebra', description: 'Complete exercises 1-10', dueDate: '2024-12-20' },
     { id: 2, subject: 'History', topics: 'WWII', description: 'Read chapters 5-8', dueDate: '2024-12-22' },
