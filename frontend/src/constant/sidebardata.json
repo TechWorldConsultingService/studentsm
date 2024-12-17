@@ -150,21 +150,20 @@
       },
       {
         "id": 6,
-        "title": "Request",
-        "icon": "IoIosGitPullRequest",
+        "title": "Add Curriculum",
+        "icon": "IoMdPersonAdd",
         "subSidebar": [
-          { "id": 1, "title": "All Request", "link": "/allrequest" },
-          { "id": 2, "title": "My request", "link": "/myrequest" },
-            { "id": 1, "title": "View", "link": "/viewLeave" }
+          { "id": 1, "title": "Class", "link": "/classList" },
+          { "id": 2, "title": "Subject", "link": "/subjectList" }
         ]
       },
       {
         "id": 7,
-        "title": "Add Person",
+        "title": "Add Learner",
         "icon": "IoMdPersonAdd",
         "subSidebar": [
-          { "id": 1, "title": "Add Teacher", "link": "/addTeacher" },
-          { "id": 2, "title": "Add Student", "link": "/addStudent" }
+          { "id": 1, "title": "Teacher", "link": "/addTeacher" },
+          { "id": 2, "title": "Student", "link": "/addStudent" }
         ]
       },
       {

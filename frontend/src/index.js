@@ -35,6 +35,11 @@ import NewAssignment from "./pages/TMS/NewAssignment";
 import AddNewNote from "./pages/TMS/AddNewNote";
 import ViewNotes from "./pages/TMS/ViewNotes";
 import StaffMap from "./pages/mybus"
+import AddClass from "./pages/principal/AddClass";
+import AddSubject from "./pages/principal/AddSubject"
+import ClassList from "./pages/principal/ClassList";
+import SubjectList from "./pages/principal/SubjectList";
+
 
 
 const router = createBrowserRouter([
@@ -165,6 +170,22 @@ const router = createBrowserRouter([
   {
     path:"/view-tip/:id",
      element:<ViewNotes />
+  },
+  {
+    path: "/addClass",
+    element: <AddClass />
+  },
+  {
+    path:"/addSubject",
+    element: <AddSubject />
+  },
+  {
+    path:"/classList",
+    element: <ClassList />
+  },
+  {
+    path:"/subjectList",
+    element: <SubjectList />
   }
 ]);
 
