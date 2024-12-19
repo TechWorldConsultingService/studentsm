@@ -93,6 +93,7 @@ class LoginAPIView(APIView):
 
             # Prepare the response data
             response_data = {
+                'id': user.id,  # Add the user's ID
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,

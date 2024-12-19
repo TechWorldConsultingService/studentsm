@@ -1,12 +1,20 @@
 import React,{useState} from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector,useDispatch } from 'react-redux';
 import { NavLink } from "react-router-dom";
 import { HiOutlineHome } from "react-icons/hi";
 import { SiGoogleclassroom } from "react-icons/si";
-
+// import { setSelectedClass } from "../features/user/userSlice"; // Import the new action
+import { setSelectedClass } from "../redux/reducerSlices/userSlice"; // Import the new action
+import userSlice from '../redux/reducerSlices/userSlice';
 
 const ClassSidebar = () => {
     const { classes } = useSelector((state) => state.user);
+    const dispatch = useDispatch();
+
+    const handleClassClick = (className) => {
+        dispatch(setSelectedClass({ className })); // Save to Redux
+        // console.log("Redux User State:", user);
+    };
 
     return (
         <div className="flex flex-col bg-gradient-to-b from-purple-700 to-purple-500  min-h-screen p-3 shadow-lg">
@@ -28,7 +36,7 @@ const ClassSidebar = () => {
                 <span className="ml-3 text-sm">Dashboard</span>
             </NavLink>
 
-            {/* Dynamic Subject Links */}
+            {/* Dynamic Class Links */}
             <div className="mb-2">
                 {classes.length > 0 ? (
                     classes.map((item) => {
@@ -36,6 +44,7 @@ const ClassSidebar = () => {
                             <div key={item.class_code} >
                                 <NavLink
                                     to={`/tms/${item.class_name.toLowerCase()}`}
+                                    onClick={() => handleClassClick(item.class_name)} // Dispatch the selected class
                                     className={({ isActive }) =>
                                         `flex items-center text-white hover:text-purple-200  hover:bg-purple-800 rounded-md p-3  ${isActive ? 'text-lg bg-purple-950' : ''}`
                                 }

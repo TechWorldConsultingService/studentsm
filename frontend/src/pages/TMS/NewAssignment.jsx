@@ -1,39 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import toast from "react-hot-toast";
 
-//validation schema
-const newHomeworkSchema = Yup.object().shape({
-  subject: Yup.string().required("Subject should select."),
-  assignment_name: Yup.string().required("Topics is required."),
-  description: Yup.string()
-    .required("Description is required.")
-    .min(12, "Description of homework must be more then 12 chacters."),
-  due_date: Yup.date().required("Due Date is required.").nullable(),
-});
-
 const NewAssignment = () => {
-  const nagivate = useNavigate();
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.user);
+  console.log(user)
+  const teacher_id = user?.id;
+  const selectedClass = user?.selectedClass; // Use selectedClass from Redux
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+  // const [selectedClass, setSelectedClass] = useState("");
 
-  const { subjects } = useSelector((state) => state.user);
-  const subjectList = subjects.map((item) => item.subject_name);
+  useEffect(() => {
+    if (teacher_id && selectedClass) {
+      fetch(`http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`)
+        .then((response) => response.json())
+        .then((data) => setSubjects(data))
+        .catch((error) => console.error("Error fetching subjects:", error));
+    } else {
+      console.log("User object:", user);
+      console.log("Selected Class:", selectedClass);
+      console.error("Teacher ID or class is undefined");
+      console.log("Teacher ID:", teacher_id);
+    }
+  }, [teacher_id, selectedClass]);
 
   const formik = useFormik({
     initialValues: {
       subject: "",
+      class_assigned: selectedClass || "",
       assignment_name: "",
       description: "",
       due_date: "",
     },
-    validationSchema: newHomeworkSchema,
-    onSubmit: (values) => {
-      console.log("New Assignment Submitted:", values);
-      toast.success("Assignment submitted successfully!");
-
-      nagivate(-1);
+    validationSchema: Yup.object({
+      subject: Yup.string().required("Subject is required"),
+      assignment_name: Yup.string().required("Assignment Name is required"),
+      description: Yup.string().required("Description is required"),
+      due_date: Yup.date().required("Due Date is required").nullable(),
+    }),
+    onSubmit: async (values) => {
+      setLoading(true);
+      try {
+        const response = await axios.post("http://localhost:8000/api/assignments/assign/", values);
+        toast.success("Assignment submitted successfully!");
+        navigate(-1); // Navigate back
+      } catch (error) {
+        console.error("Error submitting assignment:", error);
+        toast.error("Failed to submit the assignment.");
+      } finally {
+        setLoading(false);
+      }
     },
   });
 
@@ -58,7 +80,7 @@ const NewAssignment = () => {
                 <option disabled value="">
                   Select Subject
                 </option>
-                {subjectList.map((item) => (
+                {subjects.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>

@@ -13,14 +13,9 @@ import { useDispatch } from "react-redux";
 
 // Validation Schema
 const loginSchema = Yup.object().shape({
-  // email: Yup.string()
-  //   .email("Invalid email format")
-  //   .required("Email is required."),
-
   username: Yup.string()
     .min(3, "Username must be at least 3 letter")
     .required("Username is required."),
-
   password: Yup.string()
     .min(8, "Password must be at least 8 characters long.")
     .required("Password is required."),
@@ -53,17 +48,39 @@ const Login = () => {
         values
       );
 
-      const data = response.data; 
+      const userData = response.userData ; 
 
       if (response.status === 200) {
-        const successMessage = data.msg || "Login successful";
+        const successMessage = userData.msg || "Login successful";
         toast.success(successMessage);
-        dispatch(setLoginDetails(data));
+        dispatch(
+          setLoginDetails({
+            // userData
+            id: userData.id,
+          refresh: userData.refresh,
+          access: userData.access,
+          role: userData.role,
+          username: userData.username,
+          phone: userData.phone,
+          address: userData.address,
+          date_of_birth: userData.date_of_birth,
+          gender: userData.gender,
+          parents: userData.parents,
+          class: userData.class,
+          classes: userData.classes,
+          subjects: userData.subjects,
+          email: userData.email,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          class_teacher: userData.class_teacher,
+          date_of_joining: userData.date_of_joining,
+          })
+        );
 
 
 
         // Redirect based on role
-        switch (data.role) {
+        switch (userData.role) {
           case "student":
             navigate("/studentdashboard");
             break;
@@ -77,12 +94,12 @@ const Login = () => {
             navigate("/principaldashboard");
         }
       } else {
-        const errorMessage = data.msg || "Error during login.";
+        const errorMessage = userData.msg || "Error during login.";
         toast.error(errorMessage);
       }
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.msg) {
-        toast.error(error.response.data.msg);
+      if (error.response && error.response.userData && error.response.userData.msg) {
+        toast.error(error.response.userData.msg);
       } else {
         toast.error("Network error or server is down");
       }
