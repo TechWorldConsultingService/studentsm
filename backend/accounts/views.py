@@ -78,6 +78,16 @@ class LoginAPIView(APIView):
                     } if student_class else None,
                     'subjects': subjects  # Add subjects related to the student's class
                 }
+            elif hasattr(user, 'staff'):
+                staff = user.staff
+                role_data = {
+                    'role': 'staff',
+                    'phone': staff.phone,
+                    'address': staff.address,
+                    'gender': staff.gender,
+                    # 'position': staff.position if hasattr(staff, 'position') else None,
+                }
+            
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
 
