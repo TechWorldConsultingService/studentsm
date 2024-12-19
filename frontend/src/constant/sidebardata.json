@@ -162,8 +162,8 @@
         "title": "Add Learner",
         "icon": "IoMdPersonAdd",
         "subSidebar": [
-          { "id": 1, "title": "Teacher", "link": "/addTeacher" },
-          { "id": 2, "title": "Student", "link": "/addStudent" }
+          { "id": 1, "title": "Teacher", "link": "/teacherList" },
+          { "id": 2, "title": "Student", "link": "/studentList" }
         ]
       },
       {

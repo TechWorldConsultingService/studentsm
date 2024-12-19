@@ -39,6 +39,8 @@ import AddClass from "./pages/principal/AddClass";
 import AddSubject from "./pages/principal/AddSubject"
 import ClassList from "./pages/principal/ClassList";
 import SubjectList from "./pages/principal/SubjectList";
+import StudentList from "./pages/principal/StudentList";
+import TeacherList from "./pages/principal/TeacherList";
 
 
 
@@ -172,20 +174,20 @@ const router = createBrowserRouter([
      element:<ViewNotes />
   },
   {
-    path: "/addClass",
-    element: <AddClass />
-  },
-  {
-    path:"/addSubject",
-    element: <AddSubject />
-  },
-  {
     path:"/classList",
     element: <ClassList />
   },
   {
     path:"/subjectList",
     element: <SubjectList />
+  },
+  {
+    path: "/studentList",
+    element: <StudentList />
+  },
+  {
+    path: "/teacherList",
+    element: <TeacherList />
   }
 ]);
 
