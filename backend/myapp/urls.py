@@ -5,6 +5,13 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
+from .views import (
+    AssignHomeworkView,
+    FilterSubjectsView,
+    StudentAssignmentsView,
+    SubmitStudentAssignmentView,
+    ReviewAssignmentsView,
+)
 
 urlpatterns = [
     # Admin site URL
@@ -73,6 +80,10 @@ urlpatterns = [
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
     
+    # Filter subjects for a teacher and class
+    path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
+
+
     # Get assignments for students / to see all the assginments given by teacher
     path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'),
     

@@ -1037,7 +1037,25 @@ class AssignHomeworkView(APIView):
         # Serialize and return the assignment
         serializer = AssignmentSerializer(assignment)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+from rest_framework.permissions import AllowAny
+class FilterSubjectsView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        teacher = request.GET.get('teacher')
+        class_assigned = request.GET.get('class_assigned')
+
+        if not teacher or not teacher.isdigit():
+            return JsonResponse({"error": "Invalid or missing teacher parameter"}, status=400)
+        if not class_assigned or not class_assigned.isdigit():
+            return JsonResponse({"error": "Invalid or missing class parameter"}, status=400)
+        subjects = Subject.objects.filter(
+            teacher_id=int(teacher), class_assigned=int(class_assigned)
+        )
+        return JsonResponse({"subjects": list(subjects.values())}, safe=False)
+
 class StudentAssignmentsView(APIView):
     """
     View for students to fetch all assigned homework.

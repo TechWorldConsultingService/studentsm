@@ -160,10 +160,9 @@ class Event(models.Model):
     
 
 class Assignment(models.Model):
-    # id = models.AutoField(primary_key=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True, related_name="assignments")
-    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_assignments", null=True, blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, blank=True, null=True, related_name="assignments" )
     assignment_name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     assigned_on = models.DateTimeField(auto_now_add=True)
