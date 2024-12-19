@@ -48,39 +48,21 @@ const Login = () => {
         values
       );
 
-      const userData = response.userData ; 
+      const data = response.data ; 
 
       if (response.status === 200) {
-        const successMessage = userData.msg || "Login successful";
+        const successMessage = data.msg || "Login successful";
         toast.success(successMessage);
         dispatch(
-          setLoginDetails({
-            // userData
-            id: userData.id,
-          refresh: userData.refresh,
-          access: userData.access,
-          role: userData.role,
-          username: userData.username,
-          phone: userData.phone,
-          address: userData.address,
-          date_of_birth: userData.date_of_birth,
-          gender: userData.gender,
-          parents: userData.parents,
-          class: userData.class,
-          classes: userData.classes,
-          subjects: userData.subjects,
-          email: userData.email,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          class_teacher: userData.class_teacher,
-          date_of_joining: userData.date_of_joining,
-          })
+          setLoginDetails(
+            data
+          )
         );
 
 
 
         // Redirect based on role
-        switch (userData.role) {
+        switch (data.role) {
           case "student":
             navigate("/studentdashboard");
             break;
@@ -94,12 +76,12 @@ const Login = () => {
             navigate("/principaldashboard");
         }
       } else {
-        const errorMessage = userData.msg || "Error during login.";
+        const errorMessage = data.msg || "Error during login.";
         toast.error(errorMessage);
       }
     } catch (error) {
-      if (error.response && error.response.userData && error.response.userData.msg) {
-        toast.error(error.response.userData.msg);
+      if (error.response && error.response.data && error.response.data.msg) {
+        toast.error(error.response.data.msg);
       } else {
         toast.error("Network error or server is down");
       }
