@@ -17,19 +17,30 @@ const NewAssignment = () => {
   // const [selectedClass, setSelectedClass] = useState("");
 
   useEffect(() => {
+    console.log("Teacher ID:", teacher_id);
+    console.log("Selected Class:", selectedClass);
     if (teacher_id && selectedClass) {
+      // const classAssigned = parseInt(selectedClass, 10);
+      console.log("Class Assigned (Parsed):", selectedClass);
       fetch(`http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`)
         .then((response) => response.json())
-        .then((data) => setSubjects(data))
-        .catch((error) => console.error("Error fetching subjects:", error));
+        .then((data) => {
+          if (data?.subjects) {
+            setSubjects(data.subjects); // Update state with subjects array
+          } else {
+            console.error("Unexpected response format:", data); 
+            setSubjects([]); // Fallback to empty array
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching subjects:", error);
+          setSubjects([]); // Handle errors by setting subjects to an empty array
+        });
     } else {
-      console.log("User object:", user);
-      console.log("Selected Class:", selectedClass);
       console.error("Teacher ID or class is undefined");
-      console.log("Teacher ID:", teacher_id);
     }
   }, [teacher_id, selectedClass]);
-
+  
   const formik = useFormik({
     initialValues: {
       subject: "",
@@ -80,11 +91,18 @@ const NewAssignment = () => {
                 <option disabled value="">
                   Select Subject
                 </option>
-                {subjects.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+
+                {Array.isArray(subjects) && subjects.length > 0 ? (
+                  subjects.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled value="">
+                    No subjects available
                   </option>
-                ))}
+                )}
               </select>
 
               {formik.touched.subject && formik.errors.subject && (

@@ -1039,21 +1039,39 @@ class AssignHomeworkView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 from rest_framework.permissions import AllowAny
+from django.http import JsonResponse
+from rest_framework.views import APIView
+from .models import Teacher, Class, Subject
+
 class FilterSubjectsView(APIView):
-    # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
 
     def get(self, request):
-        teacher = request.GET.get('teacher')
+        teacher_id = request.GET.get('teacher')
         class_assigned = request.GET.get('class_assigned')
 
-        if not teacher or not teacher.isdigit():
-            return JsonResponse({"error": "Invalid or missing teacher parameter"}, status=400)
-        if not class_assigned or not class_assigned.isdigit():
-            return JsonResponse({"error": "Invalid or missing class parameter"}, status=400)
-        subjects = Subject.objects.filter(
-            teacher_id=int(teacher), class_assigned=int(class_assigned)
-        )
+        if not teacher_id or not class_assigned:
+            return JsonResponse({"error": "Missing teacher or class_assigned parameter"}, status=400)
+
+        try:
+            teacher_id = int(teacher_id)
+        except ValueError:
+            return JsonResponse({"error": "Invalid teacher parameter"}, status=400)
+
+        # Fetch teacher and the related class by name (matching 'class_assigned')
+        try:
+            teacher = Teacher.objects.get(id=teacher_id)
+        except Teacher.DoesNotExist:
+            return JsonResponse({"error": "Teacher not found"}, status=404)
+
+        try:
+            assigned_class = Class.objects.get(class_name=class_assigned)
+        except Class.DoesNotExist:
+            return JsonResponse({"error": f"Class '{class_assigned}' not found"}, status=404)
+
+        # Now filter the subjects for the teacher and the assigned class
+        subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
+        
         return JsonResponse({"subjects": list(subjects.values())}, safe=False)
 
 class StudentAssignmentsView(APIView):

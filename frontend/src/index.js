@@ -35,8 +35,8 @@ import NewAssignment from "./pages/TMS/NewAssignment";
 import AddNewNote from "./pages/TMS/AddNewNote";
 import ViewNotes from "./pages/TMS/ViewNotes";
 import StaffMap from "./pages/mybus"
-import AddClass from "./pages/principal/AddClass";
-import AddSubject from "./pages/principal/AddSubject"
+// import AddClass from "./pages/principal/AddClass";
+// import AddSubject from "./pages/principal/AddSubject"
 import ClassList from "./pages/principal/ClassList";
 import SubjectList from "./pages/principal/SubjectList";
 import StudentList from "./pages/principal/StudentList";
