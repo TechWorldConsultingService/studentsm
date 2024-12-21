@@ -10,40 +10,46 @@ const NewAssignment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   console.log(user)
+  const {Id,  token } = user
+  // const teacher_id = user?.id;
   const teacher_id = user?.id;
   const selectedClass = user?.selectedClass; // Use selectedClass from Redux
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(false);
   // const [selectedClass, setSelectedClass] = useState("");
 
-  const refreshAccessToken = async () => {
-    try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (!refreshToken) {
-          throw new Error("Refresh token is missing.");
-        }
-        const response = await axios.post("http://localhost:8000/api/token/refresh/", {
-            refresh: refreshToken,
-        });
-        localStorage.setItem("token", response.data.access); // Store new access token
-        return response.data.access; // Return new token
-    } catch (error) {
-        console.error("Failed to refresh token:", error.response?.data || error.message);
-        toast.error("Session expired. Please log in again.");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("token");
-        navigate("/"); // Redirect to login
-    }
-  };
+  // const refreshAccessToken = async () => {
+  //   try {
+  //       const refreshToken = token;
+  //       if (!refreshToken) {
+  //         throw new Error("Refresh token is missing.");
+  //       }
+  //       const response = await axios.post("http://localhost:8000/api/token/refresh/", {
+  //           refresh: refreshToken,
+  //       });
 
+  //       const newToken = response.data.access;
+  //       localStorage.setItem("token", newToken); // Store new access token
+  //       return newToken; // Return new token
+  //   } catch (error) {
+  //       console.error("Failed to refresh token:", error.response?.data || error.message);
+  //       toast.error("Session expired. Please log in again.");
+  //       localStorage.removeItem("refresh_token");
+  //       localStorage.removeItem("token");
+  //       navigate("/"); // Redirect to login
+  //       return null; // Indicate failure
+  //   }
+  // };
 
   useEffect(() => {
     console.log("Teacher ID:", teacher_id);
     console.log("Selected Class:", selectedClass);
+
     if (teacher_id && selectedClass) {
       // const classAssigned = parseInt(selectedClass, 10);
       console.log("Class Assigned (Parsed):", selectedClass);
-      fetch(`http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`)
+      fetch(
+        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}` )
         .then((response) => response.json())
         .then((data) => {
           console.log("data is:",data)
@@ -80,34 +86,38 @@ const NewAssignment = () => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        console.log("authentication token is:", token);
         const token = localStorage.getItem("token"); // Retrieve token from storage
+
         if (!token) {
           toast.error("Authentication token is missing.");
           return;
         }
-        console.log("token",token);
+        console.log("authentication token is:", token);
+        console.log("values is:", values);
+
         const config = {
           headers: {
             Authorization: `Bearer ${token}`, // Include token in Authorization header
           },
         };
 
-        const response = await axios.post("http://localhost:8000/api/assignments/assign/", values,config);
+        const response = await axios.post("http://localhost:8000/api/assignments/assign/", 
+          values, config
+        );
         
         toast.success("Assignment submitted successfully!");
         navigate(-1); // Navigate back
       } catch (error) {
-        if (error.response.status === 401) {
-          await refreshAccessToken(); // Try refreshing the token
+        console.error("Error submitting assignment:", error.response || error);
+
+        if (error.response?.status === 401) {
+          // await refreshAccessToken(); // Try refreshing the token
           // Retry the original request after refreshing
         } else {
           console.error("Error submitting assignment:", error.response || error);
           toast.error(error.response?.data?.detail || "Failed to submit the assignment.");
 
         }
-
-        
       } finally {
         setLoading(false);
       }
