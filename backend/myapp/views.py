@@ -980,65 +980,52 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
 from .serializers import AssignmentSerializer
 
 from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import AssignmentSerializer
+from .models import Subject, Class
+
 class AssignHomeworkView(APIView):
     """
     Allow teachers to assign homework to students of a specific class and subject.
     """
-    # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        print("Authorization Header:", request.headers.get('Authorization'))
         """
         Assign homework to a specific class and subject.
         """
         teacher = request.user
-        subject_id = request.data.get("subject")
-        class_id = request.data.get("class_assigned")
-        assignment_name = request.data.get("assignment_name")
-        description = request.data.get("description")
-        due_date = request.data.get("due_date")
 
-        # Check for missing fields
-        if not subject_id or not class_id or not assignment_name or not description or not due_date:
-            return Response(
-                {"error": "All fields (subject, class, assignment name, description, due date) are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Use the serializer for validation and creation
+        serializer = AssignmentSerializer(data=request.data)
+        if serializer.is_valid():
+            # Validate teacher's authorization for class and subject
+            subject_instance = serializer.validated_data['subject']
+            class_instance = serializer.validated_data['class_assigned']
 
-        subject_instance = get_object_or_404(Subject, id=subject_id)
-        class_instance = get_object_or_404(Class, id=class_id)
-        
-        # if not subject_instance.teachers.filter(id=teacher.id).exists():
-        #     return Response({"error": "You are not authorized to assign this subject."}, status=status.HTTP_403_FORBIDDEN)
-
-        # Verify the subject is part of the class
-        if not class_instance.subjects.filter(id=subject_instance.id).exists():
-            return Response(
-                # {"error": "You are not authorized to assign this class."}, 
-                {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
-                status=status.HTTP_400_BAD_REQUEST
+            # Ensure subject belongs to the class
+            if not class_instance.subjects.filter(id=subject_instance.id).exists():
+                return Response(
+                    {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-        
-        # Verify the teacher is authorized to assign to the class
-        if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
-            return Response(
-                {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
-        # Create the assignment
-        assignment = Assignment.objects.create(
-            subject=subject_instance,
-            class_assigned=class_instance,
-            assignment_name=assignment_name,
-            description=description,
-            due_date=due_date
-        )
+            # Ensure teacher is authorized for the class
+            if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
+                return Response(
+                    {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        # Serialize and return the assignment
-        serializer = AssignmentSerializer(assignment)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Save the assignment
+            assignment = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Return validation errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 from rest_framework.permissions import AllowAny
 from django.http import JsonResponse

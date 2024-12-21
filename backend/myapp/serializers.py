@@ -391,6 +391,10 @@ class EventSerializer(serializers.ModelSerializer):
 from .models import Assignment, AssignmentSubmission
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    class_assigned = serializers.SlugRelatedField(
+        queryset=Class.objects.all(),  # Fetch class based on `class_name`
+        slug_field='class_name'        # Use `class_name` for representation and lookup
+    )
     class Meta:
         model = Assignment
         fields = ['id', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
