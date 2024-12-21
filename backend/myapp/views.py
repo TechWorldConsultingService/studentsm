@@ -1410,3 +1410,122 @@ class UpdateStaffLocationView(APIView):
             serializer.save(staff=request.user.staff)
             return Response({"message": "Location updated successfully"})
         return Response(serializer.errors, status=400)
+
+
+
+# Discussion Topic API Views
+class DiscussionTopicAPIView(APIView):
+    """
+    API View to list and create discussion topics.
+    """
+
+    def get(self, request):
+        topics = DiscussionTopic.objects.all()
+        serializer = DiscussionTopicSerializer(topics, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = DiscussionTopicSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Discussion Post API Views
+class DiscussionPostAPIView(APIView):
+    """
+    API View to list and create posts under a specific topic.
+    """
+
+    def get(self, request, topic_id):
+        posts = DiscussionPost.objects.filter(topic_id=topic_id)
+        serializer = DiscussionPostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, topic_id):
+        data = request.data.copy()
+        data['topic'] = topic_id
+        serializer = DiscussionPostSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Discussion Comment API Views
+class DiscussionCommentAPIView(APIView):
+    """
+    API View to list and create comments under a specific post.
+    """
+
+    def get(self, request, post_id):
+        comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
+        serializer = DiscussionCommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, post_id):
+        data = request.data.copy()
+        data['post'] = post_id
+        serializer = DiscussionCommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DiscussionTopicDeleteAPIView(APIView):
+    """
+    API View to delete a discussion topic.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, topic_id):
+        try:
+            topic = DiscussionTopic.objects.get(id=topic_id)
+        except DiscussionTopic.DoesNotExist:
+            return Response({"error": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if topic.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this topic.")
+
+        topic.delete()
+        return Response({"message": "Topic deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class DiscussionPostDeleteAPIView(APIView):
+    """
+    API View to delete a discussion post.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this post.")
+
+        post.delete()
+        return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class DiscussionCommentDeleteAPIView(APIView):
+    """
+    API View to delete a discussion comment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if comment.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this comment.")
+
+        comment.delete()
+        return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
