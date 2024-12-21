@@ -253,3 +253,35 @@ class StaffLocation(models.Model):
 
     def __str__(self):
         return f"{self.staff.username} - {self.timestamp}"
+
+
+
+class DiscussionTopic(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class DiscussionPost(models.Model):
+    topic = models.ForeignKey(DiscussionTopic, on_delete=models.CASCADE, related_name="posts")
+    content = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Post by {self.created_by.username} in {self.topic.title}"
+
+
+class DiscussionComment(models.Model):
+    post = models.ForeignKey(DiscussionPost, on_delete=models.CASCADE, related_name="comments")
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    content = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.created_by.username} on {self.post.content[:20]}"

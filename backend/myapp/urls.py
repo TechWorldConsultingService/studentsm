@@ -107,6 +107,18 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
 
     path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
+    
+    # API endpoints for discussion forums
+    path('api/topics/', DiscussionTopicAPIView.as_view(), name='discussion-topic-api'),
+    path('api/topics/<int:topic_id>/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
+    path('api/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
+    
+    # API endpoints for deleting discussion forums
+    path('api/topics/<int:topic_id>/delete/', DiscussionTopicDeleteAPIView.as_view(), name='discussion-topic-delete'),
+    path('api/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
+    path('api/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
+
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

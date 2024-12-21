@@ -4,7 +4,7 @@ from django import forms
 from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
-    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory
+    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionTopic, DiscussionPost, DiscussionComment,
 )
 
 @admin.register(Post)
@@ -42,6 +42,7 @@ class PrincipalAdmin(admin.ModelAdmin):
     list_filter = ('gender',)
 
 # Student admin customization
+@admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'phone', 'address', 'date_of_birth', 'gender', 'class_code')
     search_fields = ('user__username', 'phone', 'address')
@@ -183,3 +184,23 @@ class FeePaymentHistoryAdmin(admin.ModelAdmin):
 class StaffLocationAdmin(admin.ModelAdmin):
     list_display = ['staff','latitude','altitude']
 
+
+@admin.register(DiscussionTopic)
+class DiscussionTopicAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'created_by', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at',)  # Filters on the sidebar
+    search_fields = ('title', 'created_by__username')  # Search functionality
+
+# DiscussionPost admin customization
+@admin.register(DiscussionPost)
+class DiscussionPostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'topic', 'created_by', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at', 'topic')  # Filters on the sidebar
+    search_fields = ('topic__title', 'content', 'created_by__username')  # Search functionality
+
+# DiscussionComment admin customization
+@admin.register(DiscussionComment)
+class DiscussionCommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'post', 'created_by', 'parent', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at', 'post')  # Filters on the sidebar
+    search_fields = ('post__content', 'content', 'created_by__username')  # Search functionality
