@@ -16,6 +16,27 @@ const NewAssignment = () => {
   const [loading, setLoading] = useState(false);
   // const [selectedClass, setSelectedClass] = useState("");
 
+  const refreshAccessToken = async () => {
+    try {
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (!refreshToken) {
+          throw new Error("Refresh token is missing.");
+        }
+        const response = await axios.post("http://localhost:8000/api/token/refresh/", {
+            refresh: refreshToken,
+        });
+        localStorage.setItem("token", response.data.access); // Store new access token
+        return response.data.access; // Return new token
+    } catch (error) {
+        console.error("Failed to refresh token:", error.response?.data || error.message);
+        toast.error("Session expired. Please log in again.");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("token");
+        navigate("/"); // Redirect to login
+    }
+  };
+
+
   useEffect(() => {
     console.log("Teacher ID:", teacher_id);
     console.log("Selected Class:", selectedClass);
@@ -59,7 +80,12 @@ const NewAssignment = () => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
+        console.log("authentication token is:", token);
         const token = localStorage.getItem("token"); // Retrieve token from storage
+        if (!token) {
+          toast.error("Authentication token is missing.");
+          return;
+        }
         console.log("token",token);
         const config = {
           headers: {
@@ -72,8 +98,16 @@ const NewAssignment = () => {
         toast.success("Assignment submitted successfully!");
         navigate(-1); // Navigate back
       } catch (error) {
-        console.error("Error submitting assignment:", error);
-        toast.error("Failed to submit the assignment.");
+        if (error.response.status === 401) {
+          await refreshAccessToken(); // Try refreshing the token
+          // Retry the original request after refreshing
+        } else {
+          console.error("Error submitting assignment:", error.response || error);
+          toast.error(error.response?.data?.detail || "Failed to submit the assignment.");
+
+        }
+
+        
       } finally {
         setLoading(false);
       }
@@ -181,9 +215,9 @@ const NewAssignment = () => {
           <div className="mt-6 text-center">
             <button
               type="submit"
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
+              className ="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
             >
-              Submit Assignment
+              Create Assignment
             </button>
           </div>
         </form>

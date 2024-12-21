@@ -979,14 +979,16 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 from .serializers import AssignmentSerializer
 
-    
+from rest_framework.permissions import AllowAny
 class AssignHomeworkView(APIView):
     """
     Allow teachers to assign homework to students of a specific class and subject.
     """
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request, format=None):
+        print("Authorization Header:", request.headers.get('Authorization'))
         """
         Assign homework to a specific class and subject.
         """
