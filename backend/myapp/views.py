@@ -1048,20 +1048,31 @@ class FilterSubjectsView(APIView):
 
     def get(self, request):
         teacher_id = request.GET.get('teacher')
+        print(teacher_id)
+        
         class_assigned = request.GET.get('class_assigned')
+        print(class_assigned)
 
         if not teacher_id or not class_assigned:
             return JsonResponse({"error": "Missing teacher or class_assigned parameter"}, status=400)
-
+        teacher_id = int(teacher_id)
         try:
             teacher_id = int(teacher_id)
         except ValueError:
             return JsonResponse({"error": "Invalid teacher parameter"}, status=400)
 
-        # Fetch teacher and the related class by name (matching 'class_assigned')
+        print(f"Received teacher ID: {teacher_id}")
+        # Fetch the teacher by user_id (which is teacher_id)
         try:
+            # print(f"Teacher is : {Teacher}")
+
             teacher = Teacher.objects.get(id=teacher_id)
+            # teacher = Teacher.objects.get(teacher_id)
+            print(f"Teacher is : {Teacher}")
+
+            print(f"teachersssss ID: {teacher}")
         except Teacher.DoesNotExist:
+            print(f"Teacher with user_id {teacher_id} not found.")
             return JsonResponse({"error": "Teacher not found"}, status=404)
 
         try:
@@ -1071,7 +1082,6 @@ class FilterSubjectsView(APIView):
 
         # Now filter the subjects for the teacher and the assigned class
         subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
-        
         return JsonResponse({"subjects": list(subjects.values())}, safe=False)
 
 class StudentAssignmentsView(APIView):
