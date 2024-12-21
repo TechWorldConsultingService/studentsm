@@ -1,39 +1,114 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import toast from "react-hot-toast";
 
-//validation schema
-const newHomeworkSchema = Yup.object().shape({
-  subject: Yup.string().required("Subject should select."),
-  assignment_name: Yup.string().required("Topics is required."),
+
+
+const  newAssignmentSchema= Yup.object({
+  subject: Yup.string()
+  .required("Subject is required"),
+  assignment_name: Yup.string()
+  .required("Assignment Name is required"),
   description: Yup.string()
-    .required("Description is required.")
-    .min(12, "Description of homework must be more then 12 chacters."),
-  due_date: Yup.date().required("Due Date is required.").nullable(),
-});
+  .required("Description is required"),
+  due_date: Yup.date()
+  .required("Due Date is required").nullable(),
+})
+
 
 const NewAssignment = () => {
-  const nagivate = useNavigate();
+  const navigate = useNavigate();
+  const user = useSelector((state) => state.user);
+  console.log(user)
+  const { access} = user
+  const teacher_id = user?.id;
+  const selectedClass = user?.selectedClass; // Use selectedClass from Redux
+  const [subjects, setSubjects] = useState([]);
+  // const [selectedClass, setSelectedClass] = useState("");
 
-  const { subjects } = useSelector((state) => state.user);
-  const subjectList = subjects.map((item) => item.subject_name);
+  // const refreshAccessToken = async () => {
+  //   try {
+  //       const refreshToken = token;
+  //       if (!refreshToken) {
+  //         throw new Error("Refresh token is missing.");
+  //       }
+  //       const response = await axios.post("http://localhost:8000/api/token/refresh/", {
+  //           refresh: refreshToken,
+  //       });
 
+  //       const newToken = response.data.access;
+  //       localStorage.setItem("token", newToken); // Store new access token
+  //       return newToken; // Return new token
+  //   } catch (error) {
+  //       console.error("Failed to refresh token:", error.response?.data || error.message);
+  //       toast.error("Session expired. Please log in again.");
+  //       localStorage.removeItem("refresh_token");
+  //       localStorage.removeItem("token");
+  //       navigate("/"); // Redirect to login
+  //       return null; // Indicate failure
+  //   }
+  // };
+
+  useEffect(() => {
+    console.log("Teacher ID:", teacher_id);
+    console.log("Selected Class:", selectedClass);
+
+    if (access) {
+      // const classAssigned = parseInt(selectedClass, 10);
+      fetch(
+        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}` )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data?.subjects) {
+            setSubjects(data.subjects); // Update state with subjects array
+          }
+        })
+        .catch((error) => {
+          setSubjects([]); // Handle errors by setting subjects to an empty array
+        });
+    } else {
+      console.error("Teacher ID or class is undefined");
+    }
+  }, [access]);
+  
+  
   const formik = useFormik({
     initialValues: {
-      subject: "",
+      subject:"",
+      class_assigned: selectedClass,
       assignment_name: "",
       description: "",
       due_date: "",
     },
-    validationSchema: newHomeworkSchema,
-    onSubmit: (values) => {
-      console.log("New Assignment Submitted:", values);
-      toast.success("Assignment submitted successfully!");
+    validationSchema: newAssignmentSchema,
+    onSubmit: async (values) => {
+      try {
+        if (!access) {
+          toast.error("Authentication token is missing.");
+          return;
+        }
+        await axios.post(
+          "http://localhost:8000/api/assignments/assign/",
+         values,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`, // Assuming token is stored in local storage
+            },
+          }
+        );
 
-      nagivate(-1);
+        toast.success("Assignment submitted successfully!");
+        navigate(-1);
+      } catch (error) {
+        console.error("Error submitting assignment:", error.response || error);
+        toast.error("Error submitting assignment:", error.response || error);
+
+      } 
     },
   });
 
@@ -46,6 +121,22 @@ const NewAssignment = () => {
 
         <form onSubmit={formik.handleSubmit} className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:space-x-4 sm:space-y-0 space-y-4">
+
+
+          <div className="flex flex-col w-full sm:w-1/2">
+              <label className="text-purple-700 font-semibold">Class</label>
+              <input
+                type="text"
+                id="class_assigned"
+                name="class_assigned"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.class_assigned}
+                className="mt-2 p-2 rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+
             <div className="flex flex-col w-full sm:w-1/2">
               <label className="text-purple-700 font-semibold">Subject</label>
               <select
@@ -58,13 +149,22 @@ const NewAssignment = () => {
                 <option disabled value="">
                   Select Subject
                 </option>
-                {subjectList.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
 
+                { subjects.length > 0 ? (
+                  subjects.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.subject_name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled value="">
+                    No subjects available
+                  </option>
+                )}
+              </select>
+{
+  console.log(subjects)
+}
               {formik.touched.subject && formik.errors.subject && (
                 <div className="text-red-500 text-sm">
                   {formik.errors.subject}
@@ -131,9 +231,9 @@ const NewAssignment = () => {
           <div className="mt-6 text-center">
             <button
               type="submit"
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
+              className ="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
             >
-              Submit Assignment
+              Create Assignment
             </button>
           </div>
         </form>

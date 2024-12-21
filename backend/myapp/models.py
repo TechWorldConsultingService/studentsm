@@ -52,7 +52,8 @@ class Teacher(models.Model):
     class_teacher = models.ForeignKey(Class, related_name="class_teacher", on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return self.user.username
+        # return self.user.username
+        return str(self.id)
  
 class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -160,10 +161,9 @@ class Event(models.Model):
     
 
 class Assignment(models.Model):
-    # id = models.AutoField(primary_key=True)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True, related_name="assignments")
-    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="student_assignments", null=True, blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, blank=True, null=True, related_name="assignments" )
     assignment_name = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     assigned_on = models.DateTimeField(auto_now_add=True)
@@ -253,3 +253,35 @@ class StaffLocation(models.Model):
 
     def __str__(self):
         return f"{self.staff.username} - {self.timestamp}"
+
+
+
+class DiscussionTopic(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+class DiscussionPost(models.Model):
+    topic = models.ForeignKey(DiscussionTopic, on_delete=models.CASCADE, related_name="posts")
+    content = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Post by {self.created_by.username} in {self.topic.title}"
+
+
+class DiscussionComment(models.Model):
+    post = models.ForeignKey(DiscussionPost, on_delete=models.CASCADE, related_name="comments")
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    content = models.TextField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.created_by.username} on {self.post.content[:20]}"

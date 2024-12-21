@@ -1,8 +1,10 @@
 from django.contrib import admin
+from django import forms
+
 from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
-    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory
+    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionTopic, DiscussionPost, DiscussionComment,
 )
 
 @admin.register(Post)
@@ -40,6 +42,7 @@ class PrincipalAdmin(admin.ModelAdmin):
     list_filter = ('gender',)
 
 # Student admin customization
+@admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'phone', 'address', 'date_of_birth', 'gender', 'class_code')
     search_fields = ('user__username', 'phone', 'address')
@@ -91,8 +94,47 @@ class StaffAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'phone', 'address', 'role')
     list_filter = ('gender', 'role', 'date_of_joining')
 
+
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = ['teacher','class_assigned','subject','assignment_name','description','due_date']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Default queryset for subject
+        self.fields['subject'].queryset = Subject.objects.none()
+
+        if 'teacher' in self.data and 'class_assigned' in self.data:
+            try:
+                teacher_id = int(self.data.get('teacher'))
+                class_id = int(self.data.get('class_assigned'))
+                teacher = Teacher.objects.get(id=teacher_id)
+                class_obj = Class.objects.get(id=class_id)
+                # Filter subjects: taught by the teacher AND available in the class
+                self.fields['subject'].queryset = teacher.subjects.filter(classes=class_obj)
+
+            except (ValueError, TypeError, Teacher.DoesNotExist, Class.DoesNotExist):
+                pass
+        elif self.instance.pk:
+            # Populate when editing an existing assignment
+            teacher = self.instance.teacher
+            class_obj = self.instance.class_assigned
+            self.fields['subject'].queryset = teacher.subjects.filter(classes=class_obj)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        teacher = cleaned_data.get('teacher')
+        class_assigned = cleaned_data.get('class_assigned')
+        subject = cleaned_data.get('subject')
+
+        if subject and not subject.classes.filter(id=class_assigned.id).exists():
+            raise forms.ValidationError("The selected subject is not available in the assigned class.")
+        return cleaned_data
+        
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
+    form = AssignmentForm  # Link the custom form
     list_display = ('id', 'description', 'subject')  # Columns to display in the list view
     # list_filter = ('subject','student')  # Filters for the sidebar
     search_fields = ('title', 'subject')  # Searchable fields
@@ -142,3 +184,23 @@ class FeePaymentHistoryAdmin(admin.ModelAdmin):
 class StaffLocationAdmin(admin.ModelAdmin):
     list_display = ['staff','latitude','altitude']
 
+
+@admin.register(DiscussionTopic)
+class DiscussionTopicAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'created_by', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at',)  # Filters on the sidebar
+    search_fields = ('title', 'created_by__username')  # Search functionality
+
+# DiscussionPost admin customization
+@admin.register(DiscussionPost)
+class DiscussionPostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'topic', 'created_by', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at', 'topic')  # Filters on the sidebar
+    search_fields = ('topic__title', 'content', 'created_by__username')  # Search functionality
+
+# DiscussionComment admin customization
+@admin.register(DiscussionComment)
+class DiscussionCommentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'post', 'created_by', 'parent', 'created_at')  # Fields displayed in the admin list view
+    list_filter = ('created_at', 'post')  # Filters on the sidebar
+    search_fields = ('post__content', 'content', 'created_by__username')  # Search functionality

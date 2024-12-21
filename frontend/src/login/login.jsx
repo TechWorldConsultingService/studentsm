@@ -16,14 +16,9 @@ import { useDispatch } from "react-redux";
 
 // Validation Schema
 const loginSchema = Yup.object().shape({
-  // email: Yup.string()
-  //   .email("Invalid email format")
-  //   .required("Email is required."),
-
   username: Yup.string()
     .min(3, "Username must be at least 3 letter")
     .required("Username is required."),
-
   password: Yup.string()
     .min(8, "Password must be at least 8 characters long.")
     .required("Password is required."),
@@ -56,12 +51,16 @@ const Login = () => {
         values
       );
 
-      const data = response.data; 
+      const data = response.data ; 
 
       if (response.status === 200) {
         const successMessage = data.msg || "Login successful";
         toast.success(successMessage);
-        dispatch(setLoginDetails(data));
+        dispatch(
+          setLoginDetails(
+            data
+          )
+        );
 
 
 

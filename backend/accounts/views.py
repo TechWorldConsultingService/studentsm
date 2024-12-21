@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 
 
@@ -30,11 +31,11 @@ class LoginAPIView(APIView):
             refresh = RefreshToken.for_user(user)
 
             # Determine the role and retrieve the role-specific data
-            # Determine the role and retrieve the role-specific data
             role_data = {}
             if hasattr(user, 'teacher'):
                 teacher = user.teacher
                 role_data = {
+                    'id': teacher.id,  # Ensure you send teacher's ID, not user ID
                     'role': 'teacher',
                     'phone': teacher.phone,
                     'address': teacher.address,
@@ -93,6 +94,8 @@ class LoginAPIView(APIView):
 
             # Prepare the response data
             response_data = {
+                # 'id': user.id,  # Add the user's ID
+                'id': role_data.get('id'),  # Use the role-specific ID
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,

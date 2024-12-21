@@ -979,65 +979,100 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 from .serializers import AssignmentSerializer
 
-    
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import AssignmentSerializer
+from .models import Subject, Class
+
 class AssignHomeworkView(APIView):
     """
     Allow teachers to assign homework to students of a specific class and subject.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request, format=None):
         """
         Assign homework to a specific class and subject.
         """
         teacher = request.user
-        subject_id = request.data.get("subject")
-        class_id = request.data.get("class_assigned")
-        assignment_name = request.data.get("assignment_name")
-        description = request.data.get("description")
-        due_date = request.data.get("due_date")
 
-        # Check for missing fields
-        if not subject_id or not class_id or not assignment_name or not description or not due_date:
-            return Response(
-                {"error": "All fields (subject, class, assignment name, description, due date) are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Use the serializer for validation and creation
+        serializer = AssignmentSerializer(data=request.data)
+        if serializer.is_valid():
+            # Validate teacher's authorization for class and subject
+            subject_instance = serializer.validated_data['subject']
+            class_instance = serializer.validated_data['class_assigned']
 
-        subject_instance = get_object_or_404(Subject, id=subject_id)
-        class_instance = get_object_or_404(Class, id=class_id)
-        
-        # if not subject_instance.teachers.filter(id=teacher.id).exists():
-        #     return Response({"error": "You are not authorized to assign this subject."}, status=status.HTTP_403_FORBIDDEN)
-
-        # Verify the subject is part of the class
-        if not class_instance.subjects.filter(id=subject_instance.id).exists():
-            return Response(
-                # {"error": "You are not authorized to assign this class."}, 
-                {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
-                status=status.HTTP_400_BAD_REQUEST
+            # Ensure subject belongs to the class
+            if not class_instance.subjects.filter(id=subject_instance.id).exists():
+                return Response(
+                    {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
+
+            # Ensure teacher is authorized for the class
+            if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
+                return Response(
+                    {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Save the assignment
+            assignment = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Return validation errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+from rest_framework.permissions import AllowAny
+from django.http import JsonResponse
+from rest_framework.views import APIView
+from .models import Teacher, Class, Subject
+
+class FilterSubjectsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        teacher_id = request.GET.get('teacher')
+        print(teacher_id)
         
-        # Verify the teacher is authorized to assign to the class
-        if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
-            return Response(
-                {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        class_assigned = request.GET.get('class_assigned')
+        print(class_assigned)
 
-        # Create the assignment
-        assignment = Assignment.objects.create(
-            subject=subject_instance,
-            class_assigned=class_instance,
-            assignment_name=assignment_name,
-            description=description,
-            due_date=due_date
-        )
+        if not teacher_id or not class_assigned:
+            return JsonResponse({"error": "Missing teacher or class_assigned parameter"}, status=400)
+        teacher_id = int(teacher_id)
+        try:
+            teacher_id = int(teacher_id)
+        except ValueError:
+            return JsonResponse({"error": "Invalid teacher parameter"}, status=400)
 
-        # Serialize and return the assignment
-        serializer = AssignmentSerializer(assignment)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+        print(f"Received teacher ID: {teacher_id}")
+        # Fetch the teacher by user_id (which is teacher_id)
+        try:
+            # print(f"Teacher is : {Teacher}")
+
+            teacher = Teacher.objects.get(id=teacher_id)
+            # teacher = Teacher.objects.get(teacher_id)
+            print(f"Teacher is : {Teacher}")
+
+            print(f"teachersssss ID: {teacher}")
+        except Teacher.DoesNotExist:
+            print(f"Teacher with user_id {teacher_id} not found.")
+            return JsonResponse({"error": "Teacher not found"}, status=404)
+
+        try:
+            assigned_class = Class.objects.get(class_name=class_assigned)
+        except Class.DoesNotExist:
+            return JsonResponse({"error": f"Class '{class_assigned}' not found"}, status=404)
+
+        # Now filter the subjects for the teacher and the assigned class
+        subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
+        return JsonResponse({"subjects": list(subjects.values())}, safe=False)
+
 class StudentAssignmentsView(APIView):
     """
     View for students to fetch all assigned homework.
@@ -1375,3 +1410,122 @@ class UpdateStaffLocationView(APIView):
             serializer.save(staff=request.user.staff)
             return Response({"message": "Location updated successfully"})
         return Response(serializer.errors, status=400)
+
+
+
+# Discussion Topic API Views
+class DiscussionTopicAPIView(APIView):
+    """
+    API View to list and create discussion topics.
+    """
+
+    def get(self, request):
+        topics = DiscussionTopic.objects.all()
+        serializer = DiscussionTopicSerializer(topics, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = DiscussionTopicSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Discussion Post API Views
+class DiscussionPostAPIView(APIView):
+    """
+    API View to list and create posts under a specific topic.
+    """
+
+    def get(self, request, topic_id):
+        posts = DiscussionPost.objects.filter(topic_id=topic_id)
+        serializer = DiscussionPostSerializer(posts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, topic_id):
+        data = request.data.copy()
+        data['topic'] = topic_id
+        serializer = DiscussionPostSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Discussion Comment API Views
+class DiscussionCommentAPIView(APIView):
+    """
+    API View to list and create comments under a specific post.
+    """
+
+    def get(self, request, post_id):
+        comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
+        serializer = DiscussionCommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, post_id):
+        data = request.data.copy()
+        data['post'] = post_id
+        serializer = DiscussionCommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DiscussionTopicDeleteAPIView(APIView):
+    """
+    API View to delete a discussion topic.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, topic_id):
+        try:
+            topic = DiscussionTopic.objects.get(id=topic_id)
+        except DiscussionTopic.DoesNotExist:
+            return Response({"error": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if topic.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this topic.")
+
+        topic.delete()
+        return Response({"message": "Topic deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class DiscussionPostDeleteAPIView(APIView):
+    """
+    API View to delete a discussion post.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this post.")
+
+        post.delete()
+        return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+class DiscussionCommentDeleteAPIView(APIView):
+    """
+    API View to delete a discussion comment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if comment.created_by != request.user:
+            raise PermissionDenied("You are not authorized to delete this comment.")
+
+        comment.delete()
+        return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

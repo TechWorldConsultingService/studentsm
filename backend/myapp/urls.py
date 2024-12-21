@@ -5,6 +5,13 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
+from .views import (
+    AssignHomeworkView,
+    FilterSubjectsView,
+    StudentAssignmentsView,
+    SubmitStudentAssignmentView,
+    ReviewAssignmentsView,
+)
 
 urlpatterns = [
     # Admin site URL
@@ -73,6 +80,10 @@ urlpatterns = [
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
     
+    # Filter subjects for a teacher and class
+    path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
+
+
     # Get assignments for students / to see all the assginments given by teacher
     path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'),
     
@@ -96,6 +107,18 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
 
     path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
+    
+    # API endpoints for discussion forums
+    path('api/topics/', DiscussionTopicAPIView.as_view(), name='discussion-topic-api'),
+    path('api/topics/<int:topic_id>/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
+    path('api/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
+    
+    # API endpoints for deleting discussion forums
+    path('api/topics/<int:topic_id>/delete/', DiscussionTopicDeleteAPIView.as_view(), name='discussion-topic-delete'),
+    path('api/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
+    path('api/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
+
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
