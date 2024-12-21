@@ -6,16 +6,28 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 
+
+
+const  newAssignmentSchema= Yup.object({
+  subject: Yup.string()
+  .required("Subject is required"),
+  assignment_name: Yup.string()
+  .required("Assignment Name is required"),
+  description: Yup.string()
+  .required("Description is required"),
+  due_date: Yup.date()
+  .required("Due Date is required").nullable(),
+})
+
+
 const NewAssignment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   console.log(user)
-  const {Id,  token } = user
-  // const teacher_id = user?.id;
+  const { access} = user
   const teacher_id = user?.id;
   const selectedClass = user?.selectedClass; // Use selectedClass from Redux
   const [subjects, setSubjects] = useState([]);
-  const [loading, setLoading] = useState(false);
   // const [selectedClass, setSelectedClass] = useState("");
 
   // const refreshAccessToken = async () => {
@@ -45,82 +57,58 @@ const NewAssignment = () => {
     console.log("Teacher ID:", teacher_id);
     console.log("Selected Class:", selectedClass);
 
-    if (teacher_id && selectedClass) {
+    if (access) {
       // const classAssigned = parseInt(selectedClass, 10);
-      console.log("Class Assigned (Parsed):", selectedClass);
       fetch(
         `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}` )
         .then((response) => response.json())
         .then((data) => {
-          console.log("data is:",data)
           if (data?.subjects) {
             setSubjects(data.subjects); // Update state with subjects array
-          } else {
-            console.error("Unexpected response format:", data); 
-            setSubjects([]); // Fallback to empty array
           }
         })
         .catch((error) => {
-          console.error("Error fetching subjects:", error);
           setSubjects([]); // Handle errors by setting subjects to an empty array
         });
     } else {
       console.error("Teacher ID or class is undefined");
     }
-  }, [teacher_id, selectedClass]);
+  }, [access]);
+  
   
   const formik = useFormik({
     initialValues: {
-      subject: "",
-      class_assigned: selectedClass || "",
+      subject:"",
+      class_assigned: selectedClass,
       assignment_name: "",
       description: "",
       due_date: "",
     },
-    validationSchema: Yup.object({
-      subject: Yup.string().required("Subject is required"),
-      assignment_name: Yup.string().required("Assignment Name is required"),
-      description: Yup.string().required("Description is required"),
-      due_date: Yup.date().required("Due Date is required").nullable(),
-    }),
+    validationSchema: newAssignmentSchema,
     onSubmit: async (values) => {
-      setLoading(true);
       try {
-        const token = localStorage.getItem("token"); // Retrieve token from storage
-
-        if (!token) {
+        if (!access) {
           toast.error("Authentication token is missing.");
           return;
         }
-        console.log("authentication token is:", token);
-        console.log("values is:", values);
-
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include token in Authorization header
-          },
-        };
-
-        const response = await axios.post("http://localhost:8000/api/assignments/assign/", 
-          values, config
+        await axios.post(
+          "http://localhost:8000/api/assignments/assign/",
+         values,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`, // Assuming token is stored in local storage
+            },
+          }
         );
-        
+
         toast.success("Assignment submitted successfully!");
-        navigate(-1); // Navigate back
+        navigate(-1);
       } catch (error) {
         console.error("Error submitting assignment:", error.response || error);
+        toast.error("Error submitting assignment:", error.response || error);
 
-        if (error.response?.status === 401) {
-          // await refreshAccessToken(); // Try refreshing the token
-          // Retry the original request after refreshing
-        } else {
-          console.error("Error submitting assignment:", error.response || error);
-          toast.error(error.response?.data?.detail || "Failed to submit the assignment.");
-
-        }
-      } finally {
-        setLoading(false);
-      }
+      } 
     },
   });
 
@@ -133,6 +121,22 @@ const NewAssignment = () => {
 
         <form onSubmit={formik.handleSubmit} className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:space-x-4 sm:space-y-0 space-y-4">
+
+
+          <div className="flex flex-col w-full sm:w-1/2">
+              <label className="text-purple-700 font-semibold">Class</label>
+              <input
+                type="text"
+                id="class_assigned"
+                name="class_assigned"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.class_assigned}
+                className="mt-2 p-2 rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+
             <div className="flex flex-col w-full sm:w-1/2">
               <label className="text-purple-700 font-semibold">Subject</label>
               <select
@@ -146,7 +150,7 @@ const NewAssignment = () => {
                   Select Subject
                 </option>
 
-                {Array.isArray(subjects) && subjects.length > 0 ? (
+                { subjects.length > 0 ? (
                   subjects.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.subject_name}
@@ -158,7 +162,9 @@ const NewAssignment = () => {
                   </option>
                 )}
               </select>
-
+{
+  console.log(subjects)
+}
               {formik.touched.subject && formik.errors.subject && (
                 <div className="text-red-500 text-sm">
                   {formik.errors.subject}
