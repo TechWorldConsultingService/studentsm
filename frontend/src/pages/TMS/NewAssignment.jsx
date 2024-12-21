@@ -25,6 +25,7 @@ const NewAssignment = () => {
       fetch(`http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`)
         .then((response) => response.json())
         .then((data) => {
+          console.log("data is:",data)
           if (data?.subjects) {
             setSubjects(data.subjects); // Update state with subjects array
           } else {
@@ -58,7 +59,16 @@ const NewAssignment = () => {
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const response = await axios.post("http://localhost:8000/api/assignments/assign/", values);
+        const token = localStorage.getItem("token"); // Retrieve token from storage
+        console.log("token",token);
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in Authorization header
+          },
+        };
+
+        const response = await axios.post("http://localhost:8000/api/assignments/assign/", values,config);
+        
         toast.success("Assignment submitted successfully!");
         navigate(-1); // Navigate back
       } catch (error) {
@@ -95,7 +105,7 @@ const NewAssignment = () => {
                 {Array.isArray(subjects) && subjects.length > 0 ? (
                   subjects.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.name}
+                      {item.subject_name}
                     </option>
                   ))
                 ) : (

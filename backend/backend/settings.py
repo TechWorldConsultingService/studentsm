@@ -102,8 +102,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-
-    ) 
+        'rest_framework.authentication.TokenAuthentication',  # For token-based auth
+        # 'rest_framework.authentication.SessionAuthentication',  # For session-based auth
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # Restrict access to authenticated users
+    ),
 }
 
 
