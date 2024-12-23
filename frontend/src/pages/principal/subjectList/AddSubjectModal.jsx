@@ -7,7 +7,9 @@ import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
 export const addSubjectSchema = Yup.object().shape({
-  subject_code: Yup.string().required("Subject Code is Required."),
+  subject_code: Yup.number()
+  .required("Subject Code is Required.")
+  .typeError("Subject Code must be a number."),
   subject_name: Yup.string().required("Subject Name is Required."),
 });
 

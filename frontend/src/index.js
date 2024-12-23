@@ -37,7 +37,7 @@ import ViewNotes from "./pages/TMS/ViewNotes";
 import StaffMap from "./pages/mybus"
 // import AddClass from "./pages/principal/AddClass";
 // import AddSubject from "./pages/principal/AddSubject"
-import ClassList from "./pages/principal/ClassList";
+import ClassList from "./pages/principal/classList/ClassList";
 import SubjectList from "./pages/principal/subjectList/SubjectList";
 import StudentList from "./pages/principal/StudentList";
 import TeacherList from "./pages/principal/TeacherList";
