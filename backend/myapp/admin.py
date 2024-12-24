@@ -110,9 +110,10 @@ class AssignmentForm(forms.ModelForm):
                 teacher_id = int(self.data.get('teacher'))
                 class_id = int(self.data.get('class_assigned'))
                 teacher = Teacher.objects.get(id=teacher_id)
+                print("teacherr:",teacher)
                 class_obj = Class.objects.get(id=class_id)
                 # Filter subjects: taught by the teacher AND available in the class
-                self.fields['subject'].queryset = teacher.subjects.filter(classes=class_obj)
+                self.fields['subject'].queryset = Subject.objects.filter(teachers=teacher,classes=class_obj)
 
             except (ValueError, TypeError, Teacher.DoesNotExist, Class.DoesNotExist):
                 pass
@@ -120,7 +121,12 @@ class AssignmentForm(forms.ModelForm):
             # Populate when editing an existing assignment
             teacher = self.instance.teacher
             class_obj = self.instance.class_assigned
-            self.fields['subject'].queryset = teacher.subjects.filter(classes=class_obj)
+            # self.fields['subject'].queryset = Teacher.objects.filter(classes=class_obj).values_list("subjects",flat=True)
+            self.fields['subject'].queryset = Subject.objects.filter(teachers=teacher,classes=class_obj)
+
+
+            # self.fields['teacher'].queryset = Teacher.objects.filter(classes=class_obj).values_list("teacher",flat=True)
+            self.fields['teacher'].queryset = Teacher.objects.filter(classes=class_obj)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -138,7 +144,6 @@ class AssignmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'description', 'subject')  # Columns to display in the list view
     # list_filter = ('subject','student')  # Filters for the sidebar
     search_fields = ('title', 'subject')  # Searchable fields
-
 
 @admin.register(Syllabus)
 class SyllabusAdmin(admin.ModelAdmin):
