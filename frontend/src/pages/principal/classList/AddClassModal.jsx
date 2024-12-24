@@ -13,7 +13,7 @@ export const addClassSchema = Yup.object().shape({
     .typeError("Class Code must be a number."),
   class_name: Yup.string().required("Class Name is Required."),
   subjects: Yup.array()
-    .min(1, "At least one subject must be selected.")
+    .min(3, "At least three subject must be selected.")
     .of(
       Yup.object().shape({
         subject_name: Yup.string().required(),
