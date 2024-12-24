@@ -988,42 +988,38 @@ from .serializers import AssignmentSerializer
 from .models import Subject, Class
 
 class AssignHomeworkView(APIView):
-    """
-    Allow teachers to assign homework to students of a specific class and subject.
-    """
     permission_classes = [AllowAny]
-
     def post(self, request, format=None):
-        """
-        Assign homework to a specific class and subject.
-        """
-        teacher = request.user
-
+        # Ensure the request has a logged-in user
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+        # Check if the user is a teacher
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can assign homework."}, status=status.HTTP_403_FORBIDDEN)
+        teacher = request.user.teacher # Get the associated teacher instance
+        print (teacher)
         # Use the serializer for validation and creation
-        serializer = AssignmentSerializer(data=request.data)
+        serializer = AssignmentSerializer(data=request.data, context={'teacher': teacher})
         if serializer.is_valid():
             # Validate teacher's authorization for class and subject
             subject_instance = serializer.validated_data['subject']
             class_instance = serializer.validated_data['class_assigned']
-
             # Ensure subject belongs to the class
             if not class_instance.subjects.filter(id=subject_instance.id).exists():
                 return Response(
                     {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
             # Ensure teacher is authorized for the class
-            if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
+            # if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
+            if not class_instance in teacher.classes.all():
                 return Response(
                     {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
                     status=status.HTTP_403_FORBIDDEN
                 )
-
             # Save the assignment
             assignment = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+            return Response(AssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
         # Return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
