@@ -16,6 +16,8 @@ const ClassList = () => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // New state for delete confirmation modal
+  const [classToDelete, setClassToDelete] = useState(null); // To store class to delete
 
   // Fetch classes when the component mounts
   const fetchClasses = async () => {
@@ -57,7 +59,7 @@ const ClassList = () => {
 
   // Open modal for adding a class
   const handleShowAddModal = () => {
-    setIsEditMode(false); // This is for Add mode
+    setIsEditMode(false); 
     setShowModal(true);
   };
 
@@ -72,10 +74,42 @@ const ClassList = () => {
     setShowModal(false);
   };
 
-  const handleDeleteClass = (classCode) => {
-    setClassList((prev) =>
-      prev.filter((classItem) => classItem.class_code !== classCode)
-    );
+  // Open the delete confirmation modal
+  const handleConfirmDelete = (classCode) => {
+    setClassToDelete(classCode); // Store the class to delete
+    setShowDeleteModal(true); // Show the confirmation modal
+  };
+
+  // Handle the deletion of a class
+  const handleDeleteClass = async () => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+
+    try {
+      // Send DELETE request to API
+      await axios.delete(`http://localhost:8000/api/classes/${classToDelete}/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+
+      // If the delete request was successful, update the state to remove the class from the list
+      setClassList((prev) =>
+        prev.filter((classItem) => classItem.class_code !== classToDelete)
+      );
+
+      toast.success("Class deleted successfully.");
+      setShowDeleteModal(false); // Close the confirmation modal after successful deletion
+    } catch (error) {
+      toast.error("Error deleting class:", error.response?.data?.detail || error.message);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false); // Close the confirmation modal without deleting
   };
 
   return (
@@ -136,9 +170,7 @@ const ClassList = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() =>
-                            handleDeleteClass(classItem.class_code)
-                          }
+                          onClick={() => handleConfirmDelete(classItem.class_code)} // Show delete confirmation modal
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
@@ -191,18 +223,43 @@ const ClassList = () => {
           </div>
         )}
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
+              <h2 className="text-2xl font-bold text-purple-800">
+                Are you sure you want to delete this class?
+              </h2>
+              <div className="mt-4 text-center">
+                <button
+                  onClick={handleDeleteClass}
+                  className="bg-red-700 text-white px-6 py-2 rounded-lg hover:bg-red-800 mr-4"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={handleCloseDeleteModal}
+                  className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add or Edit Modal */}
         {showModal &&
           (isEditMode ? (
             <EditClassModal
               classInfo={selectedClass}
               handleCloseModal={handleCloseModal}
-              fetchClasses={fetchClasses} // Pass fetchClasses to Edit Modal
+              fetchClasses={fetchClasses} 
             />
           ) : (
             <AddClassModal
               handleCloseModal={handleCloseModal}
-              fetchClasses={fetchClasses} // Pass fetchClasses to Add Modal
+              fetchClasses={fetchClasses} 
             />
           ))}
       </div>
