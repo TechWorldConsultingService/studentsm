@@ -31,7 +31,7 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
     initialValues: {
       class_code: "",
       class_name: "",
-      subjects: [], // Start with no selected subjects
+      subjects: [], 
     },
     validationSchema: addClassSchema,
     onSubmit: async (values) => {

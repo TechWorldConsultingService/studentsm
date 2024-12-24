@@ -49,9 +49,15 @@ const SubjectList = () => {
     fetchSubjects();
   }, [access, navigate]);
 
-  const handleViewDetails = (subject) => setSelectedSubject(subject);
+  const handleViewDetails = (subject) => {
+    setSelectedSubject(subject);  
+    setShowModal(false);
+    setIsEditMode(false); 
+  };
 
-  const handleCloseDetails = () => setSelectedSubject(null);
+  const handleCloseDetails = () => {
+    setSelectedSubject(null);  
+  };
 
   const handleShowAddModal = () => {
     setIsEditMode(false);
@@ -60,15 +66,15 @@ const SubjectList = () => {
 
   const handleShowEditModal = (subject) => {
     setIsEditMode(true);
-    setSelectedSubject(subject);
-    setShowModal(true);
+    setSelectedSubject(subject); 
+    setShowModal(true);  
   };
 
   const handleCloseModal = () => setShowModal(false);
 
   const handleConfirmDelete = (subjectId) => {
-    setSubjectToDelete(subjectId); // Store the subject to delete
-    setShowDeleteModal(true); // Show the confirmation modal
+    setSubjectToDelete(subjectId);
+    setShowDeleteModal(true); 
   };
 
   const handleDeleteSubject = async () => {
@@ -84,14 +90,14 @@ const SubjectList = () => {
       });
       setSubjectsList((prev) => prev.filter((subject) => subject.id !== subjectToDelete));
       toast.success('Subject deleted successfully');
-      setShowDeleteModal(false); // Close the confirmation modal
+      setShowDeleteModal(false); 
     } catch (error) {
       toast.error('Error deleting subject');
     }
   };
 
   const handleCloseDeleteModal = () => {
-    setShowDeleteModal(false); // Close the confirmation modal without deleting
+    setShowDeleteModal(false); 
   };
 
   return (
@@ -160,7 +166,7 @@ const SubjectList = () => {
         </div>
 
         {/* Subject Details Modal */}
-        {selectedSubject && (
+        {selectedSubject && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">Subject Details</h2>

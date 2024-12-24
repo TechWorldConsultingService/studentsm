@@ -19,7 +19,7 @@ const ClassList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false); // New state for delete confirmation modal
   const [classToDelete, setClassToDelete] = useState(null); // To store class to delete
 
-  // Fetch classes when the component mounts
+  // Fetch classes 
   const fetchClasses = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -50,23 +50,23 @@ const ClassList = () => {
   }, [access, navigate]);
 
   const handleViewDetails = (classInfo) => {
-    setSelectedClass(classInfo);
+    setSelectedClass(classInfo);  // Set class info for viewing
+    setShowModal(false);
+    setIsEditMode(false); 
   };
 
   const handleCloseDetails = () => {
     setSelectedClass(null);
   };
 
-  // Open modal for adding a class
   const handleShowAddModal = () => {
     setIsEditMode(false); 
     setShowModal(true);
   };
 
-  // Open modal for editing a class
   const handleShowEditModal = (classInfo) => {
     setIsEditMode(true);
-    setSelectedClass(classInfo);
+    setSelectedClass(classInfo);  // Set class info for editing
     setShowModal(true);
   };
 
@@ -74,13 +74,11 @@ const ClassList = () => {
     setShowModal(false);
   };
 
-  // Open the delete confirmation modal
   const handleConfirmDelete = (classCode) => {
-    setClassToDelete(classCode); // Store the class to delete
-    setShowDeleteModal(true); // Show the confirmation modal
+    setClassToDelete(classCode); 
+    setShowDeleteModal(true); 
   };
 
-  // Handle the deletion of a class
   const handleDeleteClass = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -88,7 +86,6 @@ const ClassList = () => {
     }
 
     try {
-      // Send DELETE request to API
       await axios.delete(`http://localhost:8000/api/classes/${classToDelete}/`, {
         headers: {
           "Content-Type": "application/json",
@@ -96,20 +93,19 @@ const ClassList = () => {
         },
       });
 
-      // If the delete request was successful, update the state to remove the class from the list
       setClassList((prev) =>
         prev.filter((classItem) => classItem.class_code !== classToDelete)
       );
 
       toast.success("Class deleted successfully.");
-      setShowDeleteModal(false); // Close the confirmation modal after successful deletion
+      setShowDeleteModal(false); 
     } catch (error) {
       toast.error("Error deleting class:", error.response?.data?.detail || error.message);
     }
   };
 
   const handleCloseDeleteModal = () => {
-    setShowDeleteModal(false); // Close the confirmation modal without deleting
+    setShowDeleteModal(false); 
   };
 
   return (
@@ -158,13 +154,13 @@ const ClassList = () => {
                       <td className="px-4 py-2">{classItem.class_name}</td>
                       <td className="px-4 py-2">
                         <button
-                          onClick={() => handleViewDetails(classItem)}
+                          onClick={() => handleViewDetails(classItem)} // View Details
                           className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
                         >
                           View Details
                         </button>
                         <button
-                          onClick={() => handleShowEditModal(classItem)}
+                          onClick={() => handleShowEditModal(classItem)} // Edit
                           className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
                         >
                           Edit
@@ -185,7 +181,7 @@ const ClassList = () => {
         </div>
 
         {/* Modal for class details */}
-        {selectedClass && (
+        {selectedClass && !isEditMode && (  // Only show details modal when not in edit mode
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">
