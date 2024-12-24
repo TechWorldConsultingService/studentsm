@@ -1,10 +1,38 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { Select } from "antd";
 
 const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
+  const { access } = useSelector((state) => state.user);
+
   const [updatedClass, setUpdatedClass] = useState({
     class_code: classInfo.class_code,
     class_name: classInfo.class_name,
+    subjects: classInfo.subject_details || [], // Initialize with full subject details
   });
+
+  const [allSubjects, setAllSubjects] = useState([]);
+
+  useEffect(() => {
+    // Fetch all subjects from the server to populate the dropdown
+    const fetchSubjects = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/subjects/", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        setAllSubjects(response.data); // Store all subjects in the state
+      } catch (error) {
+        toast.error("Error fetching subjects.");
+      }
+    };
+
+    fetchSubjects();
+  }, [access]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -14,12 +42,55 @@ const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
     }));
   };
 
-  const handleSave = () => {
-    // Add API call to update class here
-    console.log("Updated Class:", updatedClass);
-    // Assuming the update API is implemented
-    fetchClasses();  // Trigger the refetch of classes
-    handleCloseModal();  // Close the modal after saving
+  // Update subjects when Select changes
+  const handleSubjectsChange = (selectedSubjects) => {
+    // Map the selected subject names to their full subject objects
+    const updatedSubjects = selectedSubjects.map((subjectName) => {
+      return allSubjects.find((subject) => subject.subject_name === subjectName);
+    });
+
+    setUpdatedClass((prevState) => ({
+      ...prevState,
+      subjects: updatedSubjects, // Store the full subject objects
+    }));
+  };
+
+  const handleSave = async () => {
+    if (
+      !updatedClass.class_code ||
+      !updatedClass.class_name ||
+      !updatedClass.subjects.length
+    ) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `http://localhost:8000/api/classes/${classInfo.class_code}/`,
+        updatedClass, // Send updatedClass directly (with full subject details)
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Class updated successfully.");
+        fetchClasses();
+        handleCloseModal();
+      }
+    } catch (error) {
+      toast.error(
+        "Error updating class: " + (error.response?.data?.detail || error.message)
+      );
+    }
   };
 
   return (
@@ -43,6 +114,21 @@ const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
             value={updatedClass.class_name}
             onChange={handleInputChange}
           />
+          <Select
+            mode="multiple"
+            name="subjects"
+            placeholder="Select all subjects"
+            className="border border-gray-300 p-2 rounded w-full"
+            onChange={handleSubjectsChange}
+            value={updatedClass.subjects.map((subject) => subject.subject_name)} // Display subject names in the dropdown
+          >
+            {/* Render all available subjects */}
+            {allSubjects.map((item) => (
+              <Select.Option key={item.id} value={item.subject_name}>
+                {item.subject_name}
+              </Select.Option>
+            ))}
+          </Select>
         </div>
 
         <div className="mt-6 text-center">

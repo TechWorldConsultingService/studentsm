@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+
 
 const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
+
+    const { access } = useSelector((state) => state.user);
   const [updatedSubject, setUpdatedSubject] = useState({
     subject_code: subject.subject_code,
     subject_name: subject.subject_name,
@@ -14,12 +20,35 @@ const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
     }));
   };
 
-  const handleSave = () => {
-    // Add API call to update subject here
-    console.log("Updated Subject:", updatedSubject);
-    // Assuming the update API is implemented
-    fetchSubjects();  // Trigger the refetch of subjects
-    handleCloseModal();  // Close the modal after saving
+  const handleSave = async () => {
+    if (!updatedSubject.subject_code || !updatedSubject.subject_name) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+    try {
+      const response = await axios.put(
+        `http://localhost:8000/api/subjects/${subject.id}/`,
+        updatedSubject,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`, 
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        toast.success("Subject updated successfully.");
+        fetchSubjects(); 
+        handleCloseModal();
+      }
+    } catch (error) {
+      toast.error("Error updating subject: " + (error.response?.data?.detail || error.message));
+    }
   };
 
   return (
