@@ -17,7 +17,6 @@ import ReduxProvider from "./redux/ReduxProvider";
 import { Toaster } from "react-hot-toast";
 import Profile from "./pages/profile";
 import MyStudents from "./pages/myStudents";
-import AddStudent from "./pages/principal/addStudent";
 import AddTeacher from "./pages/principal/addTeacher";
 import AcademicCalendar from "./pages/calendar";
 import ApplyLeave from "./pages/leave/applyLeave";
@@ -35,11 +34,9 @@ import NewAssignment from "./pages/TMS/NewAssignment";
 import AddNewNote from "./pages/TMS/AddNewNote";
 import ViewNotes from "./pages/TMS/ViewNotes";
 import StaffMap from "./pages/mybus"
-// import AddClass from "./pages/principal/AddClass";
-// import AddSubject from "./pages/principal/AddSubject"
 import ClassList from "./pages/principal/classList/ClassList";
 import SubjectList from "./pages/principal/subjectList/SubjectList";
-import StudentList from "./pages/principal/StudentList";
+import StudentList from "./pages/principal/studentList/StudentList";
 import TeacherList from "./pages/principal/TeacherList";
 
 
@@ -127,10 +124,6 @@ const router = createBrowserRouter([
   {
     path: "/myStudents",
     element: <MyStudents />,
-  },
-  {
-    path: "/addStudent",
-    element: <AddStudent />,
   },
   {
     path: "/addTeacher",
