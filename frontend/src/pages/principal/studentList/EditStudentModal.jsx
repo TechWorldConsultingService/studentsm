@@ -1,19 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import { Select } from "antd";
 import Password from "antd/es/input/Password";
-import {addStudentSchema} from "./AddStudentModal"
 
-
-const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
+const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [studentData, setStudentData] = React.useState(null);
+  const [studentData, setStudentData] = useState(null);
+  const [classList, setClassList] = useState([]);
 
   useEffect(() => {
     const fetchStudentDetails = async () => {
@@ -23,26 +21,46 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8000/api/students/${studentId}/`, {
+        const response = await axios.get(
+          `http://localhost:8000/api/students/${studentInfo.id}/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
+        setStudentData(response.data);
+      } catch (error) {
+        toast.error("Error fetching student details.");
+      }
+    };
+
+    const fetchClassList = async () => {
+      if (!access) {
+        toast.error("User is not authenticated. Please log in.");
+        return;
+      }
+
+      try {
+        const { data } = await axios.get("http://localhost:8000/api/classes/", {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${access}`,
           },
         });
-        setStudentData(response.data);
+        setClassList(data);
       } catch (error) {
-        if (error.response && error.response.status === 401) {
-          navigate("/");
-        } else {
-          toast.error("Error fetching student details.");
-        }
+        toast.error("Error fetching class data.");
       }
     };
 
-    if (studentId) {
+    if (studentInfo) {
       fetchStudentDetails();
     }
-  }, [studentId, access, navigate]);
+
+    fetchClassList();
+  }, [studentInfo, access, navigate]);
 
   const formik = useFormik({
     initialValues: {
@@ -60,11 +78,13 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
       gender: studentData?.gender || "",
       class_code: studentData?.class_code || "",
     },
-    validationSchema: addStudentSchema,
+    validationSchema: Yup.object({
+      // Add validation schema here
+    }),
     onSubmit: async (values) => {
       await editStudent(values);
     },
-    enableReinitialize: true, // Allow reinitialization when studentData is loaded
+    enableReinitialize: true,
   });
 
   const editStudent = async (values) => {
@@ -74,21 +94,21 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
     }
 
     try {
-      await axios.put(`http://localhost:8000/api/students/${studentId}/`, values, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      await axios.put(
+        `http://localhost:8000/api/students/${studentInfo.id}/`,
+        values,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       toast.success("Student Updated Successfully.");
       fetchStudents();
       handleCloseModal();
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        navigate("/");
-      } else {
-        toast.error("Error updating student.", error.message || error);
-      }
+      toast.error("Error updating student.");
     }
   };
 
@@ -101,8 +121,6 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800">Edit Student</h2>
         <form onSubmit={formik.handleSubmit} className="mt-4">
-          {/* Similar fields as AddStudentModal but with pre-filled values */}
-
           {/* Username */}
           <div className="mb-4">
             <input
@@ -114,11 +132,6 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.username}
             />
-            {formik.touched.user?.username && formik.errors.user?.username && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.username}
-              </div>
-            )}
           </div>
 
           {/* Password */}
@@ -129,29 +142,142 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentId }) => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.user.password}
-              className="w-full"
             />
-            {formik.touched.user?.password && formik.errors.user?.password && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.password}
-              </div>
-            )}
           </div>
 
-          {/* Other fields will be similar to AddStudentModal... */}
+          {/* Email */}
+          <div className="mb-4">
+            <input
+              type="email"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Email"
+              name="user.email"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.user.email}
+            />
+          </div>
 
-          {/* Submit Button */}
-          <div className="mt-6 text-center">
+          {/* First Name */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="First Name"
+              name="user.first_name"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.user.first_name}
+            />
+          </div>
+
+          {/* Last Name */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Last Name"
+              name="user.last_name"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.user.last_name}
+            />
+          </div>
+
+          {/* Phone */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Phone"
+              name="phone"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.phone}
+            />
+          </div>
+
+          {/* Address */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Address"
+              name="address"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.address}
+            />
+          </div>
+
+          {/* Date of Birth */}
+          <div className="mb-4">
+            <input
+              type="date"
+              className="border border-gray-300 p-2 rounded w-full"
+              name="date_of_birth"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.date_of_birth}
+            />
+          </div>
+
+          {/* Parent's Name */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Parent's Name"
+              name="parents"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.parents}
+            />
+          </div>
+
+          {/* Gender */}
+          <div className="mb-4">
+            <select
+              className="border border-gray-300 p-2 rounded w-full"
+              name="gender"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.gender}
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
+          {/* Class Code */}
+          <div className="mb-4">
+            <select
+              className="border border-gray-300 p-2 rounded w-full"
+              name="class_code"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.class_code}
+            >
+              <option value="">Select Class</option>
+              {classList.map((cls) => (
+                <option key={cls.id} value={cls.class_code}>
+                  {cls.class_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-between mt-6">
             <button
               type="submit"
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-2"
+              className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800"
             >
-              Save
+              Save Changes
             </button>
             <button
-              type="button"
               onClick={handleCloseModal}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+              className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
             >
               Cancel
             </button>
