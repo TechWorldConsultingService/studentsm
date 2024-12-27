@@ -80,13 +80,14 @@ const StudentList = () => {
   };
 
   const handleDeleteStudent = async () => {
+    console.log('studentToDelete:', studentToDelete);
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
 
     try {
-      await axios.delete(`http://localhost:8000/api/students/${studentToDelete}/`, {
+      await axios.delete(`http://localhost:8000/api/students/${studentToDelete}/delete/`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
@@ -94,7 +95,7 @@ const StudentList = () => {
       });
 
       setStudentList((prev) =>
-        prev.filter((student) => student.id !== studentToDelete)
+        prev.filter((student) => student?.user?.id !== studentToDelete)
       );
 
       toast.success("Student deleted successfully.");
@@ -161,7 +162,7 @@ const StudentList = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleConfirmDelete(student.id)}
+                          onClick={() => handleConfirmDelete(student.user.id)}
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
