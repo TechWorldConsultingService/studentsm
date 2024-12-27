@@ -12,7 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = (
-            'id',
             'username',
             'email',
             'password',
@@ -133,7 +132,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'classes','class_teacher']
+        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'classes','class_teacher']
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -196,7 +195,7 @@ class PrincipalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Principal
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'gender']
+        fields = ['id','user', 'phone', 'address', 'gender']
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'user.password': {'write_only': True}}
 
