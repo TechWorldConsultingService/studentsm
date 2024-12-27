@@ -1,44 +1,44 @@
-import React, { useState, useEffect } from "react";
-import MainLayout from "../../../layout/MainLayout";
+import React, { useState, useEffect } from 'react';
+import MainLayout from '../../../layout/MainLayout';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import AddStudentModal from "./AddStudentModal";
-import EditStudentModal from "./EditStudentModal";
+import AddTeacherModal from './AddTeacherModal';
+import EditTeacherModal from './EditTeacherModal';
 
-const StudentList = () => {
+const TeacherList = () => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
-  const [studentList, setStudentList] = useState([]);
+  const [teacherList, setTeacherList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [studentToDelete, setStudentToDelete] = useState(null);
+  const [teacherToDelete, setTeacherToDelete] = useState(null);
 
-  // Fetch students
-  const fetchStudents = async () => {
+  // Fetch teachers
+  const fetchTeachers = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     setLoading(true);
     try {
-      const { data } = await axios.get("http://localhost:8000/api/students/", {
+      const { data } = await axios.get("http://localhost:8000/api/teachers/", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
         },
       });
-      setStudentList(data);
+      setTeacherList(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        navigate("/login");
+        navigate("/");
       } else {
-        toast.error("Error fetching students:", error.message || error);
+        toast.error('Error fetching teachers:', error.message || error);
       }
     } finally {
       setLoading(false);
@@ -46,17 +46,17 @@ const StudentList = () => {
   };
 
   useEffect(() => {
-    fetchStudents();
+    fetchTeachers();
   }, [access, navigate]);
 
-  const handleViewDetails = (studentInfo) => {
-    setSelectedStudent(studentInfo);
+  const handleViewDetails = (teacher) => {
+    setSelectedTeacher(teacher);
     setShowModal(false);
     setIsEditMode(false);
   };
 
   const handleCloseDetails = () => {
-    setSelectedStudent(null);
+    setSelectedTeacher(null);
   };
 
   const handleShowAddModal = () => {
@@ -64,43 +64,35 @@ const StudentList = () => {
     setShowModal(true);
   };
 
-  const handleShowEditModal = (studentInfo) => {
-    setIsEditMode(true); 
-    setSelectedStudent(studentInfo);  
-    setShowModal(true);  
+  const handleShowEditModal = (teacher) => {
+    setIsEditMode(true);
+    setSelectedTeacher(teacher);
+    setShowModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
+  const handleCloseModal = () => setShowModal(false);
 
-  const handleConfirmDelete = (studentId) => {
-    setStudentToDelete(studentId);
+  const handleConfirmDelete = (teacherId) => {
+    setTeacherToDelete(teacherId);
     setShowDeleteModal(true);
   };
 
-  const handleDeleteStudent = async () => {
+  const handleDeleteTeacher = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
-
     try {
-      await axios.delete(`http://localhost:8000/api/students/${studentToDelete}/`, {
+      await axios.delete(`http://localhost:8000/api/teachers/${teacherToDelete}/`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
         },
       });
-
-      setStudentList((prev) =>
-        prev.filter((student) => student.id !== studentToDelete)
-      );
-
-      toast.success("Student deleted successfully.");
+      setTeacherList((prev) => prev.filter((teacher) => teacher.id !== teacherToDelete));
+      toast.success('Teacher deleted successfully');
       setShowDeleteModal(false);
     } catch (error) {
-      toast.error("Error deleting student:", error.response?.data?.detail || error.message);
+      toast.error('Error deleting teacher');
     }
   };
 
@@ -112,56 +104,54 @@ const StudentList = () => {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <h1 className="text-3xl font-extrabold text-purple-800">Students</h1>
+          <h1 className="text-3xl font-extrabold text-purple-800">Teachers</h1>
 
           <div className="mt-6">
             <button
               onClick={handleShowAddModal}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              Add Student
+              Add Teacher
             </button>
           </div>
 
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-purple-700">
-              Available Students
-            </h2>
-            <p className="mt-4 text-gray-600">Student list with their details.</p>
+            <h2 className="text-xl font-semibold text-purple-700">Available Teachers</h2>
+            <p className="mt-4 text-gray-600">Teachers with their details.</p>
           </div>
 
           {loading ? (
-            <div className="mt-6 text-center text-gray-600">Loading students...</div>
+            <div className="mt-6 text-center text-gray-600">Loading teachers...</div>
           ) : (
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full table-auto">
                 <thead>
                   <tr className="bg-purple-700 text-white">
-                    <th className="px-4 py-2 text-left">Class</th>
-                    <th className="px-4 py-2 text-left">Student Name</th>
+                    <th className="px-4 py-2 text-left">Teacher ID</th>
+                    <th className="px-4 py-2 text-left">Name</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {studentList.map((student) => (
-                    <tr key={student.phone} className="border-b hover:bg-purple-50">
-                      <td className="px-4 py-2">{student.class_code}</td>
-                      <td className="px-4 py-2">{student.user.first_name} {student.user.last_name}</td>
+                  {teacherList.map((teacher) => (
+                    <tr key={teacher.id} className="border-b hover:bg-purple-50">
+                      <td className="px-4 py-2">{teacher.teacher_id}</td>
+                      <td className="px-4 py-2">{teacher.name}</td>
                       <td className="px-4 py-2">
                         <button
-                          onClick={() => handleViewDetails(student)}
+                          onClick={() => handleViewDetails(teacher)}
                           className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
                         >
                           View Details
                         </button>
                         <button
-                          onClick={() => handleShowEditModal(student)}
+                          onClick={() => handleShowEditModal(teacher)}
                           className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
                         >
                           Edit
                         </button>
                         <button
-                          onClick={() => handleConfirmDelete(student.id)}
+                          onClick={() => handleConfirmDelete(teacher.id)} 
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
@@ -175,42 +165,14 @@ const StudentList = () => {
           )}
         </div>
 
-        {/* Modal for student details */}
-        {selectedStudent && !isEditMode && (
+        {/* Teacher Details Modal */}
+        {selectedTeacher && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">Student Details</h2>
+              <h2 className="text-2xl font-bold text-purple-800">Teacher Details</h2>
               <div className="mt-4">
-                <p className="text-gray-700">
-                  <strong>Username:</strong> {selectedStudent.user.username}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Name:</strong> {selectedStudent.user.first_name} {selectedStudent.user.last_name}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Email:</strong> {selectedStudent.user.email}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Phone:</strong> {selectedStudent.phone}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Role:</strong> {selectedStudent.user.role}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Address:</strong> {selectedStudent.address}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Date of Birth:</strong> {selectedStudent.date_of_birth}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Parent's Name:</strong> {selectedStudent.parents}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Gender:</strong> {selectedStudent.gender}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Class Code:</strong> {selectedStudent.class_code}
-                </p>
+                <p className="text-gray-700"><strong>Teacher ID:</strong> {selectedTeacher.teacher_id}</p>
+                <p className="text-gray-700"><strong>Name:</strong> {selectedTeacher.name}</p>
               </div>
               <div className="mt-6 text-center">
                 <button
@@ -229,11 +191,11 @@ const StudentList = () => {
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">
-                Are you sure you want to delete this student?
+                Are you sure you want to delete this teacher?
               </h2>
               <div className="mt-4 text-center">
                 <button
-                  onClick={handleDeleteStudent}
+                  onClick={handleDeleteTeacher}
                   className="bg-red-700 text-white px-6 py-2 rounded-lg hover:bg-red-800 mr-4"
                 >
                   Yes, Delete
@@ -252,15 +214,15 @@ const StudentList = () => {
         {/* Add or Edit Modal */}
         {showModal && (
           isEditMode ? (
-            <EditStudentModal
-              studentInfo={selectedStudent}
+            <EditTeacherModal
+              teacher={selectedTeacher}
               handleCloseModal={handleCloseModal}
-              fetchStudents={fetchStudents}
+              fetchTeachers={fetchTeachers}
             />
           ) : (
-            <AddStudentModal
+            <AddTeacherModal
               handleCloseModal={handleCloseModal}
-              fetchStudents={fetchStudents}
+              fetchTeachers={fetchTeachers}
             />
           )
         )}
@@ -269,4 +231,4 @@ const StudentList = () => {
   );
 };
 
-export default StudentList;
+export default TeacherList;
