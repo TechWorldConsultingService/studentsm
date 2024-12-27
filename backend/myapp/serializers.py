@@ -241,7 +241,7 @@ class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         # Define which fields should be included in the serialized output
-        fields = ['user', 'phone', 'address', 'date_of_birth', 'parents', 'gender',
+        fields = ['id','user', 'phone', 'address', 'date_of_birth', 'parents', 'gender',
                 'class_code','subjects'
                 ]
         # Ensure password is write-only (won't be returned in response)
