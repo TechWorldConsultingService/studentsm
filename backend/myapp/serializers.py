@@ -12,6 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = (
+            'id',
             'username',
             'email',
             'password',
@@ -395,16 +396,23 @@ class AssignmentSerializer(serializers.ModelSerializer):
         queryset=Class.objects.all(),  # Fetch class based on `class_name`
         slug_field='class_name'        # Use `class_name` for representation and lookup
     )
+
     class Meta:
         model = Assignment
-        fields = ['id', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
+        fields = ['id','teacher','subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
+        read_only_fields = ['teacher']  # Make `teacher` read-only
+
+    def create(self, validated_data):
+        teacher = self.context.get('teacher')
+        if not teacher:
+            raise serializers.ValidationError("Teacher is required for creating an assignment.")
+        # teacher = validated_data.pop('teacher', None)
+        return Assignment.objects.create(teacher=teacher, **validated_data)
 
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignmentSubmission
         fields = ['assignment', 'student', 'submission_file', 'submitted_on']
-
-
 
 class SyllabusSerializer(serializers.ModelSerializer):
     completion_percentage = serializers.SerializerMethodField()

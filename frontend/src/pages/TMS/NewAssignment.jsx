@@ -24,7 +24,7 @@ const NewAssignment = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
   console.log(user)
-  const { access} = user
+  const { access, refresh } = user
   const teacher_id = user?.id;
   const selectedClass = user?.selectedClass; // Use selectedClass from Redux
   const [subjects, setSubjects] = useState([]);
@@ -60,7 +60,7 @@ const NewAssignment = () => {
     if (access) {
       // const classAssigned = parseInt(selectedClass, 10);
       fetch(
-        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}` )
+        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`)
         .then((response) => response.json())
         .then((data) => {
           if (data?.subjects) {
@@ -68,6 +68,7 @@ const NewAssignment = () => {
           }
         })
         .catch((error) => {
+          console.error("Error fetching subjects:", error);
           setSubjects([]); // Handle errors by setting subjects to an empty array
         });
     } else {
@@ -97,7 +98,7 @@ const NewAssignment = () => {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${access}`, // Assuming token is stored in local storage
+              Authorization: access ? `Bearer ${access}` : "", // Assuming token is stored in local storage
             },
           }
         );
@@ -105,6 +106,7 @@ const NewAssignment = () => {
         toast.success("Assignment submitted successfully!");
         navigate(-1);
       } catch (error) {
+        console.log("access token:",access);
         console.error("Error submitting assignment:", error.response || error);
         toast.error("Error submitting assignment:", error.response || error);
 

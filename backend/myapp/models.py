@@ -49,11 +49,11 @@ class Teacher(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     subjects = models.ManyToManyField(Subject, related_name='teachers')
     classes = models.ManyToManyField(Class, related_name='teachers')
-    class_teacher = models.ForeignKey(Class, related_name="class_teacher", on_delete=models.SET_NULL, null=True, blank=True)
+    class_teacher = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         # return self.user.username
-        return str(self.id)
+        return self.user.username
  
 class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
