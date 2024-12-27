@@ -16,8 +16,8 @@ const ClassList = () => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // New state for delete confirmation modal
-  const [classToDelete, setClassToDelete] = useState(null); // To store class to delete
+  const [showDeleteModal, setShowDeleteModal] = useState(false); 
+  const [classToDelete, setClassToDelete] = useState(null); 
 
   // Fetch classes 
   const fetchClasses = async () => {
@@ -160,13 +160,13 @@ const ClassList = () => {
                           View Details
                         </button>
                         <button
-                          onClick={() => handleShowEditModal(classItem)} // Edit
+                          onClick={() => handleShowEditModal(classItem)} 
                           className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
                         >
                           Edit
                         </button>
                         <button
-                          onClick={() => handleConfirmDelete(classItem.class_code)} // Show delete confirmation modal
+                          onClick={() => handleConfirmDelete(classItem.class_code)} 
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
