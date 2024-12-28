@@ -7,12 +7,13 @@ import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
 
-export const addStudentSchema = Yup.object().shape({
+
+ const addStudentSchema = Yup.object().shape({
   user: Yup.object().shape({
     username: Yup.string()
       .required("Username is required.")
       .min(3, "Username must be at least 3 characters long.")
-      .max(10, "Username can't exceed 10 characters."),
+      .max(20, "Username can't exceed 20 characters."),
     password: Yup.string()
       .required("Password is required.")
       .min(6, "Password must be at least 6 characters long.")
