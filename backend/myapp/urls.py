@@ -83,7 +83,6 @@ urlpatterns = [
     # Filter subjects for a teacher and class
     path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
 
-
     # Get assignments for students / to see all the assginments given by teacher
     path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'),
     
