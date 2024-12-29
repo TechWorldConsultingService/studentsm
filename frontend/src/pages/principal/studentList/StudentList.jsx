@@ -95,7 +95,7 @@ const StudentList = () => {
       });
 
       setStudentList((prev) =>
-        prev.filter((student) => student?.user?.id !== studentToDelete)
+        prev.filter((student) => student?.id !== studentToDelete)
       );
 
       toast.success("Student deleted successfully.");
@@ -162,7 +162,7 @@ const StudentList = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleConfirmDelete(student.user.id)}
+                          onClick={() => handleConfirmDelete(student.id)}
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
