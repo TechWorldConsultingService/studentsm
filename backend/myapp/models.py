@@ -183,7 +183,6 @@ class AssignmentSubmission(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
-
 class Syllabus(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False,default=1)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False, default=1)
