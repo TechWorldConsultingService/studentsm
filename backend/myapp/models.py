@@ -255,8 +255,6 @@ class StaffLocation(models.Model):
         return f"{self.staff.username} - {self.timestamp}"
 
 
-
-
 class DiscussionPost(models.Model):
     topic = models.CharField(max_length=255)
     content = models.TextField()
