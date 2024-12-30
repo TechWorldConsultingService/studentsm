@@ -109,14 +109,12 @@ urlpatterns = [
     path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
     
     # API endpoints for discussion forums
-    path('api/topics/', DiscussionTopicAPIView.as_view(), name='discussion-topic-api'),
-    path('api/topics/<int:topic_id>/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
-    path('api/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
+    path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
+    path('api/forum/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
     
     # API endpoints for deleting discussion forums
-    path('api/topics/<int:topic_id>/delete/', DiscussionTopicDeleteAPIView.as_view(), name='discussion-topic-delete'),
-    path('api/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
-    path('api/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
+    path('api/forum/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
+    path('api/forum/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
 
 
 
