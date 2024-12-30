@@ -255,24 +255,15 @@ class StaffLocation(models.Model):
 
 
 
-class DiscussionTopic(models.Model):
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.title
-
 
 class DiscussionPost(models.Model):
-    topic = models.ForeignKey(DiscussionTopic, on_delete=models.CASCADE, related_name="posts")
+    topic = models.CharField(max_length=255)
     content = models.TextField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Post by {self.created_by.username} in {self.topic.title}"
+        return f"Post by {self.created_by.username} in {self.topic}"
 
 
 class DiscussionComment(models.Model):
