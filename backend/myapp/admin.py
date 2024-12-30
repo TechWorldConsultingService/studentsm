@@ -4,7 +4,7 @@ from django import forms
 from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
-    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionTopic, DiscussionPost, DiscussionComment,
+    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionPost, DiscussionComment,
 )
 
 @admin.register(Post)
@@ -190,11 +190,6 @@ class StaffLocationAdmin(admin.ModelAdmin):
     list_display = ['staff','latitude','altitude']
 
 
-@admin.register(DiscussionTopic)
-class DiscussionTopicAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'created_by', 'created_at')  # Fields displayed in the admin list view
-    list_filter = ('created_at',)  # Filters on the sidebar
-    search_fields = ('title', 'created_by__username')  # Search functionality
 
 # DiscussionPost admin customization
 @admin.register(DiscussionPost)

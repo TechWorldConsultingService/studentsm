@@ -500,14 +500,6 @@ class StaffLocationSerializer(serializers.ModelSerializer):
 
 
 
-class DiscussionTopicSerializer(serializers.ModelSerializer):
-    created_by = serializers.ReadOnlyField(source='created_by.username')
-
-    class Meta:
-        model = DiscussionTopic
-        fields = ['id', 'title', 'description', 'created_by', 'created_at']
-
-
 class DiscussionPostSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
 
