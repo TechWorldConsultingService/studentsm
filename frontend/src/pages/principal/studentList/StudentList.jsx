@@ -36,7 +36,7 @@ const StudentList = () => {
       setStudentList(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        navigate("/login");
+        navigate("/");
       } else {
         toast.error("Error fetching students:", error.message || error);
       }
