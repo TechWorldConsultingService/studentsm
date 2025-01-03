@@ -126,10 +126,10 @@ class ClassSerializer(serializers.ModelSerializer):
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the teacher
-    # subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
-    subjects = SubjectSerializer(many=True)  # Nested serializer for subjects
-    # classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
-    classes = ClassSerializer(many=True)  # Nested serializer for classes
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    # subjects = SubjectSerializer(many=True)  # Nested serializer for subjects
+    classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+    # classes = ClassSerializer(many=True)  # Nested serializer for classes
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
 
     class Meta:
@@ -491,13 +491,13 @@ class FeesSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     
-from rest_framework import serializers
-from .models import StaffLocation
+# from rest_framework import serializers
+# from .models import StaffLocation
 
-class StaffLocationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StaffLocation
-        fields = ['staff', 'latitude', 'longitude', 'timestamp']
+# class StaffLocationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = StaffLocation
+#         fields = ['staff', 'latitude', 'longitude', 'timestamp']
 
 
 
