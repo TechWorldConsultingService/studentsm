@@ -1419,45 +1419,26 @@ class StudentPendingFeesView(ListAPIView):
 
 
 
-# Discussion Topic API Views
-class DiscussionTopicAPIView(APIView):
-    """
-    API View to list and create discussion topics.
-    """
-
-    def get(self, request):
-        topics = DiscussionTopic.objects.all()
-        serializer = DiscussionTopicSerializer(topics, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = DiscussionTopicSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(created_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 # Discussion Post API Views
 class DiscussionPostAPIView(APIView):
     """
-    API View to list and create posts under a specific topic.
+    API View to list and create posts.
     """
 
-    def get(self, request, topic_id):
-        posts = DiscussionPost.objects.filter(topic_id=topic_id)
+    def get(self, request):
+        # Get all discussion posts
+        posts = DiscussionPost.objects.all()
         serializer = DiscussionPostSerializer(posts, many=True)
         return Response(serializer.data)
 
-    def post(self, request, topic_id):
+    def post(self, request):
+        # Ensure the logged-in user is set as the creator
         data = request.data.copy()
-        data['topic'] = topic_id
         serializer = DiscussionPostSerializer(data=data)
         if serializer.is_valid():
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # Discussion Comment API Views
 class DiscussionCommentAPIView(APIView):
@@ -1480,23 +1461,6 @@ class DiscussionCommentAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class DiscussionTopicDeleteAPIView(APIView):
-    """
-    API View to delete a discussion topic.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, topic_id):
-        try:
-            topic = DiscussionTopic.objects.get(id=topic_id)
-        except DiscussionTopic.DoesNotExist:
-            return Response({"error": "Topic not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if topic.created_by != request.user:
-            raise PermissionDenied("You are not authorized to delete this topic.")
-
-        topic.delete()
-        return Response({"message": "Topic deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class DiscussionPostDeleteAPIView(APIView):

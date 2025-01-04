@@ -191,11 +191,6 @@ class FeePaymentHistoryAdmin(admin.ModelAdmin):
 #     list_display = ['staff','latitude','altitude']
 
 
-@admin.register(DiscussionTopic)
-class DiscussionTopicAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'created_by', 'created_at')  # Fields displayed in the admin list view
-    list_filter = ('created_at',)  # Filters on the sidebar
-    search_fields = ('title', 'created_by__username')  # Search functionality
 
 # DiscussionPost admin customization
 @admin.register(DiscussionPost)
