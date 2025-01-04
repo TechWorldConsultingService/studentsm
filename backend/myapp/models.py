@@ -66,6 +66,7 @@ class Principal(models.Model):
     
 
 class Student(models.Model):
+    # user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='student')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
@@ -244,14 +245,14 @@ class FeePaymentHistory(models.Model):
 from django.db import models
 from django.contrib.auth.models import User
 
-class StaffLocation(models.Model):
-    staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    altitude = models.DecimalField(max_digits=9, decimal_places=6)
-    timestamp = models.DateTimeField(auto_now=True)
+# class StaffLocation(models.Model):
+#     staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
+#     latitude = models.DecimalField(max_digits=9, decimal_places=6)
+#     altitude = models.DecimalField(max_digits=9, decimal_places=6)
+#     timestamp = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.staff.username} - {self.timestamp}"
+#     def __str__(self):
+#         return f"{self.staff.username} - {self.timestamp}"
 
 
 

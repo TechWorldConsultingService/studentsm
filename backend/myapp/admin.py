@@ -4,7 +4,8 @@ from django import forms
 from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
-    StaffLocation, Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionPost, DiscussionComment,
+    # StaffLocation, 
+    Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionTopic, DiscussionPost, DiscussionComment,
 )
 
 @admin.register(Post)
@@ -185,9 +186,9 @@ class FeePaymentHistoryAdmin(admin.ModelAdmin):
     search_fields = ['fee_record__student__user__username', 'transaction_id']
 
 
-@admin.register(StaffLocation)
-class StaffLocationAdmin(admin.ModelAdmin):
-    list_display = ['staff','latitude','altitude']
+# @admin.register(StaffLocation)
+# class StaffLocationAdmin(admin.ModelAdmin):
+#     list_display = ['staff','latitude','altitude']
 
 
 

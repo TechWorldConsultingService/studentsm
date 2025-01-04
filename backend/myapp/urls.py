@@ -73,9 +73,11 @@ urlpatterns = [
     path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/', LessonAttendanceView.as_view(), name='lesson-attendance-create'),
     path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/<str:date>/', LessonAttendanceView.as_view(), name='lesson-attendance-list'),
 
-
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
+
+
+
 
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
@@ -92,6 +94,8 @@ urlpatterns = [
     # Review assignments by the teacher
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
 
+
+
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
     path('api/syllabus/class/<str:class_code>/', SyllabusPerClassView.as_view(), name='syllabus-per-class'), # to view syllabus as per class
@@ -105,7 +109,7 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
 
-    path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
+    # path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
     
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),

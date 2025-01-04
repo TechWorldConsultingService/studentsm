@@ -1121,8 +1121,18 @@ class SubmitStudentAssignmentView(APIView):
                 {"error": "Submission file are required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
+        # assignment = get_object_or_404(Assignment, id=assignment_id)
+        # student = get_object_or_404(Student, user=request.user)
+
+        try:
+            student = get_object_or_404(Student, user=request.user)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to submit this assignment."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         assignment = get_object_or_404(Assignment, id=assignment_id)
-        student = get_object_or_404(Student, user=request.user)
+        
 
         if student.class_code != assignment.class_assigned:
             return Response(
@@ -1375,37 +1385,37 @@ class StudentPendingFeesView(ListAPIView):
         serializer = self.serializer_class(pending_fees, many=True)
         return Response(serializer.data)
     
-from rest_framework.permissions import AllowAny
-class UpdateStaffLocationView(APIView):
-    # permission_classes = [IsAuthenticated]
-    permission_classes = [AllowAny]
+# from rest_framework.permissions import AllowAny
+# class UpdateStaffLocationView(APIView):
+#     # permission_classes = [IsAuthenticated]
+#     permission_classes = [AllowAny]
 
-    def get(self, request):
-        # locations = StaffLocation.objects.all()  # Assuming all staff locations
-        # serializer = StaffLocationSerializer(locations, many=True)
-        # return Response({"locations": serializer.data})
-        staff_locations = StaffLocation.objects.all()
-        locations = [
-            {
-                'staff': location.staff.user.username,
-                'latitude': location.latitude,
-                'longitude': location.longitude,
-                'timestamp': location.timestamp
-            }
-            for location in staff_locations
-            # print(locations)
-        ]
-        # data = {"message": "Staff locations retrieved successfully"}
-        print(locations)
+#     def get(self, request):
+#         # locations = StaffLocation.objects.all()  # Assuming all staff locations
+#         # serializer = StaffLocationSerializer(locations, many=True)
+#         # return Response({"locations": serializer.data})
+#         staff_locations = StaffLocation.objects.all()
+#         locations = [
+#             {
+#                 'staff': location.staff.user.username,
+#                 'latitude': location.latitude,
+#                 'longitude': location.longitude,
+#                 'timestamp': location.timestamp
+#             }
+#             for location in staff_locations
+#             # print(locations)
+#         ]
+#         # data = {"message": "Staff locations retrieved successfully"}
+#         print(locations)
 
-        return Response({"locations":locations})
+#         return Response({"locations":locations})
 
-    def post(self, request):
-        serializer = StaffLocationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(staff=request.user.staff)
-            return Response({"message": "Location updated successfully"})
-        return Response(serializer.errors, status=400)
+#     def post(self, request):
+#         serializer = StaffLocationSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(staff=request.user.staff)
+#             return Response({"message": "Location updated successfully"})
+#         return Response(serializer.errors, status=400)
 
 
 
