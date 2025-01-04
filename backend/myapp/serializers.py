@@ -126,15 +126,27 @@ class ClassSerializer(serializers.ModelSerializer):
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the teacher
-    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
+    # subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
     # subjects = SubjectSerializer(many=True)  # Nested serializer for subjects
-    classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+    
+    subjects = serializers.ListField(
+        child = serializers.DictField(), # Accept a list of dictionaries
+        write_only=True  # Only for input, won't include in the response
+    )
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+    # classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
     # classes = ClassSerializer(many=True)  # Nested serializer for classes
+    classes = serializers.ListField(
+        child = serializers.DictField(), # Accept a list of dictionaries
+        write_only=True  # Only for input, won't include in the response
+    )
+    class_details = ClassSerializer(source='classes', many=True, read_only=True)
+    
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = Teacher
-        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'classes','class_teacher']
+        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details', 'classes','class_details','class_teacher']
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -153,11 +165,33 @@ class TeacherSerializer(serializers.ModelSerializer):
             # Create the Teacher instance without subjects and classes
             teacher = Teacher.objects.create(user=user, **validated_data)
             
-            #using .set() to handle many-to-many relationships
-            # Assign many-to-many relationships
-            if subjects_data:
-                teacher.subjects.set(subjects_data)
-            teacher.classes.set(classes_data)
+            
+            # Create or get Subject instances
+            subject_instances = []
+            for subject_data in subjects_data:
+                subject, _ = Subject.objects.get_or_create(
+                subject_code=subject_data['subject_code'],
+                defaults={'subject_name': subject_data['subject_name']}
+            )
+            subject_instances.append(subject)
+
+            # Assign subjects to the teacher
+            teacher.subjects.set(subject_instances)
+
+            # Create or get Class instances
+            class_instances = []
+            for class_data in classes_data:
+                class_instance, _ = Class.objects.get_or_create(
+                    class_code=class_data['class_code'],
+                    defaults={'class_name': class_data['class_name']}
+                )
+                class_instances.append(class_instance)
+
+            # Assign classes to the teacher
+            teacher.classes.set(class_instances)
+
+
+
 
             # Assign class_teacher if provided
             if class_teacher:
