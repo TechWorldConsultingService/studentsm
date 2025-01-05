@@ -143,7 +143,7 @@ const TeacherList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {teacherList.map((teacher) => (
+                  {teacherList.length > 0 ? teacherList.map((teacher) => (
                     <tr key={teacher.id} className="border-b hover:bg-purple-50">
                       <td className="px-4 py-2">{teacher.user.first_name} {teacher.user.last_name}</td>
                       <td className="px-4 py-2">{teacher.user.email}</td>
@@ -168,7 +168,11 @@ const TeacherList = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )): (
+                    <div>There is no teacher to show! Add new teacher. </div>
+                  )
+                
+                }
                 </tbody>
               </table>
             </div>
