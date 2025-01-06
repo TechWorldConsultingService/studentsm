@@ -483,7 +483,7 @@ class SyllabusSerializer(serializers.ModelSerializer):
     def get_completion_percentage(self, obj):
         return obj.get_completion_percentage()
 
-class FeePaymentHistorySerializer(serializers.ModelSerializer):
+'''class FeePaymentHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FeePaymentHistory
         fields = [
@@ -523,7 +523,7 @@ class FeesSerializer(serializers.ModelSerializer):
         """
         instance.amount_paid = validated_data.get('amount_paid', instance.amount_paid)
         instance.save()
-        return instance
+        return instance '''
     
 # from rest_framework import serializers
 # from .models import StaffLocation
@@ -554,3 +554,128 @@ class DiscussionCommentSerializer(serializers.ModelSerializer):
     def get_replies(self, obj):
         replies = DiscussionComment.objects.filter(parent=obj)
         return DiscussionCommentSerializer(replies, many=True).data
+
+
+
+class FeeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeCategory
+        fields = ['id', 'name', 'amount', 'per_months']
+
+class FeeStructureSerializer(serializers.ModelSerializer):
+    fee_categories = serializers.PrimaryKeyRelatedField(
+        queryset=FeeCategory.objects.all(),
+        many=True
+    )  # Accepts a list of FeeCategory IDs
+
+    class Meta:
+        model = FeeStructure
+        fields = ['id', 'student_class', 'monthly_fee', 'fee_categories']
+
+from decimal import Decimal
+from django.utils.timezone import now
+
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    fee_structure = serializers.PrimaryKeyRelatedField(queryset=FeeStructure.objects.all(), required=False)
+    other_fee = serializers.PrimaryKeyRelatedField(queryset=FeeCategory.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            'student',
+            'months',
+            'fee_structure',
+            'other_fee',
+            'total_amount',
+            'paid_amount',
+            'remaining_dues',
+            'payment_no',
+        ]
+        read_only_fields = ['total_amount', 'remaining_dues', 'payment_no']
+
+    def validate(self, attrs):
+        student = attrs.get('student')
+        months = attrs.get('months')
+        current_year = now().year  # Get the current year
+
+        # Fetch all transactions for the student in the current year
+        existing_transactions = PaymentTransaction.objects.filter(
+            student=student,
+            created_at__year=current_year,
+        )
+
+        # Flatten existing months in the current year
+        existing_months = set(
+            month for transaction in existing_transactions for month in transaction.months
+        )
+
+        # Check for overlapping months
+        duplicate_months = set(months).intersection(existing_months)
+        if duplicate_months:
+            raise serializers.ValidationError(
+                f"Payments for the following months in {current_year} already exist: {', '.join(duplicate_months)}"
+            )
+
+        # Ensure fee_structure is provided
+        if not attrs.get('fee_structure') and student.class_code:
+            fee_structure = FeeStructure.objects.filter(student_class=student.class_code).first()
+            if not fee_structure:
+                raise serializers.ValidationError("No fee structure found for the student's class.")
+            attrs['fee_structure'] = fee_structure
+        elif not student.class_code:
+            raise serializers.ValidationError("Student does not have a class assigned.")
+
+        return attrs
+
+
+
+    def create(self, validated_data):
+        student = validated_data['student']
+        fee_structure = validated_data['fee_structure']
+        months = validated_data['months']
+        other_fee = validated_data.get('other_fee')
+        paid_amount = validated_data['paid_amount']
+
+        # Generate a unique payment number
+        current_year = now().year
+        last_transaction = PaymentTransaction.objects.filter(payment_no__startswith=str(current_year)).order_by('-id').first()
+        if last_transaction:
+            last_number = int(last_transaction.payment_no.split('-')[-1])
+            payment_no = f"{current_year}-{last_number + 1:06d}"
+        else:
+            payment_no = f"{current_year}-000001"
+
+        # Calculate total months and total fee
+        total_months = len(months)
+        monthly_fee = fee_structure.monthly_fee or Decimal('0.00')
+
+        total_fee = Decimal('0.00')
+        for fee in fee_structure.fee_categories.all():
+            if fee.per_months:
+                total_fee += fee.amount * total_months
+            else:
+                total_fee += fee.amount
+
+        total_fee += monthly_fee * total_months
+
+        if other_fee:
+            total_fee += other_fee.amount
+
+        # Calculate remaining dues
+        previous_transaction = PaymentTransaction.objects.filter(student=student).order_by('-created_at').first()
+        previous_dues = Decimal(previous_transaction.remaining_dues) if previous_transaction else Decimal('0.00')
+
+        remaining_dues = (previous_dues + total_fee) - paid_amount
+        remaining_dues = max(remaining_dues, Decimal('0.00'))
+
+        # Create the transaction instance
+        return PaymentTransaction.objects.create(
+            student=student,
+            months=months,
+            fee_structure=fee_structure,
+            other_fee=other_fee,
+            total_amount=total_fee,
+            paid_amount=paid_amount,
+            remaining_dues=remaining_dues,
+            payment_no=payment_no,
+        )

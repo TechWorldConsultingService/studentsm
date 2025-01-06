@@ -5,9 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from django.contrib.auth.models import User
 from .models import *
-from .models import Class,Subject,Fees,Teacher
 from .serializers import * 
-from .serializers import FeesSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import *
 from django.contrib.auth import get_user_model
@@ -1324,7 +1322,7 @@ class SyllabusDeleteView(APIView):
                 status=status.HTTP_200_OK
             )
         
-# List and Create Fees
+'''# List and Create Fees
 class FeeListCreateView(ListCreateAPIView):
     queryset = Fees.objects.all()
     serializer_class = FeesSerializer
@@ -1383,7 +1381,7 @@ class StudentPendingFeesView(ListAPIView):
     def get(self, request, student_id, *args, **kwargs):
         pending_fees = self.get_queryset()
         serializer = self.serializer_class(pending_fees, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data) '''
     
 # from rest_framework.permissions import AllowAny
 # class UpdateStaffLocationView(APIView):
@@ -1499,3 +1497,168 @@ class DiscussionCommentDeleteAPIView(APIView):
 
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import FeeCategory
+from .serializers import FeeCategorySerializer
+
+
+class FeeCategoryListCreateView(APIView):
+    def get(self, request):
+        fee_categories = FeeCategory.objects.all()
+        serializer = FeeCategorySerializer(fee_categories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = FeeCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FeeCategoryDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            fee_category = FeeCategory.objects.get(pk=pk)
+        except FeeCategory.DoesNotExist:
+            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = FeeCategorySerializer(fee_category)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            fee_category = FeeCategory.objects.get(pk=pk)
+        except FeeCategory.DoesNotExist:
+            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = FeeCategorySerializer(fee_category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            fee_category = FeeCategory.objects.get(pk=pk)
+        except FeeCategory.DoesNotExist:
+            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
+        fee_category.delete()
+        return Response({'message': 'FeeCategory deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+from .models import FeeStructure
+from .serializers import FeeStructureSerializer
+
+
+class FeeStructureListCreateView(APIView):
+    def get(self, request):
+        fee_structures = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories')
+        serializer = FeeStructureSerializer(fee_structures, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = FeeStructureSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FeeStructureDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            fee_structure = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories').get(pk=pk)
+        except FeeStructure.DoesNotExist:
+            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = FeeStructureSerializer(fee_structure)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            fee_structure = FeeStructure.objects.get(pk=pk)
+        except FeeStructure.DoesNotExist:
+            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = FeeStructureSerializer(fee_structure, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            fee_structure = FeeStructure.objects.get(pk=pk)
+        except FeeStructure.DoesNotExist:
+            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
+        fee_structure.delete()
+        return Response({'message': 'FeeStructure deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+from .models import PaymentTransaction
+from .serializers import PaymentTransactionSerializer
+
+
+class StudentFeeListView(APIView):
+    def get(self, request, student_id):
+        transactions = PaymentTransaction.objects.filter(student_id=student_id)
+        serializer = PaymentTransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+
+class StudentPendingFeesView(APIView):
+    def get(self, request, student_id):
+        transactions = PaymentTransaction.objects.filter(student_id=student_id, remaining_dues__gt=0)
+        serializer = PaymentTransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+
+
+from .models import PaymentTransaction
+from .serializers import PaymentTransactionSerializer
+
+
+class PaymentTransactionListCreateView(APIView):
+    def get(self, request):
+        transactions = PaymentTransaction.objects.select_related('student', 'fee_structure')
+        serializer = PaymentTransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = PaymentTransactionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentTransactionDetailView(APIView):
+    def get(self, request, pk):
+        try:
+            transaction = PaymentTransaction.objects.select_related('student', 'fee_structure').get(pk=pk)
+        except PaymentTransaction.DoesNotExist:
+            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = PaymentTransactionSerializer(transaction)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            transaction = PaymentTransaction.objects.get(pk=pk)
+        except PaymentTransaction.DoesNotExist:
+            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = PaymentTransactionSerializer(transaction, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            transaction = PaymentTransaction.objects.get(pk=pk)
+        except PaymentTransaction.DoesNotExist:
+            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
+        transaction.delete()
+        return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
+    
