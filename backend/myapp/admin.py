@@ -5,7 +5,11 @@ from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
     # StaffLocation, 
+<<<<<<< HEAD
     Staff, Assignment, Syllabus, DiscussionPost, DiscussionComment,
+=======
+    Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionPost, DiscussionComment,
+>>>>>>> f66e9b96bf56d7f464aabb76046bc089285d606b
 )
 
 @admin.register(Post)
