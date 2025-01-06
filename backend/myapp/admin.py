@@ -5,7 +5,7 @@ from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
     # StaffLocation, 
-    Staff, Assignment, Syllabus, Fees, FeePaymentHistory, DiscussionTopic, DiscussionPost, DiscussionComment,
+    Staff, Assignment, Syllabus, DiscussionPost, DiscussionComment,
 )
 
 @admin.register(Post)
@@ -157,7 +157,7 @@ class SyllabusAdmin(admin.ModelAdmin):
         return obj.get_completion_percentage()
     completion_percentage.short_description = 'Completion (%)'
 
-
+'''
 class FeePaymentHistoryInline(admin.TabularInline):
     model = FeePaymentHistory
     extra = 0
@@ -183,7 +183,7 @@ class FeesAdmin(admin.ModelAdmin):
 class FeePaymentHistoryAdmin(admin.ModelAdmin):
     list_display = ['fee_record', 'amount_paid', 'payment_date', 'mode_of_payment', 'transaction_id']
     list_filter = ['mode_of_payment', 'payment_date']
-    search_fields = ['fee_record__student__user__username', 'transaction_id']
+    search_fields = ['fee_record__student__user__username', 'transaction_id'] '''
 
 
 # @admin.register(StaffLocation)
@@ -205,3 +205,46 @@ class DiscussionCommentAdmin(admin.ModelAdmin):
     list_display = ('id', 'post', 'created_by', 'parent', 'created_at')  # Fields displayed in the admin list view
     list_filter = ('created_at', 'post')  # Filters on the sidebar
     search_fields = ('post__content', 'content', 'created_by__username')  # Search functionality
+
+
+
+from .models import FeeCategory, FeeStructure, PaymentTransaction
+
+# Admin configuration for FeeCategory
+@admin.register(FeeCategory)
+class FeeCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'amount', 'per_months')
+    search_fields = ('name',)
+    list_filter = ('per_months',)
+    ordering = ('name',)
+    fields = ('name', 'amount', 'per_months')
+
+
+# Inline configuration for FeeCategory in FeeStructure
+class FeeCategoryInline(admin.TabularInline):
+    model = FeeStructure.fee_categories.through
+    extra = 1
+
+
+# Admin configuration for FeeStructure
+@admin.register(FeeStructure)
+class FeeStructureAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student_class', 'monthly_fee', 'total_fee')
+    search_fields = ('student_class__class_name',)
+    list_filter = ('student_class',)
+    ordering = ('student_class',)
+    fields = ('student_class', 'monthly_fee', 'fee_categories')
+    inlines = [FeeCategoryInline]
+
+
+# Admin configuration for PaymentTransaction
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student', 'payment_no', 'total_amount', 'paid_amount', 'remaining_dues', 'created_at')
+    search_fields = ('payment_no', 'student__user__username', 'student__user__first_name')
+    list_filter = ('created_at', 'student__class_code__class_name')  # Corrected field
+    ordering = ('-created_at',)
+    fields = ('student', 'months', 'fee_structure', 'total_amount', 'paid_amount', 'remaining_dues', 'payment_no', 'created_at')
+    readonly_fields = ('total_amount', 'remaining_dues', 'payment_no', 'created_at')
+
+
