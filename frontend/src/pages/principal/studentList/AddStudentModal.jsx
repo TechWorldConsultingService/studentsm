@@ -71,6 +71,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [classList, setClassList] = useState([]);
+  const [subjectList, setSubjectList] = useState([])
 
   const formik = useFormik({
     initialValues: {
