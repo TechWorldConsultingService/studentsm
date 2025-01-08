@@ -6,66 +6,72 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
-
-const addTeacherSchema = Yup.object().shape({
-  user: Yup.object().shape({
-    username: Yup.string()
-      .required("Username is required.")
-      .min(3, "Username must be at least 3 characters long.")
-      .max(20, "Username can't exceed 20 characters."),
-    password: Yup.string()
-      .required("Password is required.")
-      .min(6, "Password must be at least 6 characters long.")
-      .max(15, "Password can't exceed 15 characters.")
-      .matches(
-        /[a-zA-Z0-9]/,
-        "Password must contain at least one letter and one number."
-      ),
-    email: Yup.string()
-      .required("Email is required.")
-      .email("Please enter a valid email address."),
-    first_name: Yup.string()
-      .required("First name is required.")
-      .min(2, "First name must be at least 2 characters.")
-      .max(10, "First name can't exceed 10 characters."),
-    last_name: Yup.string()
-      .required("Last name is required.")
-      .min(2, "Last name must be at least 2 characters.")
-      .max(10, "Last name can't exceed 10 characters."),
-  }),
-  phone: Yup.string()
-    .required("Phone number is required.")
-    .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long.")
-    .min(10, "Phone number must be 10 digits.")
-    .max(10, "Phone number must be 10 digits."),
-  address: Yup.string()
-    .required("Address is required.")
-    .min(5, "Address must be at least 5 characters long.")
-    .max(25, "Address can't exceed 25 characters."),
-  date_of_birth: Yup.date()
-    .required("Date of birth is required.")
-    .max(new Date(), "Date of birth cannot be in the future.")
-    .test(
-      "age",
-      "Teacher must be at least 18 years old.",
-      (value) => new Date().getFullYear() - new Date(value).getFullYear() >= 18
-    ),
-  gender: Yup.string()
-    .required("Gender is required.")
-    .oneOf(
-      ["male", "female", "other"],
-      "Gender must be one of 'male', 'female', or 'other'."
-    ),
-  department_code: Yup.string()
-    .required("Department code is required.")
-    .min(1, "Department code must be at least 1 character long.")
-    .max(10, "Department code can't exceed 10 characters."),
-});
+import useFetchData from "../../../hooks/useFetch";
+import { Select } from "antd";
 
 const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [departmentList, setDepartmentList] = useState([]);
+  const { fetchedData: classList } = useFetchData(
+    "http://localhost:8000/api/classes/"
+  );
+
+  const { fetchedData: subjectList } = useFetchData(
+    "http://localhost:8000/api/subjects/"
+  );
+
+  const addTeacherSchema = Yup.object().shape({
+    user: Yup.object().shape({
+      username: Yup.string()
+        .required("Username is required.")
+        .min(3, "Username must be at least 3 characters long.")
+        .max(20, "Username can't exceed 20 characters."),
+      password: Yup.string()
+        .required("Password is required.")
+        .min(6, "Password must be at least 6 characters long.")
+        .max(15, "Password can't exceed 15 characters.")
+        .matches(
+          /[a-zA-Z0-9]/,
+          "Password must contain at least one letter and one number."
+        ),
+      email: Yup.string()
+        .required("Email is required.")
+        .email("Please enter a valid email address."),
+      first_name: Yup.string()
+        .required("First name is required.")
+        .min(2, "First name must be at least 2 characters.")
+        .max(10, "First name can't exceed 10 characters."),
+      last_name: Yup.string()
+        .required("Last name is required.")
+        .min(2, "Last name must be at least 2 characters.")
+        .max(10, "Last name can't exceed 10 characters."),
+    }),
+    phone: Yup.string()
+      .required("Phone number is required.")
+      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long.")
+      .min(10, "Phone number must be 10 digits.")
+      .max(10, "Phone number must be 10 digits."),
+    address: Yup.string()
+      .required("Address is required.")
+      .min(5, "Address must be at least 5 characters long.")
+      .max(25, "Address can't exceed 25 characters."),
+    date_of_joining: Yup.date()
+      .required("Date of birth is required.")
+      .max(new Date(), "Date of birth cannot be in the future."),
+    gender: Yup.string().required("Gender is required."),
+
+    subjects: Yup.array().of(Yup.object().shape({
+      subject_code: Yup.string().required("Subject code is required.").oneOf(subjectList.map((item) => item.subject_code), "Invalid subject selected."),
+      subject_name: Yup.string().required("Subject name is required.").oneOf(subjectList.map((item) => item.subject_name), "Invalid subject name.")
+    })).min(1, "At least one subject is required."),
+    classes: Yup.array().of(Yup.object().shape({
+      class_code: Yup.string().required("Class code is required.").oneOf(classList.map((item) => item.class_code), "Invalid class selected."),
+      class_name: Yup.string().required("Class name is required.").oneOf(classList.map((item) => item.class_name), "Invalid class name")
+    })).min(1, "At least one class is required."),
+    class_teacher: Yup.string()
+      .nullable()
+      .notRequired("Please select one class as Class Teacher if applicable."),
+  });
 
   const formik = useFormik({
     initialValues: {
@@ -78,9 +84,11 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       },
       phone: "",
       address: "",
-      date_of_birth: "",
+      date_of_joining: "",
       gender: "",
-      department_code: "",
+      subjects: [],
+      classes: [],
+      class_teacher: "",
     },
     validationSchema: addTeacherSchema,
     onSubmit: async (values) => {
@@ -113,28 +121,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
     }
   };
 
-  const fetchDepartments = async () => {
-    if (!access) {
-      toast.error("User is not authenticated. Please log in.");
-      return;
-    }
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/departments/", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      setDepartmentList(data);
-    } catch (error) {
-      toast.error("Error fetching departments:", error.message || error);
-    }
-  };
-
-  useEffect(() => {
-    fetchDepartments();
-  }, [access, navigate]);
-
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-1/3 max-h-full overflow-auto">
@@ -157,7 +143,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
-
           {/* Password */}
           <div className="mb-4">
             <Password
@@ -174,7 +159,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
-
           {/* Email */}
           <div className="mb-4">
             <input
@@ -192,7 +176,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
-
           {/* First Name */}
           <div className="mb-4">
             <input
@@ -204,13 +187,13 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.first_name}
             />
-            {formik.touched.user?.first_name && formik.errors.user?.first_name && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.first_name}
-              </div>
-            )}
+            {formik.touched.user?.first_name &&
+              formik.errors.user?.first_name && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.user.first_name}
+                </div>
+              )}
           </div>
-
           {/* Last Name */}
           <div className="mb-4">
             <input
@@ -222,13 +205,13 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.last_name}
             />
-            {formik.touched.user?.last_name && formik.errors.user?.last_name && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.last_name}
-              </div>
-            )}
+            {formik.touched.user?.last_name &&
+              formik.errors.user?.last_name && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.user.last_name}
+                </div>
+              )}
           </div>
-
           {/* Phone */}
           <div className="mb-4">
             <input
@@ -246,7 +229,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
-
           {/* Address */}
           <div className="mb-4">
             <input
@@ -264,24 +246,23 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
-
-          {/* Date of Birth */}
+          {/* Date of Joining */}
           <div className="mb-4">
             <input
               type="date"
               className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_birth"
+              name="date_of_joining"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              value={formik.values.date_of_birth}
+              value={formik.values.date_of_joining}
             />
-            {formik.touched.date_of_birth && formik.errors.date_of_birth && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.date_of_birth}
-              </div>
-            )}
+            {formik.touched.date_of_joining &&
+              formik.errors.date_of_joining && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.date_of_joining}
+                </div>
+              )}
           </div>
-
           {/* Gender */}
           <div className="mb-4">
             <select
@@ -303,42 +284,96 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
             )}
           </div>
 
-          {/* Department Code */}
+          {/* Subjects */}
           <div className="mb-4">
-            <select
-              name="department_code"
-              className="border border-gray-300 p-2 rounded w-full"
-              value={formik.values.department_code}
-              onChange={formik.handleChange}
+            <Select
+              mode="multiple"
+              name="subjects"
+              placeholder="Select all subjects"
+              className="w-full"
+              onChange={(selectedValues) => {
+                // Map selected subject codes to full objects
+                const selectedSubjects = subjectList.filter((subject) =>
+                  selectedValues.includes(subject.subject_code)
+                );
+                formik.setFieldValue("subjects", selectedSubjects);
+              }}
+              value={formik.values.subjects.map((subject) => subject.subject_code)} // Display selected subject codes
               onBlur={formik.handleBlur}
             >
-              <option value="">Select Department</option>
-              {departmentList.length > 0 &&
-                departmentList.map((item) => (
-                  <option key={item.id} value={item.department_code}>
-                    {item.department_name}
-                  </option>
+              {subjectList.length > 0 &&
+                subjectList.map((item) => (
+                  <Select.Option key={item.id} value={item.subject_code}>
+                    {item.subject_name}
+                  </Select.Option>
                 ))}
-            </select>
-            {formik.touched.department_code && formik.errors.department_code && (
+            </Select>
+            {formik.touched.subjects && formik.errors.subjects && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.department_code}
+                {formik.errors.subjects}
               </div>
             )}
           </div>
 
-          {/* Submit Button */}
-          <div className="mt-6 text-center">
+          {/* Classes */}
+          <div className="mb-4">
+            <Select
+              mode="multiple"
+              name="classes"
+              placeholder="Select all classes"
+              className="w-full"
+              onChange={(selectedValues) => {
+                // Map selected class codes to full objects
+                const selectedClasses = classList.filter((classItem) =>
+                  selectedValues.includes(classItem.class_code)
+                );
+                formik.setFieldValue("classes", selectedClasses);
+              }}
+              value={formik.values.classes.map((item) => item.class_code)} // Display selected class codes
+              onBlur={formik.handleBlur}
+            >
+              {classList.length > 0 &&
+                classList.map((classItem) => (
+                  <Select.Option key={classItem.class_code} value={classItem.class_code}>
+                    {classItem.class_name}
+                  </Select.Option>
+                ))}
+            </Select>
+            {formik.touched.classes && formik.errors.classes && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.classes}
+              </div>
+            )}
+          </div>
+
+          {/* clsss teacher  */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Class Teacher"
+              name="class_teacher"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.class_teacher}
+            />
+            {formik.touched.class_teacher && formik.errors.class_teacher && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.class_teacher}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-center space-x-4">
             <button
               type="submit"
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-2"
+              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              Save
+              Add Teacher
             </button>
             <button
               type="button"
+              className="bg-gray-300 text-black px-6 py-2 rounded-lg hover:bg-gray-400"
               onClick={handleCloseModal}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
             >
               Cancel
             </button>
