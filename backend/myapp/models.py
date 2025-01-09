@@ -2,6 +2,9 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from accounts.models import CustomUser
+from django.utils.timezone import now
+from decimal import Decimal
+
 # For creating Post/reel type content
 class Post(models.Model):
     POST_TYPES = [
@@ -206,7 +209,7 @@ class Syllabus(models.Model):
         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
 
-class Fees(models.Model):
+'''class Fees(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Total fee amount
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total amount paid
@@ -239,20 +242,20 @@ class FeePaymentHistory(models.Model):
     notes = models.TextField(null=True, blank=True)  # Additional notes about the payment
 
     def ____str____(self):
-        return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}"
+        return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}" '''
     
-
+'''
 from django.db import models
 from django.contrib.auth.models import User
 
-# class StaffLocation(models.Model):
-#     staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
-#     latitude = models.DecimalField(max_digits=9, decimal_places=6)
-#     altitude = models.DecimalField(max_digits=9, decimal_places=6)
-#     timestamp = models.DateTimeField(auto_now=True)
+class StaffLocation(models.Model):
+     staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
+     latitude = models.DecimalField(max_digits=9, decimal_places=6)
+     altitude = models.DecimalField(max_digits=9, decimal_places=6)
+     timestamp = models.DateTimeField(auto_now=True)
 
-#     def __str__(self):
-#         return f"{self.staff.username} - {self.timestamp}"
+     def __str__(self):
+         return f"{self.staff.username} - {self.timestamp}'''
 
 
 
@@ -276,3 +279,66 @@ class DiscussionComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.post.content[:20]}"
+
+
+class FeeCategory(models.Model):
+    name = models.CharField(max_length=100)  # e.g., Sports Fee, Exam Fee
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount for this fee
+    per_months = models.BooleanField(default=True)  # Flag to decide if the fee is multiplied by months
+
+    def __str__(self):
+        return self.name
+
+
+class FeeStructure(models.Model):
+    student_class = models.ForeignKey('Class', on_delete=models.CASCADE)  # Class the fee structure belongs to
+    monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Renamed base_amount to monthly_fee
+    fee_categories = models.ManyToManyField(FeeCategory)  # Many fee categories for each fee structure
+
+    def __str__(self):
+        return f"Fee Structure for {self.student_class.class_name}"
+
+    def total_fee(self):
+        # Ensure monthly_fee is not None and convert to Decimal
+        monthly_fee = self.monthly_fee if self.monthly_fee is not None else Decimal('0.00')
+
+        # Calculate total fee for all categories
+        fee_categories_total = sum(fee.amount for fee in self.fee_categories.all())
+        
+        return monthly_fee + fee_categories_total
+
+
+
+from decimal import Decimal
+from django.utils.timezone import now
+
+class PaymentTransaction(models.Model):
+    MONTH_CHOICES = [
+        ('Baisakh', 'Baisakh'),
+        ('Jestha', 'Jestha'),
+        ('Ashar', 'Ashar'),
+        ('Shrawan', 'Shrawan'),
+        ('Bhadra', 'Bhadra'),
+        ('Ashwin', 'Ashwin'),
+        ('Kartik', 'Kartik'),
+        ('Mangsir', 'Mangsir'),
+        ('Poush', 'Poush'),
+        ('Magh', 'Magh'),
+        ('Falgun', 'Falgun'),
+        ('Chaitra', 'Chaitra'),
+    ]
+
+    student = models.ForeignKey('Student', on_delete=models.CASCADE)
+    months = models.JSONField(default=list)  # Allow multiple months selection
+    fee_structure = models.ForeignKey(FeeStructure, on_delete=models.CASCADE, null=True)
+    other_fee = models.ForeignKey(FeeCategory, on_delete=models.CASCADE, null=True, blank=True)  # Additional fee
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0)
+    paid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    remaining_dues = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    payment_no = models.CharField(max_length=20, unique=True, editable=False, default=None)
+
+    def __str__(self):
+        return f"Transaction {self.payment_no} for {self.student} ({self.total_amount})"
+
+

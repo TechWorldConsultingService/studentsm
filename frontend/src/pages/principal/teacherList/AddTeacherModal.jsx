@@ -60,14 +60,42 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       .max(new Date(), "Date of birth cannot be in the future."),
     gender: Yup.string().required("Gender is required."),
 
-    subjects: Yup.array().of(Yup.object().shape({
-      subject_code: Yup.string().required("Subject code is required.").oneOf(subjectList.map((item) => item.subject_code), "Invalid subject selected."),
-      subject_name: Yup.string().required("Subject name is required.").oneOf(subjectList.map((item) => item.subject_name), "Invalid subject name.")
-    })).min(1, "At least one subject is required."),
-    classes: Yup.array().of(Yup.object().shape({
-      class_code: Yup.string().required("Class code is required.").oneOf(classList.map((item) => item.class_code), "Invalid class selected."),
-      class_name: Yup.string().required("Class name is required.").oneOf(classList.map((item) => item.class_name), "Invalid class name")
-    })).min(1, "At least one class is required."),
+    subjects: Yup.array()
+      .of(
+        Yup.object().shape({
+          subject_code: Yup.string()
+            .required("Subject code is required.")
+            .oneOf(
+              subjectList.map((item) => item.subject_code),
+              "Invalid subject selected."
+            ),
+          subject_name: Yup.string()
+            .required("Subject name is required.")
+            .oneOf(
+              subjectList.map((item) => item.subject_name),
+              "Invalid subject name."
+            ),
+        })
+      )
+      .min(1, "At least one subject is required."),
+    classes: Yup.array()
+      .of(
+        Yup.object().shape({
+          class_code: Yup.string()
+            .required("Class code is required.")
+            .oneOf(
+              classList.map((item) => item.class_code),
+              "Invalid class selected."
+            ),
+          class_name: Yup.string()
+            .required("Class name is required.")
+            .oneOf(
+              classList.map((item) => item.class_name),
+              "Invalid class name"
+            ),
+        })
+      )
+      .min(1, "At least one class is required."),
     class_teacher: Yup.string()
       .nullable()
       .notRequired("Please select one class as Class Teacher if applicable."),
@@ -284,7 +312,10 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
             )}
           </div>
 
-          {/* Subjects */}
+
+
+
+{/*  subjects */}
           <div className="mb-4">
             <Select
               mode="multiple"
@@ -292,18 +323,21 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               placeholder="Select all subjects"
               className="w-full"
               onChange={(selectedValues) => {
-                // Map selected subject codes to full objects
-                const selectedSubjects = subjectList.filter((subject) =>
-                  selectedValues.includes(subject.subject_code)
+                // Map selected class codes to full objects
+                const selectedSubject = subjectList.filter((item) =>
+                  selectedValues.includes(item.subject_code)
                 );
-                formik.setFieldValue("subjects", selectedSubjects);
+                formik.setFieldValue("subjects", selectedSubject);
               }}
-              value={formik.values.subjects.map((subject) => subject.subject_code)} // Display selected subject codes
+              value={formik.values.subjects.map((item) => item.subject_code)}
               onBlur={formik.handleBlur}
             >
               {subjectList.length > 0 &&
                 subjectList.map((item) => (
-                  <Select.Option key={item.id} value={item.subject_code}>
+                  <Select.Option
+                    key={item.subjectList_code}
+                    value={item.subject_code}
+                  >
                     {item.subject_name}
                   </Select.Option>
                 ))}
@@ -314,6 +348,8 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               </div>
             )}
           </div>
+
+
 
           {/* Classes */}
           <div className="mb-4">
@@ -329,12 +365,15 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
                 );
                 formik.setFieldValue("classes", selectedClasses);
               }}
-              value={formik.values.classes.map((item) => item.class_code)} // Display selected class codes
+              value={formik.values.classes.map((item) => item.class_code)}
               onBlur={formik.handleBlur}
             >
               {classList.length > 0 &&
                 classList.map((classItem) => (
-                  <Select.Option key={classItem.class_code} value={classItem.class_code}>
+                  <Select.Option
+                    key={classItem.class_code}
+                    value={classItem.class_code}
+                  >
                     {classItem.class_name}
                   </Select.Option>
                 ))}

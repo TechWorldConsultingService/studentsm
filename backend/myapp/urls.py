@@ -104,10 +104,10 @@ urlpatterns = [
     path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
     # API endpoints for fees management
-    path('api/fees/', FeeListCreateView.as_view(), name='fee-list-create'),  # List and create fees
-    path('api/fees/<int:pk>/', FeeDetailView.as_view(), name='fee-detail'),  # View, update, and delete specific fee
-    path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
-    path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
+    #path('api/sfees/', FeeListCreateView.as_view(), name='fee-list-create'),  # List and create fees
+    #path('api/sfees/<int:pk>/', FeeDetailView.as_view(), name='fee-detail'),  # View, update, and delete specific fee
+    #path('api/sstudents/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
+    #path('api/sstudents/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
 
     # path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
     
@@ -119,6 +119,16 @@ urlpatterns = [
     path('api/forum/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
     path('api/forum/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
 
+    # API endpoints for fees management
+    path('api/fees/', FeeCategoryListCreateView.as_view(), name='fee-list-create'),  # Endpoint to list all fee categories and create new fee categories.
+    path('api/fees/<int:pk>/', FeeCategoryDetailView.as_view(), name='fee-detail'),  # Endpoint to view, update, or delete a specific fee category by its ID (`pk`).
+    path('api/fee-structures/', FeeStructureListCreateView.as_view(), name='fee-structure-list-create'),  # Endpoint to list all fee structures and create new fee structures.
+    path('api/fee-structures/<int:pk>/', FeeStructureDetailView.as_view(), name='fee-structure-detail'),  # Endpoint to view, update, or delete a specific fee structure by its ID (`pk`).
+    path('api/transactions/', PaymentTransactionListCreateView.as_view(), name='transaction-list-create'),  # Endpoint to list all payment transactions and create new payment transactions.
+    path('api/transactions/<int:pk>/', PaymentTransactionDetailView.as_view(), name='transaction-detail'),  # Endpoint to view, update, or delete a specific payment transaction by its ID (`pk`).
+    path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # Endpoint to retrieve the fee details for a specific student by their `student_id`.
+    path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # Endpoint to retrieve the pending fee details for a specific student by their `student_id`.
+    
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
