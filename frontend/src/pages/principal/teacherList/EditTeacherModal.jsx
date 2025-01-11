@@ -6,13 +6,16 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Password from "antd/es/input/Password";
 import * as Yup from "yup";
+import { Select } from "antd";
+import useFetchData from "../../../hooks/useFetch";
+
 
 const EditTeacherSchema = Yup.object().shape({
   user: Yup.object().shape({
     username: Yup.string()
       .required("Username is required.")
       .min(3, "Username must be at least 3 characters long.")
-      .max(20, "Username can't exceed 20 characters."),
+      .max(20, "Username can't exceed 20 characters long."),
     password: Yup.string()
       .min(6, "Password must be at least 6 characters long.")
       .max(15, "Password can't exceed 15 characters.")
@@ -34,26 +37,37 @@ const EditTeacherSchema = Yup.object().shape({
   }),
   phone: Yup.string()
     .required("Phone number is required.")
-    .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long.")
-    .min(10, "Phone number must be 10 digits.")
-    .max(10, "Phone number must be 10 digits."),
+    .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long."),
   address: Yup.string()
     .required("Address is required.")
     .min(5, "Address must be at least 5 characters long.")
     .max(25, "Address can't exceed 25 characters."),
-  date_of_birth: Yup.date()
-    .required("Date of birth is required.")
-    .max(new Date(), "Date of birth cannot be in the future."),
+  date_of_joining: Yup.date()
+    .required("Date of joining is required.")
+    .max(new Date(), "Date of joining cannot be in the future."),
   gender: Yup.string()
     .required("Gender is required.")
     .oneOf(
       ["male", "female", "other"],
       "Gender must be one of 'male', 'female', or 'other'."
     ),
-  department: Yup.string()
-    .required("Department is required.")
-    .min(1, "Department must be at least 1 character long.")
-    .max(30, "Department can't exceed 30 characters."),
+  subjects: Yup.array()
+    .of(
+      Yup.object().shape({
+        subject_code: Yup.string().required("Subject code is required."),
+        subject_name: Yup.string().required("Subject name is required."),
+      })
+    )
+    .min(1, "At least one subject must be selected."),
+  classes: Yup.array()
+    .of(
+      Yup.object().shape({
+        class_code: Yup.string().required("Class code is required."),
+        class_name: Yup.string().required("Class name is required."),
+      })
+    )
+    .min(1, "At least one class must be selected."),
+  class_teacher: Yup.number().required("Class teacher is required."),
 });
 
 const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
@@ -61,6 +75,14 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
   const navigate = useNavigate();
   const [isUsernameEditable, setIsUsernameEditable] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
+
+  const { fetchedData: classList } = useFetchData(
+    "http://localhost:8000/api/classes/"
+  );
+
+  const { fetchedData: subjectList } = useFetchData(
+    "http://localhost:8000/api/subjects/"
+  );
 
   useEffect(() => {
     if (!access) {
@@ -80,9 +102,11 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       },
       phone: teacherInfo?.phone || "",
       address: teacherInfo?.address || "",
-      date_of_birth: teacherInfo?.date_of_birth || "",
+      date_of_joining: teacherInfo?.date_of_joining || "",
       gender: teacherInfo?.gender || "",
-      department: teacherInfo?.department || "",
+      subjects: teacherInfo?.subject_details || [],
+      classes: teacherInfo?.class_details || [],
+      class_teacher: teacherInfo?.class_teacher || "",
     },
     validationSchema: EditTeacherSchema,
     onSubmit: async (values) => {
@@ -134,6 +158,7 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       fetchTeachers();
       handleCloseModal();
     } catch (error) {
+      console.log("error on updating is :",error)
       toast.error("Error updating teacher.");
     }
   };
@@ -300,21 +325,22 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
             )}
           </div>
 
-          {/* Date of Birth */}
+          {/* Date of Joining */}
           <div className="mb-4">
             <input
               type="date"
               className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_birth"
+              name="date_of_joining"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              value={formik.values.date_of_birth}
+              value={formik.values.date_of_joining}
             />
-            {formik.touched.date_of_birth && formik.errors.date_of_birth && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.date_of_birth}
-              </div>
-            )}
+            {formik.touched.date_of_joining &&
+              formik.errors.date_of_joining && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.date_of_joining}
+                </div>
+              )}
           </div>
 
           {/* Gender */}
@@ -338,20 +364,88 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
             )}
           </div>
 
-          {/* Department */}
+          {/* Subjects */}
+          <div className="mb-4">
+            <Select
+              mode="multiple"
+              name="subjects"
+              placeholder="Select all subjects"
+              className="w-full"
+              onChange={(selectedValues) => {
+                // Map selected subject codes to full subject objects
+                const selectedSubject = subjectList.filter((item) =>
+                  selectedValues.includes(item.subject_code)
+                );
+                formik.setFieldValue("subjects", selectedSubject);
+              }}
+              value={formik.values.subjects.map((item) => item.subject_code)}
+              onBlur={formik.handleBlur}
+            >
+              {subjectList.length > 0 &&
+                subjectList.map((item) => (
+                  <Select.Option
+                    key={item.subject_code}
+                    value={item.subject_code}
+                  >
+                    {item.subject_name}
+                  </Select.Option>
+                ))}
+            </Select>
+            {formik.touched.subjects && formik.errors.subjects && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.subjects}
+              </div>
+            )}
+          </div>
+
+          {/* Classes */}
+          <div className="mb-4">
+            <Select
+              mode="multiple"
+              name="classes"
+              placeholder="Select all classes"
+              className="w-full"
+              onChange={(selectedValues) => {
+                // Map selected class codes to full class objects
+                const selectedClasses = classList.filter((classItem) =>
+                  selectedValues.includes(classItem.class_code)
+                );
+                formik.setFieldValue("classes", selectedClasses);
+              }}
+              value={formik.values.classes.map((item) => item.class_code)}
+              onBlur={formik.handleBlur}
+            >
+              {classList.length > 0 &&
+                classList.map((classItem) => (
+                  <Select.Option
+                    key={classItem.class_code}
+                    value={classItem.class_code}
+                  >
+                    {classItem.class_name}
+                  </Select.Option>
+                ))}
+            </Select>
+            {formik.touched.classes && formik.errors.classes && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.classes}
+              </div>
+            )}
+          </div>
+
+          {/* Class Teacher */}
           <div className="mb-4">
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Department"
-              name="department"
+              placeholder="Class Teacher"
+              name="class_teacher"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              value={formik.values.department}
+              value={formik.values.class_teacher}
             />
-            {formik.touched.department && formik.errors.department && (
+            {formik.touched.class_teacher && formik.errors.class_teacher && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.department}
+                {formik.errors.class_teacher}
               </div>
             )}
           </div>
