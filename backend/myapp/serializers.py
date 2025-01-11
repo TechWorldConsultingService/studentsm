@@ -141,7 +141,6 @@ class TeacherSerializer(serializers.ModelSerializer):
         write_only=True  # Only for input, won't include in the response
     )
     class_details = ClassSerializer(source='classes', many=True, read_only=True)
-    
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
 
     class Meta:
@@ -170,10 +169,10 @@ class TeacherSerializer(serializers.ModelSerializer):
             subject_instances = []
             for subject_data in subjects_data:
                 subject, _ = Subject.objects.get_or_create(
-                subject_code=subject_data['subject_code'],
-                defaults={'subject_name': subject_data['subject_name']}
-            )
-            subject_instances.append(subject)
+                    subject_code=subject_data['subject_code'],
+                    defaults={'subject_name': subject_data['subject_name']}
+                )
+                subject_instances.append(subject)
 
             # Assign subjects to the teacher
             teacher.subjects.set(subject_instances)
@@ -189,9 +188,6 @@ class TeacherSerializer(serializers.ModelSerializer):
 
             # Assign classes to the teacher
             teacher.classes.set(class_instances)
-
-
-
 
             # Assign class_teacher if provided
             if class_teacher:
