@@ -675,3 +675,39 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
             remaining_dues=remaining_dues,
             payment_no=payment_no,
         )
+
+
+class ExamSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Exam
+        fields = ['id', 'name', 'exam_type', 'date']
+        read_only_fields = ['class_name']
+
+class StudentResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentResult
+        fields = ['student', 'exam', 'subject', 'internal_marks', 'external_marks', 'remarks']
+
+    def validate(self, data):
+        student = data['student']
+        exam = data['exam']
+        subject = data['subject']
+
+        # Check if the result already exists
+        if StudentResult.objects.filter(student=student, exam=exam, subject=subject).exists():
+            raise serializers.ValidationError("This result for the given student, exam, and subject already exists.")
+        
+        return data
+
+    def create(self, validated_data):
+        # Retrieve teacher from the context
+        teacher = self.context.get('teacher')
+        if not teacher:
+            raise serializers.ValidationError("Teacher is required to save a result.")
+
+        # Add teacher to validated data
+        validated_data['teacher'] = teacher
+
+        # Create the StudentResult instance
+        return super().create(validated_data)

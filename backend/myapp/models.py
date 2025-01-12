@@ -342,3 +342,38 @@ class PaymentTransaction(models.Model):
         return f"Transaction {self.payment_no} for {self.student} ({self.total_amount})"
 
 
+
+class Exam(models.Model):
+    EXAM_TYPE_CHOICES = [
+        ('class_test', 'Class Test'),
+        ('terminal_exam', 'Terminal Exam'),
+    ]
+
+    name = models.CharField(max_length=100)  # Example: "Mid-Term Exam 2024"
+    exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
+    date = models.DateField()
+
+    def __str__(self):
+        return f"{self.name} ({self.exam_type})"
+
+
+class StudentResult(models.Model):
+    REMARKS_CHOICES = [
+        ('Pass', 'Pass'),
+        ('Fail', 'Fail'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="results")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="results")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="results")
+    internal_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    external_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    remarks = models.CharField(max_length=10, choices=REMARKS_CHOICES)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.subject.subject_name} ({self.exam.name}) - {self.remarks}"
+
+    class Meta:
+        unique_together = ('student', 'exam', 'subject')  # Prevent duplicate entries for the same exam and subject.

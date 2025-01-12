@@ -1662,3 +1662,107 @@ class PaymentTransactionDetailView(APIView):
         transaction.delete()
         return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
     
+
+
+class ExamListCreateView(APIView):
+    """
+    Handles GET and POST requests for the Exam model.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Retrieves the list of all exams.
+        """
+        exams = Exam.objects.all()
+        serializer = ExamSerializer(exams, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """
+        Creates a new exam.
+        """
+        serializer = ExamSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddResultView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        teacher = request.user.teacher
+        exam_id = request.query_params.get('exam')  # Filter by exam (optional)
+        student_id = request.query_params.get('student')  # Filter by student (optional)
+
+        results = StudentResult.objects.filter(teacher=teacher)
+
+        if exam_id:
+            results = results.filter(exam_id=exam_id)
+
+        if student_id:
+            results = results.filter(student_id=student_id)
+
+        serializer = StudentResultSerializer(results, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        teacher = request.user.teacher  # Fetch the teacher associated with the logged-in user
+        serializer = StudentResultSerializer(
+            data=request.data,
+            context={'request': request, 'teacher': teacher}  # Pass teacher in context
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Result added successfully", "data": serializer.data}, status=201)
+        return Response(serializer.errors, status=400)
+
+
+
+
+class MarksheetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, exam_id):
+        try:
+            student = Student.objects.get(id=student_id)
+            exam = Exam.objects.get(id=exam_id)
+
+            # Get all subjects for the student's class
+            class_subjects = student.class_code.subjects.all()
+
+            # Filter results for this student, exam, and class subjects
+            results = StudentResult.objects.filter(
+                student=student, 
+                exam=exam, 
+                subject__in=class_subjects
+            )
+
+            if not results.exists():
+                return Response({"error": "No results found for this student and exam."}, status=404)
+
+            # Build the marksheet
+            marksheet = {
+                "student_name": student.user.username,
+                "class_name": student.class_code.class_name,
+                "exam_name": exam.name,
+                "exam_type": exam.exam_type,
+                "subjects": []
+            }
+
+            for result in results:
+                marksheet["subjects"].append({
+                    "subject_name": result.subject.subject_name,
+                    "internal_marks": result.internal_marks,
+                    "external_marks": result.external_marks,
+                    "total_marks": (result.internal_marks or 0) + (result.external_marks or 0),
+                    "remarks": result.remarks,
+                })
+
+            return Response(marksheet)
+        except (Student.DoesNotExist, Exam.DoesNotExist):
+            return Response({"error": "Student or exam not found"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
