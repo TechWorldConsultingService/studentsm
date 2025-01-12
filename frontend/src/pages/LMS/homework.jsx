@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useSelector } from "react-redux";
 
 const AssignmentPage = () => {
+  const { access } = useSelector((state) => state.user);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,9 +15,7 @@ const AssignmentPage = () => {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem("token");
-        console.log(token)
-        if (!token) {
+        if (!access) {
           setError("You must be logged in to view assignments.");
           setLoading(false);
           return;
@@ -23,7 +23,7 @@ const AssignmentPage = () => {
 
         const response = await axios.get("http://localhost:8000/api/student/assignments/", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${access}`,
           },
         });
 
@@ -73,12 +73,8 @@ const AssignmentPage = () => {
     return <p className="text-center text-gray-600">Loading assignments...</p>;
   }
 
-  if (error) {
-    return <p className="text-center text-red-500">{error}</p>;
-  }
-
   if (assignments.length === 0) {
-    return <p className="text-center text-gray-600">No assignments available</p>;
+    return <p className="text-center text-gray-600">No assignments available for this subject.</p>;
   }
 
   const newAssignments = assignments.filter((assignment) => !assignment.submitted);
