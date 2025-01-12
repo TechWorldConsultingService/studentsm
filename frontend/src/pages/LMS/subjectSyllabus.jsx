@@ -30,7 +30,7 @@ const SubjectSyllabus = () => {
 
       setSyllabusData(data);
     } catch (error) {
-      setErrorMessage("Error fetching syllabus data.");
+      setErrorMessage("Error fetching syllabus data.",error);
     } finally {
       setIsLoading(false);
     }
@@ -46,9 +46,7 @@ const SubjectSyllabus = () => {
 
   return (
     <div className="w-full p-4 bg-purple-50 ">
-      {errorMessage ? (
-        <p className="text-red-500 text-center font-semibold">{errorMessage}</p>
-      ) : isLoading ? (
+      { isLoading ? (
         <p className="text-center text-blue-500 font-semibold">Loading...</p>
       ) : filteredSyllabus.length > 0 ? (
         <div className="space-y-6">
