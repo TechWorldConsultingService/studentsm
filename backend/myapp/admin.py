@@ -248,3 +248,32 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
     readonly_fields = ('total_amount', 'remaining_dues', 'payment_no', 'created_at')
 
 
+from django.contrib import admin
+from .models import Exam, StudentResult
+
+# Exam admin customization
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'exam_type', 'date')  # Fields to display in the admin list view
+    search_fields = ('name', 'exam_type')  # Fields to allow search functionality
+    list_filter = ('exam_type', 'date')  # Fields to add filter functionality in the admin panel
+
+# StudentResult admin customization
+@admin.register(StudentResult)
+class StudentResultAdmin(admin.ModelAdmin):
+    list_display = ('id', 'get_student_name', 'exam', 'get_subject_name', 'teacher', 'internal_marks', 'external_marks', 'remarks', 'date_added')
+    search_fields = ('student__user__username', 'exam__name', 'subject__subject_name', 'teacher__user__username')
+    list_filter = ('exam', 'subject', 'remarks')
+    ordering = ('-date_added',)
+
+    def get_student_name(self, obj):
+        """Custom method to display student's username."""
+        return obj.student.user.username
+    get_student_name.short_description = 'Student Name'
+
+    def get_subject_name(self, obj):
+        """Custom method to display subject name."""
+        return obj.subject.subject_name
+    get_subject_name.short_description = 'Subject Name'
+
+

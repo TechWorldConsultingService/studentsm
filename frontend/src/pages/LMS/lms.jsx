@@ -38,12 +38,6 @@ const LearningManagementSystem = () => {
               </ul>
             </div>
 
-            {/* Explore button */}
-            <div className="mt-6 text-center">
-              <button className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none">
-                Explore {subjectName} Content
-              </button>
-            </div>
           </div>
         </div>
 
@@ -73,18 +67,6 @@ const LearningManagementSystem = () => {
               <li className="py-2 text-gray-700">Lecture 1: Introduction to {subjectName}</li>
               <li className="py-2 text-gray-700">Lecture 2: Deep Dive into {subjectName}</li>
             </ul>
-          </div>
-
-          {/* Syllabus Section */}
-          <div className="bg-purple-100 p-6 rounded-lg shadow-lg border border-purple-300">
-            <h2 className="text-2xl font-semibold text-purple-800">Syllabus</h2>
-            <p className="mt-4 text-gray-600">
-              The syllabus for {subjectName} outlines the topics covered during the semester.
-            </p>
-            {/* Replace with dynamic syllabus data */}
-            <p className="mt-4 text-gray-700">
-              Topics include: Introduction to {subjectName}, Advanced Concepts in {subjectName}, and Practical Applications.
-            </p>
           </div>
 
           {/* Progress Section */}
