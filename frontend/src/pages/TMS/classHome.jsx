@@ -65,7 +65,7 @@ const ClassHome = () => {
       {/* Announcement Button */}
     <div className="w-full flex justify-end px-7 pb-7">
     <button
-        className="bg-purple-600 text-white px-4 py-2 rounded-md shadow-md"
+         className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
         onClick={toggleModal}
       >
         Add Announcement
