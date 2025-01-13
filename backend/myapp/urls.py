@@ -129,7 +129,9 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # Endpoint to retrieve the fee details for a specific student by their `student_id`.
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # Endpoint to retrieve the pending fee details for a specific student by their `student_id`.
     
-
+    path('api/exams/', ExamListCreateView.as_view(), name='exam-list-create'), # Endpoint to add or list exam name and type
+    path('api/results/', AddResultView.as_view(), name='add-result'),
+    path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
