@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
@@ -12,32 +11,8 @@ const newAssignmentSchema = Yup.object({
   due_date: Yup.date().required("Due Date is required").nullable(),
 });
 
-const NewAssignment = ({ closeModal }) => {
-  const user = useSelector((state) => state.user);
-  const { access } = user;
-  const teacher_id = user?.id;
-  const selectedClass = user?.selectedClass;
-  const [subjects, setSubjects] = useState([]);
-
-  useEffect(() => {
-    if (access) {
-      fetch(
-        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (data?.subjects) {
-            setSubjects(data.subjects);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching subjects:", error);
-          setSubjects([]);
-        });
-    } else {
-      console.error("Teacher ID or class is undefined");
-    }
-  }, [access]);
+const NewAssignment = ({ closeModal,subjects,access,selectedClass }) => {
+  
 
   const formik = useFormik({
     initialValues: {
