@@ -197,7 +197,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             return teacher 
         else:
             raise serializers.ValidationError(user_serializer.errors)
-        
+            
     def update(self, instance, validated_data):
         # Extract and update user data
         user_data = validated_data.pop('user', {})
@@ -210,15 +210,36 @@ class TeacherSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
-        # Update the Teacher instance
+        # Handle subjects
+        subjects_data = validated_data.pop('subjects', [])
+        subject_instances = []
+        for subject_data in subjects_data:
+            subject, _ = Subject.objects.get_or_create(
+                subject_code=subject_data['subject_code'],
+                defaults={'subject_name': subject_data['subject_name']}
+            )
+            subject_instances.append(subject)
+        instance.subjects.set(subject_instances)  # Update subjects relationship
+
+        # Handle classes
+        classes_data = validated_data.pop('classes', [])
+        class_instances = []
+        for class_data in classes_data:
+            class_instance, _ = Class.objects.get_or_create(
+                class_code=class_data['class_code'],
+                defaults={'class_name': class_data['class_name']}
+            )
+            class_instances.append(class_instance)
+        instance.classes.set(class_instances)  # Update classes relationship
+
+        # Update other fields
         for attr, value in validated_data.items():
-            if attr in ['subjects', 'classes']:
-                getattr(instance, attr).set(value)  # Update many-to-many relationships
+            if attr == 'class_teacher':
+                instance.class_teacher_id = value.id if isinstance(value, Class) else value
             else:
                 setattr(instance, attr, value)
         instance.save()
         return instance
-
 
 # Serializer for the Principal model
 class PrincipalSerializer(serializers.ModelSerializer):
