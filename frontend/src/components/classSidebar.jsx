@@ -44,7 +44,7 @@ const ClassSidebar = () => {
                             <div key={item.class_code} >
                                 <NavLink
                                     to={`/tms/${item.class_name.toLowerCase()}`}
-                                    onClick={() => handleClassClick(item.class_name)} // Dispatch the selected class
+                                    onClick={() => handleClassClick(item.class_name)}
                                     className={({ isActive }) =>
                                         `flex items-center text-white hover:text-purple-200  hover:bg-purple-800 rounded-md p-3  ${isActive ? 'text-lg bg-purple-950' : ''}`
                                 }

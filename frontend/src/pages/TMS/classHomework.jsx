@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 
 const ClassHomework = () => {
+  
   const [newHomeworkModal, setNewHomeworkModal] = useState(false);
   const [previousAssignments, setPreviousAssignments] = useState([]);
   const [runningAssignments, setRunningAssignments] = useState([]);
@@ -17,9 +18,11 @@ const ClassHomework = () => {
 
   const todayDate = new Date().toISOString().split("T")[0];
 
-  const { fetchedData: homeworkList = [], loadingData, fetchData:fetchHomeworkList } = useFetchData(
-    "http://localhost:8000/api/teacher/assignments/"
-  );
+  const {
+    fetchedData: homeworkList = [],
+    loadingData,
+    fetchData: fetchHomeworkList,
+  } = useFetchData("http://localhost:8000/api/teacher/assignments/");
 
   useEffect(() => {
     if (access && teacher_id && selectedClass) {
@@ -41,25 +44,28 @@ const ClassHomework = () => {
   }, [access, teacher_id, selectedClass]);
 
   useEffect(() => {
-    if (homeworkList && todayDate) {
-      const running = []
-      const previous = []
+    if (homeworkList && todayDate && selectedClass) {
+      const running = [];
+      const previous = [];
 
       homeworkList.forEach((homework) => {
-        const dueDate = new Date(homework.due_date)
-        const today = new Date(todayDate)
-
-        if (dueDate >= today) {
-          running.push(homework);
-        } else {
-          previous.push(homework);
+        if(selectedClass === homework.class_assigned){
+          const dueDate = new Date(homework.due_date);
+          const today = new Date(todayDate);
+  
+          if (dueDate >= today) {
+            running.push(homework);
+          } else {
+            previous.push(homework);
+          }
         }
+
       });
 
-      setRunningAssignments(running)
-      setPreviousAssignments(previous)
+      setRunningAssignments(running);
+      setPreviousAssignments(previous);
     }
-}, [homeworkList, todayDate])
+  }, [homeworkList, todayDate, selectedClass]);
 
   const toggleNewHomeworkModal = () => setNewHomeworkModal(!newHomeworkModal);
 
@@ -70,8 +76,8 @@ const ClassHomework = () => {
   return (
     <div className="bg-purple-50 p-6">
       <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-        <h1 className="text-3xl font-extrabold text-purple-800">
-          Class Homework
+        <h1 className="text-2xl font-extrabold text-purple-800">
+          Homework Of Class: {selectedClass}
         </h1>
 
         {/* New Assignment Button */}
@@ -98,6 +104,12 @@ const ClassHomework = () => {
                 >
                   <span className="flex ">
                     <strong className="block text-purple-800 mr-2">
+                      Class:
+                    </strong>
+                    {assignment.class_assigned}
+                  </span>
+                  <span className="flex ">
+                    <strong className="block text-purple-800 mr-2">
                       Subject:
                     </strong>
                     {assignment.subject}
@@ -118,7 +130,7 @@ const ClassHomework = () => {
                     Due: {assignment.due_date}
                   </span>
                   <span className="text-gray-500 block ">
-                    Assign Date: {" "}
+                    Assign Date:{" "}
                     {
                       new Date(assignment.assigned_on)
                         .toISOString()
@@ -151,6 +163,12 @@ const ClassHomework = () => {
                   key={assignment.id}
                   className="p-4 border rounded-lg shadow-md hover:shadow-lg"
                 >
+                  <span className="flex ">
+                    <strong className="block text-purple-800 mr-2">
+                      Class:
+                    </strong>
+                    {assignment.class_assigned}
+                  </span>
                   <span className="flex ">
                     <strong className="block text-purple-800 mr-2">
                       Subject:
