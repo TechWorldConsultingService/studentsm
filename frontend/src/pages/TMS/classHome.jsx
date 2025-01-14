@@ -1,6 +1,11 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
 const ClassHome = () => {
+
+  const user = useSelector((state) => state.user);
+  const selectedClass = user?.selectedClass;
+
   const [classData] = useState({
     name: "Math 101",
     teacher: "Mr. John Doe",
@@ -78,6 +83,7 @@ const ClassHome = () => {
         <h1 className="text-3xl font-extrabold text-purple-800">
           {classData.name} - Class Home
         </h1>
+        <p className="mt-4 text-gray-600">Class: {selectedClass}</p>
         <p className="mt-4 text-gray-600">
           Welcome to the {classData.name} class. Here, you will find all the resources related to this class including assignments, notes, syllabus, and more.
         </p>

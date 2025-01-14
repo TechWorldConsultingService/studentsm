@@ -11,7 +11,7 @@ const newAssignmentSchema = Yup.object({
   due_date: Yup.date().required("Due Date is required").nullable(),
 });
 
-const NewAssignment = ({ closeModal,subjects,access,selectedClass }) => {
+const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkList }) => {
   
 
   const formik = useFormik({
@@ -41,8 +41,8 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass }) => {
         );
 
         toast.success("Assignment submitted successfully!");
-
-        closeModal();
+        fetchHomeworkList()
+        closeModal()
       } catch (error) {
         console.error("Error submitting assignment:", error.response || error);
         toast.error("Error submitting assignment:", error.response || error);

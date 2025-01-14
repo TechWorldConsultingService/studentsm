@@ -5,35 +5,42 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const useFetchData = (url) => {
-    const { access } = useSelector((state) => state.user);
-    const [fetchedData, setFetchedData] = useState([]);
+  const { access } = useSelector((state) => state.user);
+  const [fetchedData, setFetchedData] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [errorFetch, setErrorFetch] = useState(null);
   const navigate = useNavigate();
 
+  const fetchData = async () => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
 
-    const fetchData = async () => {
-        if (!access) {
-          toast.error("User is not authenticated. Please log in.");
-          return;
-        }
-        try {
-          const { data } = await axios.get(url, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${access}`,
-            },
-          });
-          setFetchedData(data);
-        } catch (error) {
-          toast.error("Error fetching class:", error.message || error);
-        }
-      };
-    
-      useEffect(() => {
-        fetchData();
-      }, [access, navigate]);
+    setLoadingData(true);
+    setErrorFetch(null);
 
+    try {
+      const { data } = await axios.get(url, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setFetchedData(data);
+    } catch (error) {
+      setErrorFetch(error.message || "An error occurred while fetching data.");
+      toast.error(`Error fetching data: ${error.message || error}`);
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
-  return {fetchedData}
-}
+  useEffect(() => {
+    fetchData();
+  }, [access, navigate]);
 
-export default useFetchData
+  return { fetchedData, loadingData, errorFetch,fetchData };
+};
+
+export default useFetchData;
