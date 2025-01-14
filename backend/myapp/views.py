@@ -984,6 +984,73 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import AssignmentSerializer
 from .models import Subject, Class
+class TeacherAssignmentsView(APIView):
+    """
+    View for teachers to fetch assignments they created.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Ensure the user is a teacher
+        try:
+            teacher = request.user.teacher  # Assuming a OneToOneField relationship exists between Teacher and AUTH_USER_MODEL
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Fetch assignments created by the teacher
+        assignments = Assignment.objects.filter(teacher=teacher)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize assignments and return the response
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+class StudentAssignmentsBySubjectView(APIView):
+    """
+    View for students to fetch assignments based on a specific subject.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Ensure the user is a student
+        try:
+            student = request.user.student  # Assuming a OneToOneField relationship exists between Student and AUTH_USER_MODEL
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the subject ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+        if not subject_id:
+            return Response(
+                {"error": "Subject ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Fetch assignments for the student's class and the specified subject
+        assignments = Assignment.objects.filter(
+            class_assigned=student.class_code,
+            subject_id=subject_id
+        )
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for this subject."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize assignments and return the response
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]

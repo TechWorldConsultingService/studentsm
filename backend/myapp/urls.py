@@ -82,6 +82,12 @@ urlpatterns = [
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
     
+    # New endpoint for teachers to see their created assignments
+    path('api/teacher/assignments/', TeacherAssignmentsView.as_view(), name='teacher-assignments'),
+    
+    #endpoint for student to see their assignments as per subject
+    path('api/student/assignments/subject/', StudentAssignmentsBySubjectView.as_view(), name='student-assignments-by-subject'),
+
     # Filter subjects for a teacher and class
     path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
 
