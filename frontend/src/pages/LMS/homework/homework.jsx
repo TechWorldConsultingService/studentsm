@@ -17,49 +17,18 @@ const AssignmentPage = () => {
   const access = userData.access;
   const selectedSubject = userData.selectedSubject;
 
-  // const {fetchedData:homeworkList = [], loadingData, errorFetch,fetchData} = useFetchData(`http://localhost:8000/api/student/assignments/subject_id=${selectedSubject}`)
-
-  const homeworkList = [
-    {
-      id: 25,
-      teacher: 21,
-      subject: 3,
-      class_assigned: "one",
-      assignment_name: "ags",
-      description: "dfasf",
-      due_date: "2025-01-25",
-      assigned_on: "2025-01-13T16:00:32.171618Z",
-    },
-    {
-      id: 27,
-      teacher: 20,
-      subject: 3,
-      class_assigned: "one",
-      assignment_name: "nepali assignment  class one",
-      description: "nepali assignmetn class one",
-      due_date: "2025-01-15",
-      assigned_on: "2025-01-14T07:19:57.252822Z",
-    },
-    {
-      id: 27,
-      teacher: 20,
-      subject: 3,
-      class_assigned: "one",
-      assignment_name: "nepali assignment  class one",
-      description: "nepali assignmetn class one",
-      due_date: "2025-01-13",
-      assigned_on: "2025-01-14T07:19:57.252822Z",
-    },
-  ];
+  const { fetchedData: homeworkList = [], loadingData, errorFetch, fetchData } = useFetchData(
+    `http://localhost:8000/api/student/assignments/subject/?subject_id=${selectedSubject}`,
+    [selectedSubject]
+  )
 
   useEffect(() => {
-    // if (homeworkList && todayDate && selectedClass) {
-    if ( todayDate) {
+    if (homeworkList && todayDate && selectedSubject) {
       const running = [];
       const previous = [];
 
       homeworkList.forEach((homework) => {
-        // if(selectedClass === homework.class_assigned){
+        if(selectedSubject === homework.subject){
         const dueDate = new Date(homework.due_date);
         const today = new Date(todayDate);
 
@@ -68,14 +37,13 @@ const AssignmentPage = () => {
         } else {
           previous.push(homework);
         }
-        // }
+        }
       });
 
       setRunningAssignments(running);
       setPreviousAssignments(previous);
     }
-    // }, [homeworkList, todayDate, selectedClass]);
-  }, [ todayDate]);
+    },[homeworkList,todayDate,selectedSubject]);
 
   const handleAssignmentSubmit = ({ file, text, assignment }) => {
     const submission = { file: file ? URL.createObjectURL(file) : null, text };
@@ -102,7 +70,11 @@ const AssignmentPage = () => {
   const closeModals = () => {
     setShowSubmitModal(false);
     setShowViewModal(false);
-  };
+  }
+
+  if (loadingData) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="bg-purple-100 py-8">
