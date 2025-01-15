@@ -73,8 +73,7 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 class ClassSerializer(serializers.ModelSerializer):
     # subjects = SubjectSerializer(many=True)
-    subjects = serializers.ListField(
-        child = serializers.DictField(), # Accept a list of dictionaries
+    subjects = serializers.ListField(child = serializers.DictField(), # Accept a list of dictionaries
         write_only=True  # Only for input, won't include in the response
     )
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
@@ -83,10 +82,10 @@ class ClassSerializer(serializers.ModelSerializer):
         model = Class
         fields = ['id', 'class_code', 'class_name', 'subjects','subject_details']  # Define fields to include in the serialized output
     
-    def create(self, validated_data):
+    def create(self, validated_data):   
         # Extract the nested subjects data
         subjects_data = validated_data.pop('subjects', [])
-
+  
         # Create the class instance
         class_instance = Class.objects.create(**validated_data)
 
@@ -98,16 +97,15 @@ class ClassSerializer(serializers.ModelSerializer):
                 subject_code=subject_data['subject_code'],
                 defaults={'subject_name': subject_data['subject_name']}
             )
-
             class_instance.subjects.add(subject)
-
         return class_instance
+
     def update(self, instance, validated_data):
         subjects_data = validated_data.pop('subjects', [])
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
-
+    
         if subjects_data:
             # Clear existing subjects if updating
             instance.subjects.clear()
@@ -122,7 +120,7 @@ class ClassSerializer(serializers.ModelSerializer):
                 instance.subjects.add(subject)
 
         return instance
-    
+
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the teacher

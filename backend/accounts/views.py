@@ -41,7 +41,7 @@ class LoginAPIView(APIView):
                     'address': teacher.address,
                     'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
                     'gender': teacher.gender,
-                    'subjects': [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'subjects': [{'id': subject.id,'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
                     'classes': [{'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
                     'class_teacher': {
                         'class_code': teacher.class_teacher.class_code,
@@ -137,7 +137,7 @@ class LoginAPIView(APIView):
             
                 # Check if the student_class is None before accessing its attributes
                 if student_class:
-                    subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
+                    subjects = [{'id': subject.id,'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
                 else:
                     subjects = []  # If no class_code exists, return an empty list for subjects
 
