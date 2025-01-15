@@ -3,17 +3,14 @@ import { useSelector,useDispatch } from 'react-redux';
 import { NavLink } from "react-router-dom";
 import { HiOutlineHome } from "react-icons/hi";
 import { SiGoogleclassroom } from "react-icons/si";
-// import { setSelectedClass } from "../features/user/userSlice"; // Import the new action
 import { setSelectedClass } from "../redux/reducerSlices/userSlice"; // Import the new action
-import userSlice from '../redux/reducerSlices/userSlice';
 
 const ClassSidebar = () => {
     const { classes } = useSelector((state) => state.user);
     const dispatch = useDispatch();
 
     const handleClassClick = (className) => {
-        dispatch(setSelectedClass({ className })); // Save to Redux
-        // console.log("Redux User State:", user);
+        dispatch(setSelectedClass({ className })); 
     };
 
     return (
