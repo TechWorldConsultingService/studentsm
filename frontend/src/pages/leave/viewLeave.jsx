@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { useSelector } from "react-redux";
 
-
 const ViewLeave = () => {
   const [leaveData, setLeaveData] = useState([]);
   const [leaveError, setLeaveError] = useState(null);
@@ -15,8 +14,7 @@ const ViewLeave = () => {
   const [updatedRequests, setUpdatedRequests] = useState([]);
   const [role, setUserRole] = useState("");
 
-  const {access} = useSelector((state) => state.user);
-
+  const { access } = useSelector((state) => state.user);
 
   useEffect(() => {
     async function getLeaveData() {
@@ -142,7 +140,6 @@ const ViewLeave = () => {
                   <Link to={`/leave-view/${record.id}`} className="text-lg text-blue-500">
                     View
                   </Link>
-                  {/* Only principals or teachers should see the approve/disapprove buttons */}
                   {(role === "principal" || (role === "teacher" && record.applicant_type === "Student")) && (
                     <>
                       <Popconfirm
@@ -181,18 +178,18 @@ const ViewLeave = () => {
 
   return (
     <MainLayout>
-      <div className="flex flex-col items-center gap-2 w-full">
-        <h4 className="text-purple-800 font-semibold text-xl">Leave Requests</h4>
+      <div className="flex flex-col items-center gap-4 w-full p-6">
+        <h4 className="text-purple-800 font-semibold text-2xl">Leave Requests</h4>
         {leaveError ? (
-          <p>{leaveError}</p>
+          <p className="text-red-500">{leaveError}</p>
         ) : isLoading ? (
           <Spin size="large" />
         ) : (
           <>
-            <h4 className="text-purple-800 font-semibold text-lg">New Requests</h4>
+            <h4 className="text-purple-800 font-semibold text-xl mt-4">New Requests</h4>
             {newRequests.length > 0 ? (
               <Table
-                className="w-full"
+                className="w-full mt-4"
                 columns={getColumns(role)}
                 dataSource={newRequests}
                 rowKey="id"
@@ -202,9 +199,9 @@ const ViewLeave = () => {
             )}
             {updatedRequests.length > 0 && (
               <>
-                <h4 className="text-purple-800 font-semibold text-lg">Reviewed Requests</h4>
+                <h4 className="text-purple-800 font-semibold text-xl mt-4">Reviewed Requests</h4>
                 <Table
-                  className="w-full"
+                  className="w-full mt-4"
                   columns={getColumns(role)}
                   dataSource={updatedRequests}
                   rowKey="id"
