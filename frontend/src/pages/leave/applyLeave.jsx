@@ -3,12 +3,9 @@ import axios from "axios";
 import MainLayout from "../../layout/MainLayout";
 import { DatePicker } from "antd";
 import moment from "moment";
-import toast from 'react-hot-toast';
-import {  useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-
-
-
 
 const ApplyLeave = () => {
   const [leaveDate, setLeaveDate] = useState("");
@@ -16,8 +13,7 @@ const ApplyLeave = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
-  const {access} = useSelector((state) => state.user);
-
+  const { access } = useSelector((state) => state.user);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,15 +29,15 @@ const ApplyLeave = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`, // Assuming token is stored in local storage
+            Authorization: `Bearer ${access}`,
           },
         }
       );
 
-     toast.success('Sucessfully Submitted')
+      toast.success("Successfully Submitted");
       setErrorMessage("");
       setLeaveDate("");
-      setMessage("")
+      setMessage("");
       navigate("/myLeave");
     } catch (error) {
       const errorMsg =
@@ -55,53 +51,45 @@ const ApplyLeave = () => {
     setLeaveDate(dateString);
   };
 
-  
-
   return (
     <MainLayout>
-      <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
-        <div className="flex flex-col items-center justify-center w-full rounded-md  ">
-          <h2 className="bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
-            Apply for Leave
-          </h2>
+      <div className="bg-purple-50 p-6">
+        <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
+          <h1 className="text-3xl font-extrabold text-purple-800">Apply for Leave</h1>
+          {errorMessage && <p className="mt-4 text-red-500">{errorMessage}</p>}
 
-          {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
-
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col items-center w-full "
-          >
-            <div className="flex flex-col  gap-4 m-5 p-5 w-full">
-              <div className="flex gap-3 items-center ">
-                <label className={`text-purple-900`}>Leave Date:</label>
+          <form onSubmit={handleSubmit} className="mt-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-3 items-center">
+                <label className="text-purple-900 text-sm">Leave Date:</label>
                 <DatePicker
                   onChange={handleDateChange}
                   placeholder="Select date"
                   format="YYYY-MM-DD"
                   required
-                  className="w-full"
-                  disabledDate={(current) =>
-                    current && current < moment().startOf("day")
-                  }
+                  className="w-full border rounded-md p-2"
+                  disabledDate={(current) => current && current < moment().startOf("day")}
                 />
               </div>
 
-              <div className="flex gap-3 items-center ">
-                <label className="text-purple-900">Message:</label>
+              <div className="flex gap-3 items-center">
+                <label className="text-purple-900 text-sm">Message:</label>
                 <textarea
-                  className="w-full rounded-md p-1"
+                  className="w-full border rounded-md p-2"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
                 />
               </div>
             </div>
-            <button
-              type="submit"
-              className="bg-purple-800 text-white p-2  rounded-md mb-10"
-            >
-              SUBMIT
-            </button>
+            <div className="mt-6 text-center">
+              <button
+                type="submit"
+                className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
+              >
+                Submit
+              </button>
+            </div>
           </form>
         </div>
       </div>

@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const useFetchData = (url) => {
+const useFetchData = (url,dependencies = []) => {
   const { access } = useSelector((state) => state.user);
   const [fetchedData, setFetchedData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -30,7 +30,7 @@ const useFetchData = (url) => {
       setFetchedData(data);
     } catch (error) {
       setErrorFetch(error.message || "An error occurred while fetching data.");
-      toast.error(`Error fetching data: ${error.message || error}`);
+      console.log(`Error fetching data: ${error.message || error}`);
     } finally {
       setLoadingData(false);
     }
@@ -38,7 +38,7 @@ const useFetchData = (url) => {
 
   useEffect(() => {
     fetchData();
-  }, [access, navigate]);
+  }, [access, navigate,...dependencies]);
 
   return { fetchedData, loadingData, errorFetch,fetchData };
 };
