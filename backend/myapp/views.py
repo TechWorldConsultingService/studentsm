@@ -251,8 +251,18 @@ class StudentListView(APIView):
         class_id = request.query_params.get('class_id')
 
         if class_id:
+            try:
+                # Ensure the class exists
+                class_instance = Class.objects.get(id=class_id)
+                # Filter students by the class
+                students = Student.objects.filter(class_code=class_instance)
+            except Class.DoesNotExist:
+                return Response(
+                    {"error": "Class with the given ID does not exist."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             # Filter students by class if class_id is provided
-            students = Student.objects.filter(classes__id=class_id)
+            # students = Student.objects.filter(classes__id=class_id)
         else:
             # Retrieve all students if no class_id is provided
             students = Student.objects.all()
@@ -260,6 +270,78 @@ class StudentListView(APIView):
         # students = Student.objects.all()  # Retrieve all student instances
         serializer = StudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+# API view to list students by subject and class
+class StudentsBySubjectAndClassView(APIView):
+    def get(self, request, format=None):
+        # Retrieve subject ID and class ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+        class_id = request.query_params.get('class_id')
+
+        if not subject_id or not class_id:
+            return Response(
+                {"error": "Both subject_id and class_id query parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Ensure the subject exists
+            subject_instance = Subject.objects.get(id=subject_id)
+            # Ensure the class exists
+            class_instance = Class.objects.get(id=class_id)
+
+            # Check if the subject is associated with the class
+            if not class_instance.subjects.filter(id=subject_instance.id).exists():
+                return Response(
+                    {"error": "The specified subject is not associated with the given class."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Filter students in the specified class
+            students = Student.objects.filter(class_code=class_instance)
+
+        except Subject.DoesNotExist:
+            return Response(
+                {"error": "Subject with the given ID does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Class.DoesNotExist:
+            return Response(
+                {"error": "Class with the given ID does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class StudentsBySubjectView(APIView):
+    def get(self, request, format=None):
+        # Retrieve subject ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+
+        if subject_id:
+            try:
+                # Ensure the subject exists
+                subject_instance = Subject.objects.get(id=subject_id)
+                # Get all classes associated with the subject
+                classes_with_subject = subject_instance.classes.all()
+                # Get students in those classes
+                students = Student.objects.filter(class_code__in=classes_with_subject)
+            except Subject.DoesNotExist:
+                return Response(
+                    {"error": "Subject with the given ID does not exist."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {"error": "subject_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # List all staff members
 class StaffListView(APIView):
