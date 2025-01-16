@@ -4,7 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import Reports from "./pages/reports";
+import Reports from "./pages/reports/reports";
 import MyBus from "./pages/mybus";
 import Attendence from "./pages/attendence";
 import MyRequest from "./pages/myrequest";
