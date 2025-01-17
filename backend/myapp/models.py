@@ -179,9 +179,9 @@ class Assignment(models.Model):
 
 class AssignmentSubmission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
-    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming user model is used for students
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="submissions")  # CustomUser reference
     submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
+    written_submission = models.TextField(null=True, blank=True)  # field for written submissions
     submitted_on = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

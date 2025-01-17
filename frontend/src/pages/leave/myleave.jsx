@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import MainLayout from "../../layout/MainLayout";
-import { Space, Table, Input, Button, DatePicker } from "antd";
+import { Space, Table } from "antd";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import toast from "react-hot-toast";
-import moment from "moment"; // Import moment.js for date handling
+import moment from "moment";
 import { useSelector } from "react-redux";
-
-
+import { DatePicker } from "antd";
 
 const Myleave = () => {
   const navigate = useNavigate();
@@ -19,11 +18,10 @@ const Myleave = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [newRequests, setNewRequests] = useState([]);
   const [updatedRequests, setUpdatedRequests] = useState([]);
-  const [editLeaveId, setEditLeaveId] = useState(null); // Store the leave ID to edit
-  const [editedLeaveDate, setEditedLeaveDate] = useState(null); // Store the new leave date
-  const [editedMessage, setEditedMessage] = useState(""); // Store the new message
-
-  const {access} = useSelector((state) => state.user);
+  const [editLeaveId, setEditLeaveId] = useState(null);
+  const [editedLeaveDate, setEditedLeaveDate] = useState(null);
+  const [editedMessage, setEditedMessage] = useState("");
+  const { access } = useSelector((state) => state.user);
 
   // Fetch self-applied leave data
   const fetchLeaveData = async () => {
@@ -68,7 +66,7 @@ const Myleave = () => {
     fetchLeaveData();
   }, [access]);
 
-  // Handle  to apply leave page
+  // Handle Apply Leave
   const handleApplyLeave = () => {
     navigate("/applyLeave");
   };
@@ -92,7 +90,7 @@ const Myleave = () => {
         <Space size="middle">
           <Link
             to={`/leave-view/${record.id}`}
-            className="text-lg text-blue-500"
+            className="text-lg text-purple-700 hover:underline"
           >
             View
           </Link>
@@ -100,7 +98,7 @@ const Myleave = () => {
             onClick={() =>
               handleEditLeave(record.id, record.leave_date, record.message)
             }
-            className="bg-blue-700 text-white rounded-md shadow-md p-1.5 text-sm"
+            className="bg-purple-700 text-white rounded-md shadow-md p-1.5 text-sm"
           >
             Edit
           </button>
@@ -140,7 +138,7 @@ const Myleave = () => {
         <Space size="middle">
           <Link
             to={`/leave-view/${record.id}`}
-            className="text-lg text-blue-500"
+            className="text-lg text-purple-700 hover:underline"
           >
             View
           </Link>
@@ -185,7 +183,6 @@ const Myleave = () => {
   };
 
   const handleEditLeave = (id, leaveDate, message) => {
-    // Set the leave ID to constant (once clicked, it should not change)
     setEditLeaveId(id);
     setEditedLeaveDate(leaveDate);
     setEditedMessage(message);
@@ -227,104 +224,106 @@ const Myleave = () => {
     }
   };
 
-  
   return (
     <MainLayout>
-      <div className="flex flex-col items-center gap-2 w-full">
-        {errorMessage ? (
-          <p>{errorMessage}</p>
-        ) : isLoading ? (
-          <p>Loading...</p>
-        ) : (
-          <>
-            {editLeaveId ? (
-              <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
-                <div className="flex flex-col items-center justify-center w-full rounded-md  ">
-                  <h2 className="bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
-                    Edit Leave Request
-                  </h2>
+      <div className="bg-purple-50 p-6">
+        <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
+          <h1 className="text-3xl font-extrabold text-purple-800">My Leave</h1>
+          <p className="mt-4 text-gray-600">
+            View and manage your leave requests here.
+          </p>
 
-                  {errorMessage && (
-                    <p style={{ color: "red" }}>{errorMessage}</p>
+          {errorMessage ? (
+            <p className="text-red-600">{errorMessage}</p>
+          ) : isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              {editLeaveId ? (
+         <div className="bg-purple-50 p-6">
+         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
+           <h2 className="text-3xl font-extrabold text-purple-800 text-center mb-6">
+             Edit Leave Request
+           </h2>
+           <form
+             onSubmit={handleUpdateLeave}
+             className="flex flex-col gap-6"
+           >
+             <div className="flex gap-3 items-center">
+               <label className="text-purple-900 text-sm">Leave Date:</label>
+               <DatePicker
+                 value={editedLeaveDate ? moment(editedLeaveDate) : null}
+                 onChange={(date) => setEditedLeaveDate(date)}
+                 format="YYYY-MM-DD"
+                 className="w-full border rounded-md p-2"
+                 disabledDate={(current) =>
+                   current && current < moment().startOf("day")
+                 }
+               />
+             </div>
+       
+             <div className="flex gap-3 items-center">
+               <label className="text-purple-900 text-sm">Message:</label>
+               <textarea
+                 className="w-full border rounded-md p-2"
+                 value={editedMessage}
+                 onChange={(e) => setEditedMessage(e.target.value)}
+               />
+             </div>
+       
+             <div className="mt-6 text-center">
+               <button
+                 type="submit"
+                 className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
+               >
+                 Update Leave
+               </button>
+             </div>
+           </form>
+         </div>
+       </div>
+       
+              ) : (
+                <>
+                  <div className="flex justify-end items-center mr-24 w-full">
+                    <button
+                      onClick={handleApplyLeave}
+                      className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
+                    >
+                      Apply For Leave
+                    </button>
+                  </div>
+
+                  <h4 className="text-purple-800 font-semibold text-lg">
+                    New Requests
+                  </h4>
+                  {newRequests.length > 0 ? (
+                    <Table
+                      className="min-w-full mt-4"
+                      columns={newRequestscolumns}
+                      dataSource={newRequests}
+                    />
+                  ) : (
+                    <p className="text-gray-600 mt-4">No new leave requests found.</p>
                   )}
 
-                  <form
-                    onSubmit={handleUpdateLeave}
-                    className="flex flex-col items-center w-full "
-                  >
-                    <div className="flex flex-col  gap-4 m-5 p-5 w-full">
-                      <div className="flex gap-3 items-center ">
-                        <label className={`text-purple-900`}>Leave Date:</label>
-                        <DatePicker
-                          value={
-                            editedLeaveDate ? moment(editedLeaveDate) : null
-                          }
-                          onChange={(date) => setEditedLeaveDate(date)}
-                          format="YYYY-MM-DD"
-                          className="w-full"
-                          disabledDate={(current) =>
-                            current && current < moment().startOf("day")
-                          }
-                        />
-                      </div>
-
-                      <div className="flex gap-3 items-center ">
-                        <label className="text-purple-900">Message:</label>
-                        <textarea
-                          className="w-full rounded-md p-1"
-                          value={editedMessage}
-                          onChange={(e) => setEditedMessage(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <button
-                      className="bg-purple-800 text-white p-2  rounded-md mb-10"
-                      type="submit"
-                    >
-                      Update Leave
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-end items-center mr-24 w-full ">
-                  <button
-                    onClick={handleApplyLeave}
-                    className="bg-purple-800 p-2 rounded-md shadow-lg text-white"
-                  >
-                    Apply For Leave
-                  </button>
-                </div>
-                <h4 className="text-purple-800 font-semibold text-lg">
-                  New Requests
-                </h4>
-                {newRequests.length > 0 ? (
-                  <Table
-                    className="w-full"
-                    columns={newRequestscolumns}
-                    dataSource={newRequests}
-                  />
-                ) : (
-                  <p>No new leave requests found.</p>
-                )}
-
-                {updatedRequests.length > 0 && (
-                  <>
-                    <h4 className="text-purple-800 font-semibold text-lg">
-                      Reviewed Requests
-                    </h4>
-                    <Table
-                      className="w-full"
-                      columns={updatedRequestsColumns}
-                      dataSource={updatedRequests}
-                    />
-                  </>
-                )}
-              </>
-            )}
-          </>
-        )}
+                  {updatedRequests.length > 0 && (
+                    <>
+                      <h4 className="text-purple-800 font-semibold text-lg">
+                        Reviewed Requests
+                      </h4>
+                      <Table
+                        className="min-w-full mt-4"
+                        columns={updatedRequestsColumns}
+                        dataSource={updatedRequests}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </MainLayout>
   );

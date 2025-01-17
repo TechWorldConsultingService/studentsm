@@ -27,11 +27,31 @@ const TeachingManagementSystem = () => {
               </ul>
             </div>
 
-            <div className="mt-6 text-center">
-              <button className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none">
-                Explore Classes
-              </button>
+            
+          {/* Progress Section */}
+          <div className="bg-purple-100 my-9 p-6 rounded-lg shadow-lg border border-purple-300">
+            <h2 className="text-2xl font-semibold text-purple-800">Your Progress</h2>
+            <div className="mt-4">
+
+
+              {/* Replace with dynamic progress */}
+              <div className="text-purple-700">Course Progress: 75%</div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div className="bg-purple-700 h-2 rounded-full" style={{ width: '75%' }}></div>
+              </div>
             </div>
+          </div>
+
+          {/* Recent Announcements Section */}
+          <div className="bg-purple-100 p-6 rounded-lg shadow-lg border border-purple-300 col-span-2 lg:col-span-3">
+            <h2 className="text-2xl font-semibold text-purple-800">Recent Announcements</h2>
+            <ul className="mt-4 text-gray-600">
+              {/* Replace with dynamic announcements */}
+              <li className="py-2">Exam schedule has been updated, check the portal.</li>
+              <li className="py-2">New reading material available for next class.</li>
+            </ul>
+          </div>
+
           </div>
         </div>
       </div>

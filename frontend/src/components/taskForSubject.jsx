@@ -3,7 +3,7 @@ import { Radio } from "antd";
 import "./taskForSubject.css";
 
 const SubjectSyllabus = lazy(() => import("../pages/LMS/subjectSyllabus"));
-const Homework = lazy(() => import("../pages/LMS/homework"));
+const Homework = lazy(() => import("../pages/LMS/homework/homework"));
 const SubjectNotes = lazy(() => import("../pages/LMS/subjectNotes"));
 const SubjectHome = lazy(() => import("../pages/LMS/subjectHome"));
 

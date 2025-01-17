@@ -226,6 +226,11 @@ const TeacherList = () => {
                 <p className="text-gray-700">
                   <strong>Gender:</strong> {selectedTeacher.gender}
                 </p>
+
+                    <p className="text-gray-700">
+                    <strong>Class Teacher:</strong> {selectedTeacher.class_teacher ? (selectedTeacher.class_teacher," class"  ): "-" }
+                  </p>
+                 
                 <p className="flex flex-col">
                 <strong> Subject Code/Name:  </strong> 
                 {selectedTeacher.subject_details.length > 0 ? (

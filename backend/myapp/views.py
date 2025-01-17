@@ -251,8 +251,18 @@ class StudentListView(APIView):
         class_id = request.query_params.get('class_id')
 
         if class_id:
+            try:
+                # Ensure the class exists
+                class_instance = Class.objects.get(id=class_id)
+                # Filter students by the class
+                students = Student.objects.filter(class_code=class_instance)
+            except Class.DoesNotExist:
+                return Response(
+                    {"error": "Class with the given ID does not exist."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             # Filter students by class if class_id is provided
-            students = Student.objects.filter(classes__id=class_id)
+            # students = Student.objects.filter(classes__id=class_id)
         else:
             # Retrieve all students if no class_id is provided
             students = Student.objects.all()
@@ -260,6 +270,78 @@ class StudentListView(APIView):
         # students = Student.objects.all()  # Retrieve all student instances
         serializer = StudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
+# API view to list students by subject and class
+class StudentsBySubjectAndClassView(APIView):
+    def get(self, request, format=None):
+        # Retrieve subject ID and class ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+        class_id = request.query_params.get('class_id')
+
+        if not subject_id or not class_id:
+            return Response(
+                {"error": "Both subject_id and class_id query parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Ensure the subject exists
+            subject_instance = Subject.objects.get(id=subject_id)
+            # Ensure the class exists
+            class_instance = Class.objects.get(id=class_id)
+
+            # Check if the subject is associated with the class
+            if not class_instance.subjects.filter(id=subject_instance.id).exists():
+                return Response(
+                    {"error": "The specified subject is not associated with the given class."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Filter students in the specified class
+            students = Student.objects.filter(class_code=class_instance)
+
+        except Subject.DoesNotExist:
+            return Response(
+                {"error": "Subject with the given ID does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Class.DoesNotExist:
+            return Response(
+                {"error": "Class with the given ID does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class StudentsBySubjectView(APIView):
+    def get(self, request, format=None):
+        # Retrieve subject ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+
+        if subject_id:
+            try:
+                # Ensure the subject exists
+                subject_instance = Subject.objects.get(id=subject_id)
+                # Get all classes associated with the subject
+                classes_with_subject = subject_instance.classes.all()
+                # Get students in those classes
+                students = Student.objects.filter(class_code__in=classes_with_subject)
+            except Subject.DoesNotExist:
+                return Response(
+                    {"error": "Subject with the given ID does not exist."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            return Response(
+                {"error": "subject_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Serialize the student data
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # List all staff members
 class StaffListView(APIView):
@@ -985,6 +1067,74 @@ from rest_framework import status
 from .serializers import AssignmentSerializer
 from .models import Subject, Class
 
+class TeacherAssignmentsView(APIView):
+    """
+    View for teachers to fetch assignments they created.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Ensure the user is a teacher
+        try:
+            teacher = request.user.teacher  # Assuming a OneToOneField relationship exists between Teacher and AUTH_USER_MODEL
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Fetch assignments created by the teacher
+        assignments = Assignment.objects.filter(teacher=teacher)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize assignments and return the response
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+class StudentAssignmentsBySubjectView(APIView):
+    """
+    View for students to fetch assignments based on a specific subject.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Ensure the user is a student
+        try:
+            student = request.user.student  # Assuming a OneToOneField relationship exists between Student and AUTH_USER_MODEL
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get the subject ID from query parameters
+        subject_id = request.query_params.get('subject_id')
+        if not subject_id:
+            return Response(
+                {"error": "Subject ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Fetch assignments for the student's class and the specified subject
+        assignments = Assignment.objects.filter(
+            class_assigned=student.class_code,
+            subject_id=subject_id
+        )
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for this subject."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Serialize assignments and return the response
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, format=None):
@@ -1105,33 +1255,36 @@ class SubmitStudentAssignmentView(APIView):
         """
         Submit an assignment for a student.
         """
+        try:
+            # student = get_object_or_404(Student, user=request.user)
+            # Ensure the user is linked to a Student instance
+            student = request.user.student  # Fetch the related Student instance
+
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to submit this assignment."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
         # Check if the student is trying to submit a valid assignment
         assignment_id = request.data.get('assignment_id')
         submission_file = request.FILES.get('submission_file')
+        written_submission = request.data.get('written_submission')
 
         if not assignment_id:
             return Response(
                 {"error": "Assignment ID are required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        if not submission_file:
+        if not submission_file and not written_submission:
             return Response(
-                {"error": "Submission file are required."},
+                {"error": "Either a submission file or written submission is required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        # assignment = get_object_or_404(Assignment, id=assignment_id)
-        # student = get_object_or_404(Student, user=request.user)
-
-        try:
-            student = get_object_or_404(Student, user=request.user)
-        except Student.DoesNotExist:
-            return Response(
-                {"error": "You are not authorized to submit this assignment."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # Retrieve the assignment
         assignment = get_object_or_404(Assignment, id=assignment_id)
         
-
+        # Check if the assignment is for the student's class
         if student.class_code != assignment.class_assigned:
             return Response(
                 {"error": "This assignment is not for your class."}, 
@@ -1139,7 +1292,7 @@ class SubmitStudentAssignmentView(APIView):
 
         # Check if the student has already submitted
         if AssignmentSubmission.objects.filter(
-            assignment=assignment,student=student
+            assignment=assignment,student=request.user
             ).exists():
             return Response(
                 {"error": "You have already submitted this assignment."}, 
@@ -1148,8 +1301,9 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=student,  # Use CustomUser instance
-            submission_file=submission_file
+            student=request.user,  # # Pass the CustomUser instance
+            submission_file=submission_file,
+            written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
@@ -1170,7 +1324,6 @@ class ReviewAssignmentsView(APIView):
             return Response({"error": "You are not authorized to view this content."}, status=status.HTTP_403_FORBIDDEN)
 
         # Fetch assignments related to the teacher's subjects
-        # assignments = Assignment.objects.filter(subject__teachers=teacher_instance)
         assignments = Assignment.objects.filter(subject__teachers=teacher)
 
         # Prepare data for response
@@ -1178,7 +1331,7 @@ class ReviewAssignmentsView(APIView):
 
         for assignment in assignments:
             submissions = AssignmentSubmission.objects.filter(assignment=assignment)
-            data.append({
+            data.append({   
                 "assignment": AssignmentSerializer(assignment).data,
                 "submissions": AssignmentSubmissionSerializer(submissions, many=True).data
             })

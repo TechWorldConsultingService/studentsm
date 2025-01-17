@@ -1,11 +1,19 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { NavLink } from "react-router-dom";
 import { HiOutlineHome } from "react-icons/hi";
 import { IoBookOutline } from "react-icons/io5";
+import { setSelectedSubject } from '../redux/reducerSlices/userSlice';
+
+
 
 const SubjectSidebar = () => {
     const { subjects } = useSelector((state) => state.user);
+    const dispatch = useDispatch()
+
+    const handleSubjectClick = (subjectId) => {
+        dispatch(setSelectedSubject({subjectId}))
+    }
 
     return (
         <div className="flex flex-col bg-gradient-to-b from-purple-800 to-purple-600 min-h-screen p-3 shadow-lg">
@@ -34,6 +42,7 @@ const SubjectSidebar = () => {
                         <div key={item.subject_code} className="group">
                             <NavLink
                                 to={`/lms/${item.subject_name.toLowerCase()}`}
+                                onClick={() => handleSubjectClick(item.id)}
                                 className={({ isActive }) =>
                                     `flex items-center text-white hover:text-purple-200 hover:bg-purple-700 rounded-md p-4 ${isActive ? 'text-lg bg-purple-900' : ''}`
                                 }

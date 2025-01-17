@@ -30,9 +30,12 @@ urlpatterns = [
     path('api/teachers/', TeacherListView.as_view(), name='teacher-list'),  # Endpoint for listing teachers
     path('api/principals/', PrincipalListView.as_view(), name='principal-list'),  # Endpoint for listing principals
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
+    path('api/students-by-subject/', StudentsBySubjectView.as_view(), name='students-by-subject'),
+    path('api/students-by-subject-and-class/', StudentsBySubjectAndClassView.as_view(), name='students-by-subject-and-class'),
+    
     path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
 
-     # API endpoints for viewing details of a specific record
+    # API endpoints for viewing details of a specific record
     path('api/teachers/<int:pk>/', TeacherDetailView.as_view(), name='teacher-detail'),  # Endpoint for viewing a specific teacher
     path('api/principals/<int:pk>/', PrincipalDetailView.as_view(), name='principal-detail'),  # Endpoint for viewing a specific principal
     path('api/students/<int:pk>/', StudentDetailView.as_view(), name='student-detail'),  # Endpoint for viewing a specific student
@@ -76,12 +79,15 @@ urlpatterns = [
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
-
-
-
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
     
+    # New endpoint for teachers to see their created assignments
+    path('api/teacher/assignments/', TeacherAssignmentsView.as_view(), name='teacher-assignments'),
+    
+    #endpoint for student to see their assignments as per subject
+    path('api/student/assignments/subject/', StudentAssignmentsBySubjectView.as_view(), name='student-assignments-by-subject'),
+
     # Filter subjects for a teacher and class
     path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
 
@@ -103,14 +109,6 @@ urlpatterns = [
     path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
     path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
-    # API endpoints for fees management
-    #path('api/sfees/', FeeListCreateView.as_view(), name='fee-list-create'),  # List and create fees
-    #path('api/sfees/<int:pk>/', FeeDetailView.as_view(), name='fee-detail'),  # View, update, and delete specific fee
-    #path('api/sstudents/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # View fees for a specific student
-    #path('api/sstudents/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # View pending fees for a student
-
-    # path('api/staff/locations/', UpdateStaffLocationView.as_view(), name='update_staff_location'),
-    
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
     path('api/forum/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),

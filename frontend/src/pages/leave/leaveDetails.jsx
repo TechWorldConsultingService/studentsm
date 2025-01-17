@@ -3,10 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "../../layout/MainLayout";
 import { ImCross } from "react-icons/im";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-
-
 
 const LeaveDetail = () => {
   const navigate = useNavigate();
@@ -15,8 +13,7 @@ const LeaveDetail = () => {
   const [leaveError, setLeaveError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const {access} = useSelector((state) => state.user);
-
+  const { access } = useSelector((state) => state.user);
 
   useEffect(() => {
     async function getLeaveDetail() {
@@ -49,32 +46,51 @@ const LeaveDetail = () => {
     getLeaveDetail();
   }, [id]);
 
-
   return (
     <MainLayout>
-      <div className="flex  items-center justify-self-center bg-purple-300 w-[45%]   m-10 rounded-md shadow-2xl">
-      <div className='flex flex-col items-center justify-center w-full rounded-md  ' >
-        <div className="flex  bg-purple-800  w-full p-4 text-white font-semibold text-center text-lg ">
-        <h4 className="text-center w-full">Leave Application Detail</h4>
-        <ImCross onClick={() => navigate(-1)}/>
-        </div>
-        {leaveError ? (
-          <p>{leaveError}</p>
-        ) : isLoading ? (
-          <p>Loading...</p>
-        ) : leaveDetail ? (
-          <div className="w-full p-2 pl-10 pb-7 ">
-            <p><strong>Applicant Name:</strong> {leaveDetail.applicant_name}</p>
-            <p><strong>Role:</strong> {leaveDetail.applicant_type}</p>
-            <p><strong>Applied On:</strong> {leaveDetail.applied_on}</p>
-            <p><strong>Leave Date:</strong> {leaveDetail.leave_date}</p>
-            <p><strong>Message:</strong> {leaveDetail.message}</p>
-            <p><strong>Status:</strong> {leaveDetail.status}</p>
+      <div className="bg-purple-50 p-6">
+        <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-extrabold text-purple-800">
+              Leave Application Detail
+            </h1>
+            <ImCross
+              className="text-purple-700 cursor-pointer"
+              onClick={() => navigate(-1)}
+            />
           </div>
-        ) : (
-          <p>No leave details found.</p>
-        )}
-      </div>
+
+          {leaveError ? (
+            <p className="mt-4 text-red-500">{leaveError}</p>
+          ) : isLoading ? (
+            <p className="mt-4 text-gray-500">Loading...</p>
+          ) : leaveDetail ? (
+            <div className="mt-6">
+              <div className="flex flex-col gap-4">
+                <p>
+                  <strong className="text-purple-700">Applicant Name:</strong> {leaveDetail.applicant_name}
+                </p>
+                <p>
+                  <strong className="text-purple-700">Role:</strong> {leaveDetail.applicant_type}
+                </p>
+                <p>
+                  <strong className="text-purple-700">Applied On:</strong> {leaveDetail.applied_on}
+                </p>
+                <p>
+                  <strong className="text-purple-700">Leave Date:</strong> {leaveDetail.leave_date}
+                </p>
+                <p>
+                  <strong className="text-purple-700">Message:</strong> {leaveDetail.message}
+                </p>
+                <p>
+                  <strong className="text-purple-700">Status:</strong> {leaveDetail.status}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-gray-600">No leave details found.</p>
+          )}
+        </div>
       </div>
     </MainLayout>
   );
