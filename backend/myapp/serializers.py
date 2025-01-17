@@ -678,36 +678,129 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
 
 
 class ExamSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Exam
-        fields = ['id', 'name', 'exam_type', 'date']
-        read_only_fields = ['class_name']
+        fields = ['id', 'name']
 
-class StudentResultSerializer(serializers.ModelSerializer):
+
+class ExamDetailSerializer(serializers.ModelSerializer):
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
-        model = StudentResult
-        fields = ['student', 'exam', 'subject', 'internal_marks', 'external_marks', 'remarks']
+        model = ExamDetail
+        fields = ['exam', 'subject', 'full_marks', 'pass_marks', 'exam_date', 'class_assigned', 'created_by']
+        read_only_fields = ['class_assigned']
 
     def validate(self, data):
-        student = data['student']
-        exam = data['exam']
-        subject = data['subject']
-
-        # Check if the result already exists
-        if StudentResult.objects.filter(student=student, exam=exam, subject=subject).exists():
-            raise serializers.ValidationError("This result for the given student, exam, and subject already exists.")
-        
+        # Check if class_assigned needs to be automatically filled based on the subject
+        if not data.get('class_assigned'):
+            subject = data.get('subject')
+            associated_classes = subject.classes.all()
+            if associated_classes.count() == 1:
+                data['class_assigned'] = associated_classes.first()
+            elif associated_classes.count() > 1:
+                raise serializers.ValidationError(f"The subject '{subject.subject_name}' is associated with multiple classes. Please specify the class explicitly.")
+            else:
+                raise serializers.ValidationError(f"The subject '{subject.subject_name}' is not associated with any class.")
         return data
 
-    def create(self, validated_data):
-        # Retrieve teacher from the context
-        teacher = self.context.get('teacher')
-        if not teacher:
-            raise serializers.ValidationError("Teacher is required to save a result.")
 
-        # Add teacher to validated data
-        validated_data['teacher'] = teacher
 
-        # Create the StudentResult instance
-        return super().create(validated_data)
+class GetExamDetailSerializer(serializers.ModelSerializer):
+    exam = serializers.SerializerMethodField()  # Field to fetch exam details
+    subject_details = serializers.SerializerMethodField()  # Field to fetch subject details
+    class_details = serializers.SerializerMethodField()  # Field to fetch class details
+
+    class Meta:
+        model = ExamDetail
+        fields = ['id', 'exam', 'full_marks', 'pass_marks', 'exam_date', 'subject_details', 'class_details']
+
+    def get_exam(self, obj):
+        return {
+            "id": obj.exam.id,
+            "name": obj.exam.name,
+        }
+
+    def get_subject_details(self, obj):
+        return {
+            "id": obj.subject.id,
+            "subject_code": obj.subject.subject_code,
+            "subject_name": obj.subject.subject_name
+        }
+
+    def get_class_details(self, obj):
+        return {
+            "id": obj.class_assigned.id,
+            "class_code": obj.class_assigned.class_code,
+            "class_name": obj.class_assigned.class_name,
+            "subject_details": [
+                {
+                    "id": subject.id,
+                    "subject_code": subject.subject_code,
+                    "subject_name": subject.subject_name
+                }
+                for subject in obj.class_assigned.subjects.all()
+            ]
+        }
+
+
+
+class StudentResultSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # To show the creator's username
+
+    class Meta:
+        model = StudentResult
+        fields = [
+            'id', 'student', 'exam_detail', 'practical_marks', 'theory_marks',
+            'total_marks', 'percentage', 'gpa', 'created_by', 'created_at'
+        ]
+
+class GetStudentResultSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Display the creator's username
+    student_details = serializers.SerializerMethodField()  # Fetch student details
+    exam_detail = serializers.SerializerMethodField()  # Fetch detailed exam information
+
+    class Meta:
+        model = StudentResult
+        fields = [
+            'id', 'student_details', 'exam_detail', 'practical_marks', 'theory_marks',
+            'total_marks', 'percentage', 'gpa', 'created_by', 'created_at'
+        ]
+
+    def get_student_details(self, obj):
+        student = obj.student
+        return {
+            "id": student.id,
+            "username": student.user.username,
+            "email": student.user.email,
+            "full_name": f"{student.user.first_name} {student.user.last_name}",
+            "gender": student.gender,
+            "address": student.address,
+            "phone": student.phone,
+            "date_of_birth": student.date_of_birth
+        }
+
+    def get_exam_detail(self, obj):
+        exam_detail = obj.exam_detail
+        return {
+            "id": exam_detail.id,
+            "exam": {
+                "id": exam_detail.exam.id,
+                "name": exam_detail.exam.name
+            },
+            "subject": {
+                "id": exam_detail.subject.id,
+                "subject_code": exam_detail.subject.subject_code,
+                "subject_name": exam_detail.subject.subject_name
+            },
+            "class_assigned": {
+                "id": exam_detail.class_assigned.id,
+                "class_code": exam_detail.class_assigned.class_code,
+                "class_name": exam_detail.class_assigned.class_name
+            },
+            "full_marks": exam_detail.full_marks,
+            "pass_marks": exam_detail.pass_marks,
+            "exam_date": exam_detail.exam_date
+        }
+
+
