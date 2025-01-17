@@ -1816,25 +1816,13 @@ class PaymentTransactionDetailView(APIView):
         return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
     
 
-
-class ExamListCreateView(APIView):
-    """
-    Handles GET and POST requests for the Exam model.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """
-        Retrieves the list of all exams.
-        """
+class ExamAPIView(APIView):
+    def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
         serializer = ExamSerializer(exams, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        """
-        Creates a new exam.
-        """
+    def post(self, request, *args, **kwargs):
         serializer = ExamSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -1842,80 +1830,155 @@ class ExamListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AddResultView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class ExamDetailAPIView(APIView):
     def get(self, request):
-        teacher = request.user.teacher
-        exam_id = request.query_params.get('exam')  # Filter by exam (optional)
-        student_id = request.query_params.get('student')  # Filter by student (optional)
-
-        results = StudentResult.objects.filter(teacher=teacher)
-
-        if exam_id:
-            results = results.filter(exam_id=exam_id)
-
-        if student_id:
-            results = results.filter(student_id=student_id)
-
-        serializer = StudentResultSerializer(results, many=True)
+        details = ExamDetail.objects.all()
+        serializer = GetExamDetailSerializer(details, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        teacher = request.user.teacher  # Fetch the teacher associated with the logged-in user
-        serializer = StudentResultSerializer(
-            data=request.data,
-            context={'request': request, 'teacher': teacher}  # Pass teacher in context
-        )
+    def post(self, request, *args, **kwargs):
+        serializer = ExamDetailSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Result added successfully", "data": serializer.data}, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
+class StudentResultAPIView(APIView):
+    def get(self, request):
+        results = StudentResult.objects.all()
+        serializer = GetStudentResultSerializer(results, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = StudentResultSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from .models import StudentResult, Exam, ExamDetail
+from .serializers import StudentResultSerializer
 
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id, exam_id):
         try:
-            student = Student.objects.get(id=student_id)
+            # Fetch the exam
             exam = Exam.objects.get(id=exam_id)
 
-            # Get all subjects for the student's class
-            class_subjects = student.class_code.subjects.all()
+            # Fetch the student and their details
+            student = Student.objects.select_related('user', 'class_code').get(id=student_id)
 
-            # Filter results for this student, exam, and class subjects
+            # Fetch the results for the student for the given exam
             results = StudentResult.objects.filter(
-                student=student, 
-                exam=exam, 
-                subject__in=class_subjects
-            )
+                student_id=student_id,
+                exam_detail__exam_id=exam_id
+            ).select_related('exam_detail__subject')
 
             if not results.exists():
-                return Response({"error": "No results found for this student and exam."}, status=404)
+                return Response(
+                    {"detail": "No results found for the specified student and exam."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-            # Build the marksheet
-            marksheet = {
-                "student_name": student.user.username,
-                "class_name": student.class_code.class_name,
-                "exam_name": exam.name,
-                "exam_type": exam.exam_type,
-                "subjects": []
-            }
+            # Serialize results
+            results_data = []
+            total_marks_obtained = 0
+            total_full_marks = 0
 
             for result in results:
-                marksheet["subjects"].append({
-                    "subject_name": result.subject.subject_name,
-                    "internal_marks": result.internal_marks,
-                    "external_marks": result.external_marks,
-                    "total_marks": (result.internal_marks or 0) + (result.external_marks or 0),
-                    "remarks": result.remarks,
+                subject = result.exam_detail.subject
+                total_marks = (result.practical_marks or 0) + (result.theory_marks or 0)
+                total_marks_obtained += total_marks
+                total_full_marks += result.exam_detail.full_marks
+
+                results_data.append({
+                    "subject": subject.subject_name,
+                    "practical_marks": result.practical_marks,
+                    "theory_marks": result.theory_marks,
+                    "total_marks": total_marks,
+                    "full_marks": result.exam_detail.full_marks,
+                    "pass_marks": result.exam_detail.pass_marks,
                 })
 
-            return Response(marksheet)
-        except (Student.DoesNotExist, Exam.DoesNotExist):
-            return Response({"error": "Student or exam not found"}, status=404)
+            # Calculate percentage and GPA
+            percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks > 0 else 0
+            gpa = percentage / 25  # Assuming GPA scale of 4.0 (adjust as needed)
+
+            # Prepare student details
+            student_details = {
+                "id": student.id,
+                "first_name": student.user.first_name,
+                "last_name": student.user.last_name,
+                "gender": student.gender,
+                "class_code": {
+                    "id": student.class_code.id if student.class_code else None,
+                    "class_name": student.class_code.class_name if student.class_code else None
+                } if student.class_code else None
+            }
+
+            return Response({
+                "student": student_details,
+                "exam": exam.name,
+                "results": results_data,
+                "total_marks_obtained": total_marks_obtained,
+                "total_full_marks": total_full_marks,
+                "percentage": round(percentage, 2),
+                "gpa": round(gpa, 2),
+            }, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response(
+                {"detail": "Exam not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": "Student not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ExamTimetableView(APIView):
+    def get(self, request, exam_id, *args, **kwargs):
+        try:
+            # Fetch the exam and related exam details
+            exam = Exam.objects.prefetch_related('exam_details__class_assigned', 'exam_details__subject').get(id=exam_id)
+
+            # Prepare the response data
+            exam_details = []
+            for detail in exam.exam_details.all():
+                exam_details.append({
+                    "class_name": detail.class_assigned.class_name,
+                    "subject_name": detail.subject.subject_name,
+                    "exam_date": detail.exam_date,
+                })
+
+            response_data = {
+                "id": exam.id,
+                "name": exam.name,
+                "exam_details": exam_details,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
