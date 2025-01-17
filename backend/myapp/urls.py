@@ -130,8 +130,10 @@ urlpatterns = [
     path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),
     path('api/exam-details/', ExamDetailAPIView.as_view(), name='exam-detail-list-create'),
     path('api/results/', StudentResultAPIView.as_view(), name='student-result-list-create'),
+    path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),
     path('api/exam-timetable/<int:exam_id>/', ExamTimetableView.as_view(), name='exam-timetable'),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1982,3 +1982,77 @@ class ExamTimetableView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class SubjectWiseExamResultsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, exam_id, subject_id, *args, **kwargs):
+        try:
+            # Fetch the results for the specified exam and subject
+            results = StudentResult.objects.filter(
+                exam_detail__exam_id=exam_id,
+                exam_detail__subject_id=subject_id
+            ).select_related(
+                'student__user', 'exam_detail__exam', 'exam_detail__subject', 'exam_detail__class_assigned'
+            )
+
+            if not results.exists():
+                return Response(
+                    {"detail": "No results found for the specified exam and subject."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Prepare exam and subject details
+            exam = results[0].exam_detail.exam
+            subject = results[0].exam_detail.subject
+            exam_details = {
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+                "subject_id": subject.id,
+                "subject_code": subject.subject_code,
+                "subject_name": subject.subject_name,
+                "full_marks": results[0].exam_detail.full_marks,
+                "pass_marks": results[0].exam_detail.pass_marks,
+                "exam_date": results[0].exam_detail.exam_date,
+            }
+
+            # Prepare results data for all students
+            results_data = []
+            for result in results:
+                student = result.student
+                results_data.append({
+                    "student": {
+                        "id": student.id,
+                        "username": student.user.username,
+                        "full_name": f"{student.user.first_name} {student.user.last_name}",
+                        "class": {
+                            "id": student.class_code.id,
+                            "class_code": student.class_code.class_code,
+                            "class_name": student.class_code.class_name,
+                        } if student.class_code else None,
+                        "gender": student.gender,
+                    },
+                    "practical_marks": result.practical_marks,
+                    "theory_marks": result.theory_marks,
+                    "total_marks": result.total_marks,
+                    "percentage": result.percentage,
+                    "gpa": result.gpa,
+                })
+
+            return Response({
+                "exam_details": exam_details,
+                "results": results_data,
+            }, status=status.HTTP_200_OK)
+
+        except StudentResult.DoesNotExist:
+            return Response(
+                {"detail": "Results not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
