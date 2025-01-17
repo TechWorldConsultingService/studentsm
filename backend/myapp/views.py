@@ -1066,6 +1066,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import AssignmentSerializer
 from .models import Subject, Class
+
 class TeacherAssignmentsView(APIView):
     """
     View for teachers to fetch assignments they created.
@@ -1254,33 +1255,36 @@ class SubmitStudentAssignmentView(APIView):
         """
         Submit an assignment for a student.
         """
+        try:
+            # student = get_object_or_404(Student, user=request.user)
+            # Ensure the user is linked to a Student instance
+            student = request.user.student  # Fetch the related Student instance
+
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to submit this assignment."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
         # Check if the student is trying to submit a valid assignment
         assignment_id = request.data.get('assignment_id')
         submission_file = request.FILES.get('submission_file')
+        written_submission = request.data.get('written_submission')
 
         if not assignment_id:
             return Response(
                 {"error": "Assignment ID are required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        if not submission_file:
+        if not submission_file and not written_submission:
             return Response(
-                {"error": "Submission file are required."},
+                {"error": "Either a submission file or written submission is required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        # assignment = get_object_or_404(Assignment, id=assignment_id)
-        # student = get_object_or_404(Student, user=request.user)
-
-        try:
-            student = get_object_or_404(Student, user=request.user)
-        except Student.DoesNotExist:
-            return Response(
-                {"error": "You are not authorized to submit this assignment."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # Retrieve the assignment
         assignment = get_object_or_404(Assignment, id=assignment_id)
         
-
+        # Check if the assignment is for the student's class
         if student.class_code != assignment.class_assigned:
             return Response(
                 {"error": "This assignment is not for your class."}, 
@@ -1288,7 +1292,7 @@ class SubmitStudentAssignmentView(APIView):
 
         # Check if the student has already submitted
         if AssignmentSubmission.objects.filter(
-            assignment=assignment,student=student
+            assignment=assignment,student=request.user
             ).exists():
             return Response(
                 {"error": "You have already submitted this assignment."}, 
@@ -1297,8 +1301,9 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=student,  # Use CustomUser instance
-            submission_file=submission_file
+            student=request.user,  # # Pass the CustomUser instance
+            submission_file=submission_file,
+            written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
@@ -1319,7 +1324,6 @@ class ReviewAssignmentsView(APIView):
             return Response({"error": "You are not authorized to view this content."}, status=status.HTTP_403_FORBIDDEN)
 
         # Fetch assignments related to the teacher's subjects
-        # assignments = Assignment.objects.filter(subject__teachers=teacher_instance)
         assignments = Assignment.objects.filter(subject__teachers=teacher)
 
         # Prepare data for response
@@ -1327,7 +1331,7 @@ class ReviewAssignmentsView(APIView):
 
         for assignment in assignments:
             submissions = AssignmentSubmission.objects.filter(assignment=assignment)
-            data.append({
+            data.append({   
                 "assignment": AssignmentSerializer(assignment).data,
                 "submissions": AssignmentSubmissionSerializer(submissions, many=True).data
             })
