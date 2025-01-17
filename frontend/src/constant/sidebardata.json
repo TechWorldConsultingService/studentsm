@@ -68,9 +68,9 @@
       },
       {
         "id": 5,
-        "title": "Reports",
+        "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/reports"
+        "link": "/examTeacher"
       },
       {
         "id": 6,

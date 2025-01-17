@@ -37,7 +37,7 @@ import ClassList from "./pages/principal/classList/ClassList";
 import SubjectList from "./pages/principal/subjectList/SubjectList";
 import StudentList from "./pages/principal/studentList/StudentList";
 import TeacherList from "./pages/principal/teacherList/TeacherList";
-
+import ExamTeacher from "./pages/reports/ExamTeacher";
 
 
 const router = createBrowserRouter([
@@ -176,6 +176,10 @@ const router = createBrowserRouter([
   {
     path: "/teacherList",
     element: <TeacherList />
+  },
+  {
+    path:"/examTeacher",
+    element: <ExamTeacher />
   }
 ]);
 
