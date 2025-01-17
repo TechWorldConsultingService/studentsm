@@ -462,7 +462,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignmentSubmission
-        fields = ['assignment', 'student', 'submission_file', 'submitted_on']
+        fields = ['assignment', 'student', 'submission_file','written_submission', 'submitted_on']
 
 class SyllabusSerializer(serializers.ModelSerializer):
     completion_percentage = serializers.SerializerMethodField()

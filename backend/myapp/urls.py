@@ -35,7 +35,7 @@ urlpatterns = [
     
     path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
 
-     # API endpoints for viewing details of a specific record
+    # API endpoints for viewing details of a specific record
     path('api/teachers/<int:pk>/', TeacherDetailView.as_view(), name='teacher-detail'),  # Endpoint for viewing a specific teacher
     path('api/principals/<int:pk>/', PrincipalDetailView.as_view(), name='principal-detail'),  # Endpoint for viewing a specific principal
     path('api/students/<int:pk>/', StudentDetailView.as_view(), name='student-detail'),  # Endpoint for viewing a specific student
