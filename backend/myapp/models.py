@@ -183,7 +183,9 @@ class AssignmentSubmission(models.Model):
     submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
     written_submission = models.TextField(null=True, blank=True)  # field for written submissions
     submitted_on = models.DateTimeField(auto_now_add=True)
-    
+    review_text = models.TextField(null=True, blank=True)
+    is_checked = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
