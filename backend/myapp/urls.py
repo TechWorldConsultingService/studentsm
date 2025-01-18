@@ -100,6 +100,7 @@ urlpatterns = [
     # Review assignments by the teacher
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
 
+    path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
 
 
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),

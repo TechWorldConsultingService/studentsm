@@ -1137,6 +1137,7 @@ class StudentAssignmentsBySubjectView(APIView):
 
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         # Ensure the request has a logged-in user
         if not request.user.is_authenticated:
@@ -1159,8 +1160,12 @@ class AssignHomeworkView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             # Ensure teacher is authorized for the class
-            # if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
-            if not class_instance in teacher.classes.all():
+            # if not class_instance in teacher.classes.all():
+            #     return Response(
+            #         {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
+            #         status=status.HTTP_403_FORBIDDEN
+            #     )
+            if not teacher.classes.filter(id=class_instance.id).exists():
                 return Response(
                     {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
                     status=status.HTTP_403_FORBIDDEN
@@ -1256,13 +1261,11 @@ class SubmitStudentAssignmentView(APIView):
         Submit an assignment for a student.
         """
         try:
-            # student = get_object_or_404(Student, user=request.user)
-            # Ensure the user is linked to a Student instance
-            student = request.user.student  # Fetch the related Student instance
+            student = request.user.student  # Ensure the user is linked to a Student instance
 
         except Student.DoesNotExist:
             return Response(
-                {"error": "You are not authorized to submit this assignment."},
+                {"error": "Only students can submit assignments."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         
@@ -1310,33 +1313,91 @@ class SubmitStudentAssignmentView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 
+# review list of assignements given by teacher//uses by teacher 
 class ReviewAssignmentsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        user = request.user
-        # user = request.user
-
-        # Ensure the user is a teacher
+        """
+        Fetch assignments and their submissions for the teacher's assigned classes and subjects.
+        """
         try:
-            teacher = user.teacher # Assuming a OneToOneField relationship exists between Teacher and AUTH_USER_MODEL
+            teacher = request.user.teacher  # Ensure the request user is a teacher
         except Teacher.DoesNotExist:
-            return Response({"error": "You are not authorized to view this content."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # Fetch assignments related to the teacher's subjects
-        assignments = Assignment.objects.filter(subject__teachers=teacher)
+        # Fetch assignments for the teacher's classes and subjects
+        assignments = Assignment.objects.filter(
+            class_assigned__in=teacher.classes.all(),
+            subject__in=teacher.subjects.all()
+        )
 
-        # Prepare data for response
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for your assigned classes or subjects."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Prepare detailed response for each assignment
         data = []
-
         for assignment in assignments:
             submissions = AssignmentSubmission.objects.filter(assignment=assignment)
-            data.append({   
+            
+            # If there is no `status` field, we will not include the breakdown
+            data.append({
                 "assignment": AssignmentSerializer(assignment).data,
-                "submissions": AssignmentSubmissionSerializer(submissions, many=True).data
+                "submissions": AssignmentSubmissionSerializer(submissions, many=True).data,
+                "total_submissions": submissions.count(),
             })
-        
+
         return Response(data, status=status.HTTP_200_OK)
+
+# to allow a teacher to review a specific assignment submission
+from rest_framework import status
+class ReviewAssignmentSubmissionView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def post(self, request, submission_id, format=None):
+        """
+        Allow a teacher to review a student's assignment submission.
+        """
+        try:
+            teacher = request.user.teacher  # Ensure the user is a teacher
+            print(teacher)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to review assignmentss."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Fetch the submission
+        submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+
+        # Ensure the assignment belongs to the teacher
+        if submission.assignment.teacher != teacher:
+            return Response(
+                {"error": "You are not authorized to review this assignment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get review data from the request
+        review_text = request.data.get('review_text', '').strip()
+        is_checked = request.data.get('is_checked', False)
+
+        # Update the submission
+        submission.reviewed_by = teacher
+        submission.review_text = review_text
+        submission.is_checked = is_checked
+        submission.save()
+
+        return Response(
+            {"message": "Review submitted successfully."},
+            status=status.HTTP_200_OK
+        )
 
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
