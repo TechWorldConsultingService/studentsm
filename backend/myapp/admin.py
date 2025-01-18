@@ -249,31 +249,62 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
 
 
 from django.contrib import admin
-from .models import Exam, StudentResult
+from .models import Exam, ExamDetail, StudentResult
+from django.contrib import admin
 
 # Exam admin customization
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'exam_type', 'date')  # Fields to display in the admin list view
-    search_fields = ('name', 'exam_type')  # Fields to allow search functionality
-    list_filter = ('exam_type', 'date')  # Fields to add filter functionality in the admin panel
+    list_display = ('id', 'name')  # Display ID and name for exams
+    search_fields = ('name',)  # Allow searching by exam name
+    ordering = ('id',)  # Order by ID (default behavior)
+
+# ExamDetail admin customization
+@admin.register(ExamDetail)
+class ExamDetailAdmin(admin.ModelAdmin):
+    list_display = ('id', 'exam', 'subject', 'class_assigned', 'full_marks', 'pass_marks', 'exam_date', 'created_by')
+    search_fields = ('exam__name', 'subject__subject_name', 'class_assigned__class_name', 'created_by__username')
+    list_filter = ('exam', 'subject', 'class_assigned', 'exam_date')
+    ordering = ('-exam_date',)
+
+   
+
+
 
 # StudentResult admin customization
 @admin.register(StudentResult)
 class StudentResultAdmin(admin.ModelAdmin):
-    list_display = ('id', 'get_student_name', 'exam', 'get_subject_name', 'teacher', 'internal_marks', 'external_marks', 'remarks', 'date_added')
-    search_fields = ('student__user__username', 'exam__name', 'subject__subject_name', 'teacher__user__username')
-    list_filter = ('exam', 'subject', 'remarks')
-    ordering = ('-date_added',)
+    list_display = (
+        'id',
+        'get_student_name',
+        'get_exam_name',
+        'get_subject_name',
+        'practical_marks',
+        'theory_marks',
+        'total_marks',
+        'percentage',
+        'gpa',
+        'created_at',
+    )  # Show key fields and computed values
+    search_fields = (
+        'student__user__username',
+        'exam_detail__exam__name',
+        'exam_detail__subject__subject_name',
+    )  # Enable search by student, exam, and subject
+    list_filter = ('exam_detail__exam', 'exam_detail__subject', 'created_at')  # Add useful filters
+    ordering = ('-created_at',)  # Order by creation date (latest first)
 
     def get_student_name(self, obj):
-        """Custom method to display student's username."""
+        """Display the student's username."""
         return obj.student.user.username
     get_student_name.short_description = 'Student Name'
 
+    def get_exam_name(self, obj):
+        """Display the exam name."""
+        return obj.exam_detail.exam.name
+    get_exam_name.short_description = 'Exam Name'
+
     def get_subject_name(self, obj):
-        """Custom method to display subject name."""
-        return obj.subject.subject_name
+        """Display the subject name."""
+        return obj.exam_detail.subject.subject_name
     get_subject_name.short_description = 'Subject Name'
-
-

@@ -344,38 +344,77 @@ class PaymentTransaction(models.Model):
         return f"Transaction {self.payment_no} for {self.student} ({self.total_amount})"
 
 
-
 class Exam(models.Model):
-    EXAM_TYPE_CHOICES = [
-        ('class_test', 'Class Test'),
-        ('terminal_exam', 'Terminal Exam'),
-    ]
-
     name = models.CharField(max_length=100)  # Example: "Mid-Term Exam 2024"
-    exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
-    date = models.DateField()
 
     def __str__(self):
-        return f"{self.name} ({self.exam_type})"
+        return self.name
+
+class ExamDetail(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_details")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, null=True, blank=True, related_name='exam_details')  # Automatically filled based on subject
+    full_marks = models.PositiveIntegerField(null=True)
+    pass_marks = models.PositiveIntegerField(null=True)
+    exam_date = models.DateField()
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        if not self.class_assigned:  # Auto-assign class based on the subject_code
+            try:
+                self.class_assigned = self.subject.classes.first()
+                if not self.class_assigned:
+                    raise ValueError(f"The subject '{self.subject.subject_code}' is not associated with any class.")
+            except Exception as e:
+                raise ValueError(str(e))
+        
+        super().save(*args, **kwargs)  # Save after setting the class_assigned
+
+    def __str__(self):
+        return f"{self.exam.name} - {self.subject.subject_code} ({self.class_assigned.class_name})"
+
+    class Meta:
+        unique_together = ('exam', 'subject', 'class_assigned')  # Prevent duplicate exam details
+
+
 
 
 class StudentResult(models.Model):
-    REMARKS_CHOICES = [
-        ('Pass', 'Pass'),
-        ('Fail', 'Fail'),
-    ]
-
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="results")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="results")
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="results")
-    internal_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    external_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    remarks = models.CharField(max_length=10, choices=REMARKS_CHOICES)
-    date_added = models.DateTimeField(auto_now_add=True)
+    exam_detail = models.ForeignKey(ExamDetail, on_delete=models.CASCADE, related_name="results")
+    practical_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    theory_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    total_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    gpa = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Calculate total_marks, percentage, and gpa before saving
+        self.total_marks = (self.practical_marks or 0) + (self.theory_marks or 0)
+        if self.exam_detail.full_marks:
+            self.percentage = (self.total_marks / self.exam_detail.full_marks) * 100
+        else:
+            self.percentage = 0
+
+        if self.percentage >= 90:
+            self.gpa = 4.0
+        elif self.percentage >= 80:
+            self.gpa = 3.5
+        elif self.percentage >= 70:
+            self.gpa = 3.0
+        elif self.percentage >= 60:
+            self.gpa = 2.5
+        elif self.percentage >= 50:
+            self.gpa = 2.0
+        else:
+            self.gpa = 0.0
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.student.user.username} - {self.subject.subject_name} ({self.exam.name}) - {self.remarks}"
+        return f"{self.student.user.username} - {self.exam_detail.subject.subject_name}"
 
     class Meta:
-        unique_together = ('student', 'exam', 'subject')  # Prevent duplicate entries for the same exam and subject.
+        unique_together = ('student', 'exam_detail')  # Prevent duplicate entries for the same exam detail.
