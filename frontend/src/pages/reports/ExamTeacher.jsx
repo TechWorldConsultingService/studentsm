@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import EnterMarks from "./EnterMarks"; 
+import EnterMarks from "./EnterMarksTeacherModal"; 
 import MainLayout from "../../layout/MainLayout";
 
 const ExamTeacher = () => {
