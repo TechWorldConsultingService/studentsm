@@ -1893,10 +1893,13 @@ class ExamAPIView(APIView):
 
 class ExamDetailAPIView(APIView):
     def get(self, request):
+        """
+        Retrieve all exam details.
+        """
         details = ExamDetail.objects.all()
         serializer = GetExamDetailSerializer(details, many=True)
-        return Response(serializer.data)
-
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def post(self, request, *args, **kwargs):
         serializer = ExamDetailSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -1920,6 +1923,89 @@ class StudentResultAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# Single Exam APIView
+class SingleExamAPIView(APIView):
+    def get_object(self, exam_id):
+        try:
+            return Exam.objects.get(id=exam_id)
+        except Exam.DoesNotExist:
+            raise NotFound("Exam not found.")
+
+    def get(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        serializer = ExamSerializer(exam)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        serializer = ExamSerializer(exam, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        exam.delete()
+        return Response({"message": "Exam deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+# Single ExamDetail APIView
+class SingleExamDetailAPIView(APIView):
+    def get_object(self, exam_detail_id):
+        try:
+            return ExamDetail.objects.get(id=exam_detail_id)
+        except ExamDetail.DoesNotExist:
+            raise NotFound("Exam detail not found.")
+
+    def get(self, request, exam_detail_id):
+        exam_detail = self.get_object(exam_detail_id)
+        serializer = GetExamDetailSerializer(exam_detail)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, exam_detail_id):
+        try:
+            exam_detail = ExamDetail.objects.get(pk=exam_detail_id)
+        except ExamDetail.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ExamDetailSerializer(exam_detail, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, exam_detail_id):
+        exam_detail = self.get_object(exam_detail_id)
+        exam_detail.delete()
+        return Response({"message": "Exam detail deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
+# Single StudentResult APIView
+class SingleStudentResultAPIView(APIView):
+    def get_object(self, result_id):
+        try:
+            return StudentResult.objects.get(id=result_id)
+        except StudentResult.DoesNotExist:
+            raise NotFound("Student result not found.")
+
+    def get(self, request, result_id):
+        student_result = self.get_object(result_id)
+        serializer = GetStudentResultSerializer(student_result)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, result_id):
+        student_result = self.get_object(result_id)
+        serializer = StudentResultSerializer(student_result, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, result_id):
+        student_result = self.get_object(result_id)
+        student_result.delete()
+        return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
 from rest_framework.views import APIView

@@ -708,7 +708,7 @@ class ExamDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExamDetail
         fields = ['exam', 'subject', 'full_marks', 'pass_marks', 'exam_date', 'class_assigned', 'created_by']
-        read_only_fields = ['class_assigned']
+        read_only_fields = ['class_assigned', 'created_by']
 
     def validate(self, data):
         # Check if class_assigned needs to be automatically filled based on the subject
@@ -722,6 +722,15 @@ class ExamDetailSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError(f"The subject '{subject.subject_name}' is not associated with any class.")
         return data
+
+    def update(self, instance, validated_data):
+        # Check if the request context is passed and set the 'created_by' accordingly
+        request = self.context.get('request')
+        if request and request.user:
+            instance.created_by = request.user
+        # Call the parent `update` method to save the validated data
+        return super().update(instance, validated_data)
+
 
 
 
