@@ -931,13 +931,13 @@ class ClassListCreateView(APIView):
 
 # API view to retrieve, update, or delete a specific class
 class ClassDetailView(APIView):
-    # def get(self, request, pk, format=None):
-    def get(self, request, class_code, format=None):
+    def get(self, request, pk, format=None):
+    # def get(self, request, class_code, format=None):
         """
         Handle GET requests to retrieve the details of a specific Class by primary key.
         """
-        # class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by class_code
-        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by class_code
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by class_code
+        # class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by class_code
         serializer = ClassSerializer(class_instance)  # Serialize the Class instance
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 

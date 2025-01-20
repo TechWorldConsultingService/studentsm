@@ -137,7 +137,6 @@ class Grade(models.Model):
     def __str__(self):
         return f'{self.student} - {self.subject} - {self.grade}'
 
-
 class Timetable(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
@@ -148,7 +147,6 @@ class Timetable(models.Model):
 
     def __str__(self):
         return f'{self.class_assigned} - {self.subject} on {self.day_of_week}'
-
 
 from django.conf import settings
 
@@ -163,7 +161,6 @@ class Event(models.Model):
     def __str__(self):
         return self.title
     
-
 class Assignment(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True, related_name="assignments")
@@ -211,57 +208,6 @@ class Syllabus(models.Model):
         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
 
-'''class Fees(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Total fee amount
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total amount paid
-    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)  # Computed field for pending fees
-    due_date = models.DateField()  # The last date for fee payment
-    last_payment_date = models.DateField(null=True, blank=True)  # Date of the last payment
-    status = models.CharField(max_length=20, choices=[('Paid', 'Paid'), ('Pending', 'Pending')], default='Pending')
-    created_at = models.DateTimeField(auto_now_add=True)  # Record creation timestamp
-    updated_at = models.DateTimeField(auto_now=True)  # Record update timestamp
-
-    def save(self, *args, **kwargs):
-        # Automatically calculate the pending amount
-        self.pending_amount = self.total_amount - self.amount_paid
-        self.status = 'Paid' if self.pending_amount <= 0 else 'Pending'
-        super(Fees, self).save(*args, **kwargs)
-
-    def ____str____(self):
-        return f"{self.student.user.username} - Total: {self.total_amount} - Pending: {self.pending_amount}"
-
-class FeePaymentHistory(models.Model):
-    fee_record = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='payment_history')
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
-    payment_date = models.DateField(default=timezone.now)  # Date of payment
-    mode_of_payment = models.CharField(
-        max_length=20, 
-        choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Online', 'Online')], 
-        default='Online'
-    )
-    transaction_id = models.CharField(max_length=255, null=True, blank=True)  # Transaction ID for reference
-    notes = models.TextField(null=True, blank=True)  # Additional notes about the payment
-
-    def ____str____(self):
-        return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}" '''
-    
-'''
-from django.db import models
-from django.contrib.auth.models import User
-
-class StaffLocation(models.Model):
-     staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
-     latitude = models.DecimalField(max_digits=9, decimal_places=6)
-     altitude = models.DecimalField(max_digits=9, decimal_places=6)
-     timestamp = models.DateTimeField(auto_now=True)
-
-     def __str__(self):
-         return f"{self.staff.username} - {self.timestamp}'''
-
-
-
-
 class DiscussionPost(models.Model):
     topic = models.CharField(max_length=255)
     content = models.TextField()
@@ -270,7 +216,6 @@ class DiscussionPost(models.Model):
 
     def __str__(self):
         return f"Post by {self.created_by.username} in {self.topic}"
-
 
 class DiscussionComment(models.Model):
     post = models.ForeignKey(DiscussionPost, on_delete=models.CASCADE, related_name="comments")
@@ -291,7 +236,6 @@ class FeeCategory(models.Model):
     def __str__(self):
         return self.name
 
-
 class FeeStructure(models.Model):
     student_class = models.ForeignKey('Class', on_delete=models.CASCADE)  # Class the fee structure belongs to
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Renamed base_amount to monthly_fee
@@ -308,8 +252,6 @@ class FeeStructure(models.Model):
         fee_categories_total = sum(fee.amount for fee in self.fee_categories.all())
         
         return monthly_fee + fee_categories_total
-
-
 
 from decimal import Decimal
 from django.utils.timezone import now
@@ -375,9 +317,6 @@ class ExamDetail(models.Model):
 
     class Meta:
         unique_together = ('exam', 'subject', 'class_assigned')  # Prevent duplicate exam details
-
-
-
 
 class StudentResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
