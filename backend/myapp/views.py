@@ -2111,6 +2111,7 @@ class ExamTimetableView(APIView):
             exam_details = []
             for detail in exam.exam_details.all():
                 exam_details.append({
+                    "id": detail.id,
                     "class_name": detail.class_assigned.class_name,
                     "subject": {
                         "id": detail.subject.id,
@@ -2124,7 +2125,10 @@ class ExamTimetableView(APIView):
 
             response_data = {
                 "id": exam.id,
-                "name": exam.name,
+                "exam": {
+                    "id": exam.id,
+                    "name": exam.name,
+                },
                 "exam_details": exam_details,
             }
 
