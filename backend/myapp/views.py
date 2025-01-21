@@ -2112,7 +2112,13 @@ class ExamTimetableView(APIView):
             for detail in exam.exam_details.all():
                 exam_details.append({
                     "class_name": detail.class_assigned.class_name,
-                    "subject_name": detail.subject.subject_name,
+                    "subject": {
+                        "id": detail.subject.id,
+                        "subject_code": detail.subject.subject_code,
+                        "subject_name": detail.subject.subject_name,
+                    },
+                    "full_marks": detail.full_marks,
+                    "pass_marks": detail.pass_marks,
                     "exam_date": detail.exam_date,
                 })
 
