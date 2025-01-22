@@ -10,7 +10,7 @@ const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
   const [updatedClass, setUpdatedClass] = useState({
     class_code: classInfo.class_code,
     class_name: classInfo.class_name,
-    subjects: classInfo.subject_details || [], // Initialize with full subject details
+    subjects: classInfo.subject_details || [], 
   });
 
   const [allSubjects, setAllSubjects] = useState([]);
@@ -44,7 +44,6 @@ const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
 
   // Update subjects when Select changes
   const handleSubjectsChange = (selectedSubjects) => {
-    // Map the selected subject names to their full subject objects
     const updatedSubjects = selectedSubjects.map((subjectName) => {
       return allSubjects.find((subject) => subject.subject_name === subjectName);
     });
@@ -71,7 +70,7 @@ const EditClassModal = ({ classInfo, handleCloseModal, fetchClasses }) => {
 
     try {
       const response = await axios.put(
-        `http://localhost:8000/api/classes/${classInfo.class_code}/`,
+        `http://localhost:8000/api/classes/${classInfo.id}/`,
         updatedClass, // Send updatedClass directly (with full subject details)
         {
           headers: {
