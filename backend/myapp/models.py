@@ -57,7 +57,11 @@ class Teacher(models.Model):
     def __str__(self):
         # return self.user.username
         return self.user.username
- 
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
+
 class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
@@ -66,6 +70,10 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
     
 
 class Student(models.Model):
@@ -80,6 +88,10 @@ class Student(models.Model):
    
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
 
 class Staff(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -91,6 +103,10 @@ class Staff(models.Model):
 
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}, Role: {self.role}"
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
 
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
