@@ -2213,3 +2213,30 @@ class SubjectWiseExamResultsView(APIView):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class ExamDetailsByTeacherView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
+
+    def get(self, request, examid, teacherId):
+        # Fetch the teacher
+        try:
+            teacher = Teacher.objects.get(id=teacherId)
+        except Teacher.DoesNotExist:
+            raise NotFound("Teacher not found.")
+
+        # Get subjects taught by the teacher
+        teacher_subjects = teacher.subjects.all()
+
+        # Fetch exam details for the given exam ID and teacher's subjects
+        exam_details = ExamDetail.objects.filter(
+            exam_id=examid,
+            subject__in=teacher_subjects
+        )
+
+        if not exam_details.exists():
+            return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
+
+        # Serialize the data
+        serializer = GetExamDetailSerializer(exam_details, many=True)
+        return Response(serializer.data, status=200)

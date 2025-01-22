@@ -138,7 +138,7 @@ urlpatterns = [
     path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),
     path('api/exam-timetable/<int:exam_id>/', ExamTimetableView.as_view(), name='exam-timetable'),
-
+    path('api/exam-details/<int:examid>/<int:teacherId>/', ExamDetailsByTeacherView.as_view(), name='exam-details-teacher'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
