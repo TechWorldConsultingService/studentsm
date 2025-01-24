@@ -299,9 +299,8 @@ class StudentSerializer(serializers.ModelSerializer):
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def validate_classes(self, value):
-        """
-        Validate the `classes` value and retrieve the corresponding class instance.
-        """
+
+        #Validate the `classes` value and retrieve the corresponding class instance.
         try:
             class_instance = Class.objects.get(classes=value)
             return class_instance
@@ -353,6 +352,29 @@ class StudentSerializer(serializers.ModelSerializer):
             # instance.classes.set([class_instances])  # Update associated classes
             instance.classes = class_instance  # Update associated class
         return instance
+       
+class GetStudentSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # Nested serializer for the user associated with the student
+    subjects = SubjectSerializer(many=True, source='classes.subjects', read_only=True)  # Dynamically get subjects from the associated class
+    class_details = serializers.SerializerMethodField()  # Fetch class details instead of just class_code
+    
+    class Meta:
+        model = Student
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'subjects']
+        extra_kwargs = {'user.password': {'write_only': True}}
+
+    def get_class_details(self, obj):
+        """
+        Fetch class details including id, class_code, and class_name.
+        """
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_code": obj.class_code.class_code,
+                "class_name": obj.class_code.class_name
+            }
+        return None
+
        
 class StaffSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the staff
