@@ -246,7 +246,6 @@ class PrincipalListView(APIView):
 # API view to list all students
 class StudentListView(APIView):
     def get(self, request, format=None):
-
         # Retrieve class ID from query parameters
         class_id = request.query_params.get('class_id')
 
@@ -261,15 +260,13 @@ class StudentListView(APIView):
                     {"error": "Class with the given ID does not exist."},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            # Filter students by class if class_id is provided
-            # students = Student.objects.filter(classes__id=class_id)
         else:
             # Retrieve all students if no class_id is provided
             students = Student.objects.all()
 
-        # students = Student.objects.all()  # Retrieve all student instances
-        serializer = StudentSerializer(students, many=True)  # Serialize the student data
+        serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+
 
 # API view to list students by subject and class
 class StudentsBySubjectAndClassView(APIView):
@@ -397,7 +394,7 @@ class StudentDetailView(APIView):
             # Retrieve the Student instance by primary key
             student = Student.objects.get(pk=pk)
             # Serialize the Student instance
-            serializer = StudentSerializer(student)
+            serializer = GetStudentSerializer(student)
             # Return serialized data with 200 OK status
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
