@@ -2138,7 +2138,6 @@ class ExamTimetableView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class SubjectWiseExamResultsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2159,17 +2158,17 @@ class SubjectWiseExamResultsView(APIView):
                 )
 
             # Prepare exam and subject details
-            exam = results[0].exam_detail.exam
-            subject = results[0].exam_detail.subject
+            exam_detail = results[0].exam_detail
             exam_details = {
-                "exam_id": exam.id,
-                "exam_name": exam.name,
-                "subject_id": subject.id,
-                "subject_code": subject.subject_code,
-                "subject_name": subject.subject_name,
-                "full_marks": results[0].exam_detail.full_marks,
-                "pass_marks": results[0].exam_detail.pass_marks,
-                "exam_date": results[0].exam_detail.exam_date,
+                "exam_id": exam_detail.exam.id,
+                "exam_name": exam_detail.exam.name,
+                "exam_detail_id": exam_detail.id,  # Include the exam_detail ID
+                "subject_id": exam_detail.subject.id,
+                "subject_code": exam_detail.subject.subject_code,
+                "subject_name": exam_detail.subject.subject_name,
+                "full_marks": exam_detail.full_marks,
+                "pass_marks": exam_detail.pass_marks,
+                "exam_date": exam_detail.exam_date,
             }
 
             # Prepare results data for all students
@@ -2210,6 +2209,7 @@ class SubjectWiseExamResultsView(APIView):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
 
 
 class ExamDetailsByTeacherView(APIView):
