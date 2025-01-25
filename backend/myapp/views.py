@@ -2176,6 +2176,7 @@ class SubjectWiseExamResultsView(APIView):
             for result in results:
                 student = result.student
                 results_data.append({
+                    "result_id": result.id,  # Include the result ID
                     "student": {
                         "id": student.id,
                         "username": student.user.username,
@@ -2209,6 +2210,7 @@ class SubjectWiseExamResultsView(APIView):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
 
 
 
