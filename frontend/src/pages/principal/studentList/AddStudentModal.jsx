@@ -342,7 +342,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
               <option value="">Select Class</option>
               {classList.length > 0 &&
                 classList.map((item) => (
-                  <option key={item.id} value={item.class_code}>
+                  <option key={item.id} value={item.id}>
                     {item.class_name}
                   </option>
                 ))}
