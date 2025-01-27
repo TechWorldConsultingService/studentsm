@@ -2212,8 +2212,6 @@ class SubjectWiseExamResultsView(APIView):
             )
 
 
-
-
 class ExamDetailsByTeacherView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
 
@@ -2231,11 +2229,35 @@ class ExamDetailsByTeacherView(APIView):
         exam_details = ExamDetail.objects.filter(
             exam_id=examid,
             subject__in=teacher_subjects
-        )
+        ).select_related('subject', 'exam', 'class_assigned')  # Optimize queries
 
         if not exam_details.exists():
             return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
 
-        # Serialize the data
-        serializer = GetExamDetailSerializer(exam_details, many=True)
-        return Response(serializer.data, status=200)
+        # Prepare the response with the desired structure
+        response_data = []
+        for detail in exam_details:
+            response_data.append({
+                "exam_details": {
+                    "id": detail.id,  # Exam detail ID
+                    "full_marks": detail.full_marks,
+                    "pass_marks": detail.pass_marks,
+                    "exam_date": detail.exam_date,
+                },
+                "exam": {
+                    "id": detail.exam.id,
+                    "name": detail.exam.name,
+                },
+                "subject_details": {
+                    "id": detail.subject.id,
+                    "subject_code": detail.subject.subject_code,
+                    "subject_name": detail.subject.subject_name,
+                },
+                "class_details": {
+                    "id": detail.class_assigned.id if detail.class_assigned else None,
+                    "class_code": detail.class_assigned.class_code if detail.class_assigned else None,
+                    "class_name": detail.class_assigned.class_name if detail.class_assigned else None,
+                },
+            })
+
+        return Response(response_data, status=200)
