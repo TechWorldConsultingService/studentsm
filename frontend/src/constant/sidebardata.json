@@ -20,9 +20,12 @@
       },
       {
         "id": 5,
-        "title": "Reports",
+        "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/reports"
+        "subSidebar": [
+          { "id": 1, "title": "Result", "link": "/studentResult" },
+          { "id": 2, "title": "Routine", "link": "/examRoutine" }
+        ]
       },
       {
         "id": 6,

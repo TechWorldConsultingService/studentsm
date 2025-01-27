@@ -4,7 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import Reports from "./pages/reports/reports";
+import StudentReports from "./pages/reports/StudentReports";
 import MyBus from "./pages/mybus";
 import Attendence from "./pages/attendence";
 import MyRequest from "./pages/myrequest";
@@ -40,6 +40,7 @@ import TeacherList from "./pages/principal/teacherList/TeacherList";
 import ExamTeacher from "./pages/reports/ExamTeacher";
 import ExamPrincipal from "./pages/reports/ExamPrincipal"
 import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal";
+import StudentRoutine from "./pages/reports/StudentRoutine";
 
 const router = createBrowserRouter([
   {
@@ -76,8 +77,8 @@ const router = createBrowserRouter([
   },
 
   {
-    path: "/reports",
-    element: <Reports />,
+    path: "/studentResult",
+    element: <StudentReports /> ,
   },
 
   {
@@ -189,6 +190,10 @@ const router = createBrowserRouter([
   {
     path:"/exam-details/:examId",
      element:<AddExamDetailsByPrincipal />
+  },
+  {
+    path:"/examRoutine",
+    element: <StudentRoutine />
   }
 ]);
 
