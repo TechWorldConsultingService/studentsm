@@ -18,6 +18,7 @@ const ExamTeacher = () => {
   const [studentList, setStudentList] = useState([]);
   const [subjectWiseExamResult, setSubjectWiseExamResult] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedExamDetailsId, setSelectedExamDetailsId] = useState(null);
 
   // Fetch exams when the component mounts
   useEffect(() => {
@@ -148,7 +149,7 @@ const ExamTeacher = () => {
     try {
       const payload = {
         student: studentId,
-        exam_detail: subjectWiseExamResult?.exam_details?.exam_detail_id,
+        exam_detail: selectedExamDetailsId,
         practical_marks: practicalMarks,
         theory_marks: theoryMarks,
       };
@@ -195,10 +196,13 @@ const ExamTeacher = () => {
     setMarks({});
   };
 
-  const handleSubjectSelect = (subjectId) => {
-    setSelectedSubject(subjectId);
+  const handleSubjectSelect = (subjectString) => {
+    const subject = JSON.parse(subjectString);
+    setSelectedSubject(subject.subject_details.id);
+    setSelectedExamDetailsId(subject.exam_details.id);
     setMarks({});
   };
+  
 
   // Handle toggle between View and Edit modes
   const toggleViewMode = () => {
@@ -253,10 +257,10 @@ const ExamTeacher = () => {
               >
                 <option value="">Select Subject</option>
                 {subjectDetails.length > 0 &&
-                  subjectDetails.map((item) =>
+                  subjectDetails.map((item, index) =>
                     item.subject_details &&
                     item.subject_details.subject_name ? (
-                      <option key={item.id} value={item.id}>
+                      <option key={index} value={JSON.stringify(item)}>
                         {item.subject_details.subject_name}
                       </option>
                     ) : null
@@ -314,40 +318,55 @@ const ExamTeacher = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {studentList.map((student) => {
-                    const result =
-                      subjectWiseExamResult?.results?.find(
-                        (res) => res.student.id === student.id
-                      ) || null;
-
-                    return (
-                      <tr
-                        key={student.id}
-                        className="border-b hover:bg-purple-50"
+                  {studentList.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="px-6 py-4 text-center text-gray-500"
                       >
-                        <td className="px-6 py-4">
-                          {student.user.first_name} {student.user.last_name}
-                        </td>
-                        <td className="px-6 py-4">
-                          {result ? result.theory_marks : "-"}
-                        </td>
-                        <td className="px-6 py-4">
-                          {result ? result.practical_marks : "-"}
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() =>
-                              handleDeleteMarks(result ? result.result_id : null)
-                            }
-                            className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 ml-2"
-                            disabled={!result}
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        No students found for the selected subject.
+                      </td>
+                    </tr>
+                  ) : (
+                    studentList.map((student) => {
+                      const result =
+                        subjectWiseExamResult?.results?.find(
+                          (res) => res.student.id === student.id
+                        ) || null;
+
+                      return (
+                        <tr
+                          key={student.id}
+                          className="border-b hover:bg-purple-50"
+                        >
+                          <td className="px-6 py-4">
+                            {student.user.first_name} {student.user.last_name}
+                          </td>
+                          {/* Theory Marks Column */}
+                          <td className="px-6 py-4">
+                            {result ? result.theory_marks : "-"}
+                          </td>
+                          {/* Practical Marks Column */}
+                          <td className="px-6 py-4">
+                            {result ? result.practical_marks : "-"}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() =>
+                                handleDeleteMarks(
+                                  result ? result.result_id : null
+                                )
+                              }
+                              className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 ml-2"
+                              disabled={!result}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -386,69 +405,82 @@ const ExamTeacher = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {studentList.map((student) => {
-                    const result =
-                      subjectWiseExamResult?.results?.find(
-                        (res) => res.student.id === student.id
-                      ) || null;
-
-                    return (
-                      <tr
-                        key={student.id}
-                        className="border-b hover:bg-purple-50"
+                  {studentList.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="4"
+                        className="px-6 py-4 text-center text-gray-500"
                       >
-                        <td className="px-6 py-4">
-                          {student.user.first_name} {student.user.last_name}
-                        </td>
-                        <td className="px-6 py-4">
-                          <input
-                            type="number"
-                            value={marks[student.id]?.theory || ""}
-                            onChange={(e) =>
-                              setMarks((prev) => ({
-                                ...prev,
-                                [student.id]: {
-                                  ...prev[student.id],
-                                  theory: e.target.value,
-                                },
-                              }))
-                            }
-                            className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <input
-                            type="number"
-                            value={marks[student.id]?.practical || ""}
-                            onChange={(e) =>
-                              setMarks((prev) => ({
-                                ...prev,
-                                [student.id]: {
-                                  ...prev[student.id],
-                                  practical: e.target.value,
-                                },
-                              }))
-                            }
-                            className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() =>
-                              handleSaveMarks(
-                                student.id,
-                                marks[student.id]?.theory || 0,
-                                marks[student.id]?.practical || 0
-                              )
-                            }
-                            className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
-                          >
-                            Save
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        No students found for the selected subject.
+                      </td>
+                    </tr>
+                  ) : (
+                    studentList.map((student) => {
+                      const result =
+                        subjectWiseExamResult?.results?.find(
+                          (res) => res.student.id === student.id
+                        ) || null;
+
+                      return (
+                        <tr
+                          key={student.id}
+                          className="border-b hover:bg-purple-50"
+                        >
+                          <td className="px-6 py-4">
+                            {student.user.first_name} {student.user.last_name}
+                          </td>
+                          {/* Theory Marks Column */}
+                          <td className="px-6 py-4">
+                            <input
+                              type="number"
+                              value={marks[student.id]?.theory || ""}
+                              onChange={(e) =>
+                                setMarks((prev) => ({
+                                  ...prev,
+                                  [student.id]: {
+                                    ...prev[student.id],
+                                    theory: e.target.value,
+                                  },
+                                }))
+                              }
+                              className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
+                            />
+                          </td>
+                          {/* Practical Marks Column */}
+                          <td className="px-6 py-4">
+                            <input
+                              type="number"
+                              value={marks[student.id]?.practical || ""}
+                              onChange={(e) =>
+                                setMarks((prev) => ({
+                                  ...prev,
+                                  [student.id]: {
+                                    ...prev[student.id],
+                                    practical: e.target.value,
+                                  },
+                                }))
+                              }
+                              className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
+                            />
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() =>
+                                handleSaveMarks(
+                                  student.id,
+                                  marks[student.id]?.theory || 0,
+                                  marks[student.id]?.practical || 0
+                                )
+                              }
+                              className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
+                            >
+                              Save
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
