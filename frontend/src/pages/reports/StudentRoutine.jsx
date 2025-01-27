@@ -1,7 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../layout/MainLayout";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
+
+
 
 const StudentRoutine = () => {
+  const { access } = useSelector((state) => state.user);
+  const [exams, setExams] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+
+  // Fetch exams when the component mounts
+  useEffect(() => {
+    const fetchExams = async () => {
+      if (!access) {
+        toast.error("User is not authenticated. Please log in.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data } = await axios.get("http://localhost:8000/api/exams/", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        setExams(data);
+        setLoading(false);
+      } catch (error) {
+        setLoading(false);
+        toast.error("Error fetching exams.");
+      }
+    };
+    fetchExams();
+  }, [access]);
+
   // Sample Exam Routine Data
   const examSchedule = [
     {
