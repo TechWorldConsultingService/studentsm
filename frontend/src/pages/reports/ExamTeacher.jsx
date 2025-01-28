@@ -20,7 +20,6 @@ const ExamTeacher = () => {
   const [loading, setLoading] = useState(false);
   const [selectedExamDetailsId, setSelectedExamDetailsId] = useState(null);
 
-  // Fetch exams when the component mounts
   useEffect(() => {
     const fetchExams = async () => {
       if (!access) {
@@ -46,7 +45,6 @@ const ExamTeacher = () => {
     fetchExams();
   }, [access]);
 
-  // Fetch subject details based on selected exam
   useEffect(() => {
     if (selectedExam === null) return;
 
@@ -77,7 +75,6 @@ const ExamTeacher = () => {
     fetchSubjectDetails();
   }, [access, selectedExam]);
 
-  // Fetch student list based on selected exam and subject
   useEffect(() => {
     if (selectedExam === null || selectedSubject === null) return;
 
@@ -108,7 +105,6 @@ const ExamTeacher = () => {
     fetchStudentList();
   }, [access, selectedExam, selectedSubject]);
 
-  // Fetch subject-wise exam results
   const fetchSubjectWiseExamResult = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -139,7 +135,6 @@ const ExamTeacher = () => {
     fetchSubjectWiseExamResult();
   }, [access, selectedExam, selectedSubject]);
 
-  // Save marks for a student
   const handleSaveMarks = async (studentId, theoryMarks, practicalMarks) => {
     if (theoryMarks < 0 || practicalMarks < 0) {
       toast.error("Marks cannot be negative");
@@ -167,10 +162,8 @@ const ExamTeacher = () => {
     }
   };
 
-  // Delete marks for a student
   const handleDeleteMarks = async (resultId) => {
     if (!resultId) {
-      console.log(resultId, "result id");
       toast.error("This field is already blank.");
       return;
     }
@@ -188,23 +181,18 @@ const ExamTeacher = () => {
     }
   };
 
-  // Handle the selection of exam and subject
   const handleExamSelect = (examId) => {
     setSelectedExam(examId);
     setSelectedSubject(null);
     setSubjectDetails([]);
-    setMarks({});
   };
 
   const handleSubjectSelect = (subjectString) => {
     const subject = JSON.parse(subjectString);
     setSelectedSubject(subject.subject_details.id);
     setSelectedExamDetailsId(subject.exam_details.id);
-    setMarks({});
   };
-  
 
-  // Handle toggle between View and Edit modes
   const toggleViewMode = () => {
     setViewMode((prevMode) => !prevMode);
   };
@@ -220,12 +208,10 @@ const ExamTeacher = () => {
             Manage exams, subjects, and student marks here.
           </p>
 
-          {/* Loading State */}
           {loading && (
             <div className="text-center text-purple-600">Loading...</div>
           )}
 
-          {/* Exam Selection */}
           <div className="mt-6">
             <h2 className="text-xl font-semibold text-purple-700">
               Select Exam
@@ -244,7 +230,6 @@ const ExamTeacher = () => {
             </select>
           </div>
 
-          {/* Subject Selection */}
           {selectedExam && (
             <div className="mt-6">
               <h2 className="text-xl font-semibold text-purple-700">
@@ -269,7 +254,6 @@ const ExamTeacher = () => {
             </div>
           )}
 
-          {/* Marks View or Add Toggle */}
           {selectedExam && selectedSubject && (
             <div className="mt-6 flex justify-between items-center">
               <button
@@ -285,11 +269,10 @@ const ExamTeacher = () => {
             </div>
           )}
 
-          {/* View Marks Section */}
-          {viewMode && selectedExam && selectedSubject && (
+          {(viewMode || !viewMode) && selectedExam && selectedSubject && (
             <div className="mt-8">
               <h2 className="text-xl font-semibold text-purple-700">
-                View Marks
+                {viewMode ? "View Marks" : "Edit Marks"}
               </h2>
               <p>
                 Exam: {subjectWiseExamResult?.exam_details?.exam_name || "-"}
@@ -307,7 +290,6 @@ const ExamTeacher = () => {
                 {subjectWiseExamResult?.exam_details?.pass_marks || "-"}
               </p>
 
-              {/* Display table */}
               <table className="min-w-full mt-6 table-auto">
                 <thead>
                   <tr className="bg-purple-700 text-white">
@@ -342,140 +324,84 @@ const ExamTeacher = () => {
                           <td className="px-6 py-4">
                             {student.user.first_name} {student.user.last_name}
                           </td>
-                          {/* Theory Marks Column */}
-                          <td className="px-6 py-4">
-                            {result ? result.theory_marks : "-"}
-                          </td>
-                          {/* Practical Marks Column */}
-                          <td className="px-6 py-4">
-                            {result ? result.practical_marks : "-"}
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() =>
-                                handleDeleteMarks(
-                                  result ? result.result_id : null
-                                )
-                              }
-                              className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 ml-2"
-                              disabled={!result}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
 
-          {/* Edit Marks Section */}
-          {!viewMode && selectedExam && selectedSubject && (
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold text-purple-700">
-                Edit Marks
-              </h2>
-              <p>
-                Exam: {subjectWiseExamResult?.exam_details?.exam_name || "-"}
-              </p>
-              <p>
-                Subject:{" "}
-                {subjectWiseExamResult?.exam_details?.subject_name || "-"}
-              </p>
-              <p>
-                Full Marks:{" "}
-                {subjectWiseExamResult?.exam_details?.full_marks || "-"}
-              </p>
-              <p>
-                Pass Marks:{" "}
-                {subjectWiseExamResult?.exam_details?.pass_marks || "-"}
-              </p>
+                          <td className="px-6 py-4">
+                            {viewMode ? (
+                              result?.theory_marks || "-"
+                            ) : (
+                              <input
+                                type="number"
+                                value={
+                                  marks[student.id]?.theory ||
+                                  result?.theory_marks ||
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  const newTheoryMarks = e.target.value;
+                                  setMarks((prev) => ({
+                                    ...prev,
+                                    [student.id]: {
+                                      ...prev[student.id],
+                                      theory: newTheoryMarks,
+                                    },
+                                  }));
+                                }}
+                                className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
+                              />
+                            )}
+                          </td>
 
-              {/* Display table */}
-              <table className="min-w-full mt-6 table-auto">
-                <thead>
-                  <tr className="bg-purple-700 text-white">
-                    <th className="px-6 py-3 text-left">Student Name</th>
-                    <th className="px-6 py-3 text-left">Theory Marks</th>
-                    <th className="px-6 py-3 text-left">Practical Marks</th>
-                    <th className="px-6 py-3 text-left">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentList.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="4"
-                        className="px-6 py-4 text-center text-gray-500"
-                      >
-                        No students found for the selected subject.
-                      </td>
-                    </tr>
-                  ) : (
-                    studentList.map((student) => {
-                      const result =
-                        subjectWiseExamResult?.results?.find(
-                          (res) => res.student.id === student.id
-                        ) || null;
+                          <td className="px-6 py-4">
+                            {viewMode ? (
+                              result?.practical_marks || "-"
+                            ) : (
+                              <input
+                                type="number"
+                                value={
+                                  marks[student.id]?.practical ||
+                                  result?.practical_marks ||
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  const newPracticalMarks = e.target.value;
+                                  setMarks((prev) => ({
+                                    ...prev,
+                                    [student.id]: {
+                                      ...prev[student.id],
+                                      practical: newPracticalMarks,
+                                    },
+                                  }));
+                                }}
+                                className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
+                              />
+                            )}
+                          </td>
 
-                      return (
-                        <tr
-                          key={student.id}
-                          className="border-b hover:bg-purple-50"
-                        >
                           <td className="px-6 py-4">
-                            {student.user.first_name} {student.user.last_name}
-                          </td>
-                          {/* Theory Marks Column */}
-                          <td className="px-6 py-4">
-                            <input
-                              type="number"
-                              value={marks[student.id]?.theory || ""}
-                              onChange={(e) =>
-                                setMarks((prev) => ({
-                                  ...prev,
-                                  [student.id]: {
-                                    ...prev[student.id],
-                                    theory: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
-                            />
-                          </td>
-                          {/* Practical Marks Column */}
-                          <td className="px-6 py-4">
-                            <input
-                              type="number"
-                              value={marks[student.id]?.practical || ""}
-                              onChange={(e) =>
-                                setMarks((prev) => ({
-                                  ...prev,
-                                  [student.id]: {
-                                    ...prev[student.id],
-                                    practical: e.target.value,
-                                  },
-                                }))
-                              }
-                              className="border border-purple-300 rounded-lg px-4 py-2 w-full shadow-sm focus:ring-2 focus:ring-purple-300"
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() =>
-                                handleSaveMarks(
-                                  student.id,
-                                  marks[student.id]?.theory || 0,
-                                  marks[student.id]?.practical || 0
-                                )
-                              }
-                              className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
-                            >
-                              Save
-                            </button>
+                            {viewMode ? (
+                              <button
+                                onClick={() =>
+                                  handleDeleteMarks(result ? result.result_id : null)
+                                }
+                                className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 ml-2"
+                                disabled={!result}
+                              >
+                                Delete
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  handleSaveMarks(
+                                    student.id,
+                                    marks[student.id]?.theory || 0,
+                                    marks[student.id]?.practical || 0
+                                  )
+                                }
+                                className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
+                              >
+                                Save
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
