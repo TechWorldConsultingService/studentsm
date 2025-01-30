@@ -77,7 +77,6 @@ class Principal(models.Model):
     
 
 class Student(models.Model):
-    # user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='student')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
@@ -85,13 +84,14 @@ class Student(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
     class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
-   
+    roll_no = models.CharField(max_length=10, unique=True, null=True, blank=True)  # Add Roll Number Field
+
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
     
     def delete(self, *args, **kwargs):
-        self.user.delete()  # Delete the associated user
-        super().delete(*args, **kwargs)  # Call the parent delete method
+        self.user.delete()
+        super().delete(*args, **kwargs)
 
 class Staff(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -144,14 +144,6 @@ class Enrollment(models.Model):
     def __str__(self):
         return f'{self.student} in {self.class_assigned}'
 
-class Grade(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    grade = models.CharField(max_length=5)
-
-    def __str__(self):
-        return f'{self.student} - {self.subject} - {self.grade}'
 
 class Timetable(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
@@ -304,6 +296,8 @@ class PaymentTransaction(models.Model):
 
 class Exam(models.Model):
     name = models.CharField(max_length=100)  # Example: "Mid-Term Exam 2024"
+    is_timetable_published = models.BooleanField(default=False)  # Flag for timetable publication
+    is_result_published = models.BooleanField(default=False)  # Flag for result publication
 
     def __str__(self):
         return self.name
@@ -315,6 +309,7 @@ class ExamDetail(models.Model):
     full_marks = models.PositiveIntegerField(null=True)
     pass_marks = models.PositiveIntegerField(null=True)
     exam_date = models.DateField()
+    exam_time = models.TimeField(null=True)  # New field for exam time
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
@@ -333,7 +328,6 @@ class ExamDetail(models.Model):
 
     class Meta:
         unique_together = ('exam', 'subject', 'class_assigned')  # Prevent duplicate exam details
-
 class StudentResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
     exam_detail = models.ForeignKey(ExamDetail, on_delete=models.CASCADE, related_name="results")
@@ -348,6 +342,11 @@ class StudentResult(models.Model):
     def save(self, *args, **kwargs):
         # Calculate total_marks, percentage, and gpa before saving
         self.total_marks = (self.practical_marks or 0) + (self.theory_marks or 0)
+
+        # Ensure total_marks do not exceed full_marks of the subject
+        if self.total_marks > self.exam_detail.full_marks:
+            raise ValueError(f"Total marks ({self.total_marks}) cannot be greater than the full marks ({self.exam_detail.full_marks}) of the subject.")
+
         if self.exam_detail.full_marks:
             self.percentage = (self.total_marks / self.exam_detail.full_marks) * 100
         else:

@@ -239,6 +239,28 @@ class TeacherSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class GetTeacherSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+    class_details = ClassSerializer(source='classes', many=True, read_only=True)
+    class_teacher_details = serializers.SerializerMethodField()  # Add this for class teacher details
+
+    class Meta:
+        model = Teacher
+        fields = ['id', 'user', 'phone', 'address', 'date_of_joining', 'gender',
+                  'subject_details', 'class_details', 'class_teacher_details']
+
+    def get_class_teacher_details(self, obj):
+        """Retrieve class_code and class_name of the class teacher"""
+        if obj.class_teacher:
+            return {
+                "class_code": obj.class_teacher.class_code,
+                "class_name": obj.class_teacher.class_name
+            }
+        return None  # Return None if class_teacher is not assigned
+
+
+
 # Serializer for the Principal model
 class PrincipalSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the principal
@@ -269,104 +291,73 @@ class PrincipalSerializer(serializers.ModelSerializer):
         
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
-        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        
+        # Update user instance only with provided fields
+        user_serializer = UserSerializer(instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
-            user = user_serializer.save()
-            user.is_principal = True  # Ensure is_principal is set to True on update
-            user.save()
+            user_serializer.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
+        # Update the Principal instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
+
     
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested serializer for the user associated with the student
-    subjects = SubjectSerializer(many=True, source='classes.subjects', read_only=True)  # Dynamically get subjects from the associated class
-    #parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
+    user = UserSerializer()
     class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
-    
+
     class Meta:
         model = Student
-        # Define which fields should be included in the serialized output
-        fields = ['id','user', 'phone', 'address', 'date_of_birth', 'parents', 'gender',
-                'class_code','subjects'
-                ]
-        # Ensure password is write-only (won't be returned in response)
-        extra_kwargs = {'user.password': {'write_only': True}}
-
-    def validate_classes(self, value):
-
-        #Validate the `classes` value and retrieve the corresponding class instance.
-        try:
-            class_instance = Class.objects.get(classes=value)
-            return class_instance
-        except Class.DoesNotExist:
-            raise serializers.ValidationError(f"Class with code '{value}' does not exist.")
-        # return class_instance
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
 
     def create(self, validated_data):
-        # Extract user and parents data from the validated data
         user_data = validated_data.pop('user')
         class_instance = validated_data.pop('class_code')
-        # Mark the user as a student
         user_data['is_student'] = True
 
-        # Serialize the user data
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
-            # Save the user and get the created user instance
             user = user_serializer.save()
-
-            # Create and save the Student instance
             student = Student.objects.create(user=user, class_code=class_instance, **validated_data)
-            # student.classes.add(class_instance) # Use `add()` to associate the class
             return student
         else:
-            # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
-        
-    def update(self, instance, validated_data):
-        # Extract user data and classes
-        user_data = validated_data.pop('user', {})
-        class_instance = validated_data.pop('classes', None)
 
-        # Update user data
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        class_instance = validated_data.pop('class_code', None)
+
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            user.is_student = True  # Ensure is_student is set to True on update
+            user.is_student = True
             user.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
-        # Update other fields of the Student instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
         if class_instance:
-            # instance.classes.set([class_instances])  # Update associated classes
-            instance.classes = class_instance  # Update associated class
+            instance.class_code = class_instance
         return instance
-       
+
+
 class GetStudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested serializer for the user associated with the student
-    subjects = SubjectSerializer(many=True, source='classes.subjects', read_only=True)  # Dynamically get subjects from the associated class
-    class_details = serializers.SerializerMethodField()  # Fetch class details instead of just class_code
-    
+    user = UserSerializer()
+    class_details = serializers.SerializerMethodField()
+
     class Meta:
         model = Student
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'subjects']
-        extra_kwargs = {'user.password': {'write_only': True}}
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
 
     def get_class_details(self, obj):
-        """
-        Fetch class details including id, class_code, and class_name.
-        """
         if obj.class_code:
             return {
                 "id": obj.class_code.id,
@@ -374,6 +365,7 @@ class GetStudentSerializer(serializers.ModelSerializer):
                 "class_name": obj.class_code.class_name
             }
         return None
+
 
        
 class StaffSerializer(serializers.ModelSerializer):
@@ -721,7 +713,8 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
 class ExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'is_timetable_published', 'is_result_published']
+
 
 
 class ExamDetailSerializer(serializers.ModelSerializer):
@@ -729,7 +722,7 @@ class ExamDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExamDetail
-        fields = ['exam', 'subject', 'full_marks', 'pass_marks', 'exam_date', 'class_assigned', 'created_by']
+        fields = ['exam', 'subject', 'full_marks', 'pass_marks', 'exam_date', 'exam_time', 'class_assigned', 'created_by']  # Added exam_time
         read_only_fields = ['class_assigned', 'created_by']
 
     def validate(self, data):
@@ -754,8 +747,6 @@ class ExamDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-
-
 class GetExamDetailSerializer(serializers.ModelSerializer):
     exam = serializers.SerializerMethodField()  # Field to fetch exam details
     subject_details = serializers.SerializerMethodField()  # Field to fetch subject details
@@ -763,7 +754,7 @@ class GetExamDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExamDetail
-        fields = ['id', 'exam', 'full_marks', 'pass_marks', 'exam_date', 'subject_details', 'class_details']
+        fields = ['id', 'exam', 'full_marks', 'pass_marks', 'exam_date', 'exam_time', 'subject_details', 'class_details']  # Added exam_time
 
     def get_exam(self, obj):
         return {
