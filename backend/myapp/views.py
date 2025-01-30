@@ -233,7 +233,7 @@ class RegisterStaffView(APIView):
 class TeacherListView(APIView):
     def get(self, request, format=None):
         teachers = Teacher.objects.all()  # Retrieve all teacher instances
-        serializer = TeacherSerializer(teachers, many=True)  # Serialize the teacher data
+        serializer = GetTeacherSerializer(teachers, many=True)  # Serialize the teacher data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
 # API view to list all principals
@@ -246,24 +246,7 @@ class PrincipalListView(APIView):
 # API view to list all students
 class StudentListView(APIView):
     def get(self, request, format=None):
-        # Retrieve class ID from query parameters
-        class_id = request.query_params.get('class_id')
-
-        if class_id:
-            try:
-                # Ensure the class exists
-                class_instance = Class.objects.get(id=class_id)
-                # Filter students by the class
-                students = Student.objects.filter(class_code=class_instance)
-            except Class.DoesNotExist:
-                return Response(
-                    {"error": "Class with the given ID does not exist."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        else:
-            # Retrieve all students if no class_id is provided
-            students = Student.objects.all()
-
+        students = Student.objects.all()  # Retrieve all student instances
         serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
@@ -360,7 +343,7 @@ class TeacherDetailView(APIView):
             # Retrieve the Teacher instance by primary key
             teacher = Teacher.objects.get(pk=pk)
             # Serialize the Teacher instance
-            serializer = TeacherSerializer(teacher)
+            serializer = GetTeacherSerializer(teacher)
             # Return serialized data with 200 OK status
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Teacher.DoesNotExist:
@@ -2012,6 +1995,8 @@ from rest_framework import status
 from .models import StudentResult, Exam, ExamDetail
 from .serializers import StudentResultSerializer
 
+
+
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2020,14 +2005,21 @@ class MarksheetView(APIView):
             # Fetch the exam
             exam = Exam.objects.get(id=exam_id)
 
+            # Check if results are published
+            if not exam.is_result_published:
+                return Response(
+                    {"detail": "Results for this exam are not published yet."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             # Fetch the student and their details
-            student = Student.objects.select_related('user', 'class_code').get(id=student_id)
+            student = Student.objects.select_related('user').get(id=student_id)
 
             # Fetch the results for the student for the given exam
             results = StudentResult.objects.filter(
                 student_id=student_id,
                 exam_detail__exam_id=exam_id
-            ).select_related('exam_detail__subject')
+            ).select_related('exam_detail', 'exam_detail__subject', 'exam_detail__class_assigned')
 
             if not results.exists():
                 return Response(
@@ -2035,41 +2027,35 @@ class MarksheetView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Serialize results
+            # Prepare the student details
+            student_details = {
+                "id": student.id,
+                "username": student.user.username,
+                "email": student.user.email,
+                "full_name": f"{student.user.first_name} {student.user.last_name}",
+                "gender": student.gender,
+                "address": student.address,
+                "phone": student.phone,
+                "date_of_birth": student.date_of_birth
+            }
+
+            # Prepare result data
             results_data = []
             total_marks_obtained = 0
             total_full_marks = 0
 
             for result in results:
-                subject = result.exam_detail.subject
-                total_marks = (result.practical_marks or 0) + (result.theory_marks or 0)
-                total_marks_obtained += total_marks
-                total_full_marks += result.exam_detail.full_marks
+                # Calculate total marks obtained and full marks
+                total_marks_obtained += result.total_marks or 0
+                total_full_marks += result.exam_detail.full_marks or 0
 
-                results_data.append({
-                    "subject": subject.subject_name,
-                    "practical_marks": result.practical_marks,
-                    "theory_marks": result.theory_marks,
-                    "total_marks": total_marks,
-                    "full_marks": result.exam_detail.full_marks,
-                    "pass_marks": result.exam_detail.pass_marks,
-                })
+                # Serialize the result
+                result_data = GetStudentResultSerializer(result).data
+                results_data.append(result_data)
 
             # Calculate percentage and GPA
-            percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks > 0 else 0
-            gpa = percentage / 25  # Assuming GPA scale of 4.0 (adjust as needed)
-
-            # Prepare student details
-            student_details = {
-                "id": student.id,
-                "first_name": student.user.first_name,
-                "last_name": student.user.last_name,
-                "gender": student.gender,
-                "class_code": {
-                    "id": student.class_code.id if student.class_code else None,
-                    "class_name": student.class_code.class_name if student.class_code else None
-                } if student.class_code else None
-            }
+            percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks else 0
+            gpa = self.calculate_gpa(percentage)
 
             return Response({
                 "student": student_details,
@@ -2097,19 +2083,45 @@ class MarksheetView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    def calculate_gpa(self, percentage):
+        if percentage >= 90:
+            return 4.0
+        elif percentage >= 80:
+            return 3.5
+        elif percentage >= 70:
+            return 3.0
+        elif percentage >= 60:
+            return 2.5
+        elif percentage >= 50:
+            return 2.0
+        else:
+            return 0.0
+
+
 
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, *args, **kwargs):
         try:
-            # Fetch the exam and related exam details
-            exam = Exam.objects.prefetch_related('exam_details__class_assigned', 'exam_details__subject').get(id=exam_id)
+            # Fetch the exam
+            exam = Exam.objects.get(id=exam_id)
 
-            # Prepare the response data
+            # Check if timetable is published
+            if not exam.is_timetable_published:
+                return Response(
+                    {"detail": "Timetable for this exam is not published yet."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Fetch the related exam details
             exam_details = []
             for detail in exam.exam_details.all():
                 exam_details.append({
                     "id": detail.id,
-                    "class_name": detail.class_assigned.class_name,
+                    "class_details": {
+                        "id": detail.class_assigned.id,
+                        "name": detail.class_assigned.class_name,
+                        "code": detail.class_assigned.class_code,
+                    },
                     "subject": {
                         "id": detail.subject.id,
                         "subject_code": detail.subject.subject_code,
