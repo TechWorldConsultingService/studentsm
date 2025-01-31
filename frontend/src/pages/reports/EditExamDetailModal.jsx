@@ -44,10 +44,12 @@ const EditExamDetailModal = ({ examDetail, exams, classes, onSave, onCancel }) =
   const [selectedClassCode, setSelectedClassCode] = useState('');
   const [subjects, setSubjects] = useState([]);
 
+  console.log(examDetail,"exam details is ")
+
   const formik = useFormik({
     initialValues: {
       exam: exams.name || '',
-      subject: examDetail?.subject?.subject_name || '',
+      subject: examDetail?.subject?.id || '',
       class_assigned: examDetail?.class_name || '',
       full_marks: examDetail?.full_marks || '',
       pass_marks: examDetail?.pass_marks || '',
@@ -99,19 +101,14 @@ const EditExamDetailModal = ({ examDetail, exams, classes, onSave, onCancel }) =
           {/* Exam */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Exam</label>
-            <select
-              id="exam"
-              name="exam"
-              value={formik.values.exam}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className="p-2 border border-purple-300 rounded w-full"
-            >
-              <option value="">Select Exam</option>
-              <option key={exams.id} value={exams.id}>
-                {exams.name}
-              </option>
-            </select>
+            <input 
+            id="exam"
+            name='exam'
+            value={formik.values.exam}
+            onBlur={formik.handleBlur}
+            readOnly
+            className='p-2 border border-purple-300 rounded w-full'
+            />
             {formik.touched.exam && formik.errors.exam && (
               <div className="text-red-500 text-sm">{formik.errors.exam}</div>
             )}

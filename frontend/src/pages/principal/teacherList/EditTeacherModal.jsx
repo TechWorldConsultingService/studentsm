@@ -41,7 +41,7 @@ const EditTeacherSchema = Yup.object().shape({
   address: Yup.string()
     .required("Address is required.")
     .min(5, "Address must be at least 5 characters long.")
-    .max(25, "Address can't exceed 25 characters."),
+    .max(50, "Address can't exceed 50 characters."),
   date_of_joining: Yup.date()
     .required("Date of joining is required.")
     .max(new Date(), "Date of joining cannot be in the future."),
@@ -67,8 +67,9 @@ const EditTeacherSchema = Yup.object().shape({
       })
     )
     .min(1, "At least one class must be selected."),
-  class_teacher: Yup.number().required("Class teacher is required."),
-});
+    class_teacher: Yup.string()
+    .nullable()
+    .notRequired("Please select one class as Class Teacher if applicable."),});
 
 const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
   const { access } = useSelector((state) => state.user);

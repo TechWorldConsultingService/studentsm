@@ -42,7 +42,7 @@ import Password from "antd/es/input/Password";
   address: Yup.string()
     .required("Address is required.")
     .min(5, "Address must be at least 5 characters long.")
-    .max(25, "Address can't exceed 25 characters."),
+    .max(50, "Address can't exceed 50 characters."),
   date_of_birth: Yup.date()
     .required("Date of birth is required.")
     .max(new Date(), "Date of birth cannot be in the future.")
