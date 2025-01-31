@@ -52,7 +52,7 @@ const EditStudentSchema = Yup.object().shape({
   parents: Yup.string()
     .required("Parent's name is required.")
     .min(2, "Parent's name must be at least 2 characters long.")
-    .max(25, "Parent's name can't exceed 25 characters."),
+    .max(25, "Parent's name can't exceed  characters."),
   gender: Yup.string()
     .required("Gender is required.")
     .oneOf(
@@ -60,9 +60,12 @@ const EditStudentSchema = Yup.object().shape({
       "Gender must be one of 'male', 'female', or 'other'."
     ),
   class_code: Yup.string()
-    .required("Class code is required.")
-    .min(1, "Class code must be at least 1 character long.")
-    .max(10, "Class code can't exceed 10 characters."),
+    .required("Class is required.")
+    .min(1, "Class must be at least 1 character long.")
+    .max(5, "Class can't exceed 5 characters."),
+    class_teacher: Yup.string()
+          .nullable()
+          .notRequired("Please select one class as Class Teacher if applicable."),
 });
 
 const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
@@ -95,6 +98,8 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
     fetchClassList();
   }, [access, navigate]);
 
+console.log(studentInfo,"student info is as ")
+
   const formik = useFormik({
     initialValues: {
       user: {
@@ -109,7 +114,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
       date_of_birth: studentInfo?.date_of_birth || "",
       parents: studentInfo?.parents || "",
       gender: studentInfo?.gender || "",
-      class_code: studentInfo?.class_code || "",
+      class_code: studentInfo?.class_details?.id || "",
     },
     validationSchema: EditStudentSchema,
     onSubmit: async (values) => {
@@ -394,7 +399,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
             >
               <option value="">Select Class</option>
               {classList.map((item) => (
-                <option key={item.id} value={item.class_code}>
+                <option key={item.id} value={item.id}>
                   {item.class_name}
                 </option>
               ))}

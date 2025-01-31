@@ -146,7 +146,7 @@ const StudentList = () => {
                 <tbody>
                   {studentList.map((student) => (
                     <tr key={student.phone} className="border-b hover:bg-purple-50">
-                      <td className="px-4 py-2">{student.class_code}</td>
+                      <td className="px-4 py-2">{student.class_details.class_name}</td>
                       <td className="px-4 py-2">{student.user.first_name} {student.user.last_name}</td>
                       <td className="px-4 py-2">
                         <button
@@ -210,7 +210,7 @@ const StudentList = () => {
                   <strong>Gender:</strong> {selectedStudent.gender}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Class Code:</strong> {selectedStudent.class_code}
+                  <strong>Class:</strong> {selectedStudent.class_details.class_name}
                 </p>
               </div>
               <div className="mt-6 text-center">

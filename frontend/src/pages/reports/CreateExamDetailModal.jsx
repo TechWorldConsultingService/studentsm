@@ -7,7 +7,7 @@ const CreateExamDetailModal = ({ examDetail, exams, classes, onSave, onCancel })
   const [selectedClassCode, setSelectedClassCode] = useState('');
   const [subjects, setSubjects] = useState([]);
   const [formData, setFormData] = useState({
-    exam: '',
+    exam: exams.id || '',
     subject: '',
     class_assigned: '',
     full_marks: '',
