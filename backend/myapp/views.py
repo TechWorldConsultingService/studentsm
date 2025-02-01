@@ -1904,6 +1904,7 @@ class StudentResultAPIView(APIView):
 
 
 # Single Exam APIView
+# Single Exam APIView
 class SingleExamAPIView(APIView):
     def get_object(self, exam_id):
         try:
@@ -1918,7 +1919,15 @@ class SingleExamAPIView(APIView):
 
     def put(self, request, exam_id):
         exam = self.get_object(exam_id)
-        serializer = ExamSerializer(exam, data=request.data)
+        data = request.data.copy()  # Copy request data to modify safely
+
+        # Ensure boolean fields are updated properly
+        if 'is_timetable_published' not in data:
+            data['is_timetable_published'] = exam.is_timetable_published
+        if 'is_result_published' not in data:
+            data['is_result_published'] = exam.is_result_published
+
+        serializer = ExamSerializer(exam, data=data, partial=True)  # Allow partial updates
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -2099,18 +2108,11 @@ class MarksheetView(APIView):
 
 
 
-class ExamTimetableView(APIView):
+class ExamDetailsByExamView(APIView):
     def get(self, request, exam_id, *args, **kwargs):
         try:
             # Fetch the exam
-            exam = Exam.objects.get(id=exam_id)
-
-            # Check if timetable is published
-            if not exam.is_timetable_published:
-                return Response(
-                    {"detail": "Timetable for this exam is not published yet."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            exam = Exam.objects.get(id=exam_id)      
 
             # Fetch the related exam details
             exam_details = []
@@ -2129,7 +2131,9 @@ class ExamTimetableView(APIView):
                     },
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,
+                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_time": detail.exam_time,
+                    
                 })
 
             response_data = {
@@ -2273,3 +2277,52 @@ class ExamDetailsByTeacherView(APIView):
             })
 
         return Response(response_data, status=200)
+
+
+class ExamTimetableView(APIView):
+    def get(self, request, exam_id, class_id, *args, **kwargs):
+        try:
+            # Fetch the exam
+            exam = Exam.objects.get(id=exam_id)
+
+            # Fetch the exam details for the specific class
+            exam_details = exam.exam_details.filter(class_assigned_id=class_id)
+
+            if not exam_details.exists():
+                return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare response data without full_marks and pass_marks
+            exam_details_data = [
+                {
+                    "id": detail.id,
+                    "class_details": {
+                        "id": detail.class_assigned.id,
+                        "name": detail.class_assigned.class_name,
+                        "code": detail.class_assigned.class_code,
+                    },
+                    "subject": {
+                        "id": detail.subject.id,
+                        "subject_code": detail.subject.subject_code,
+                        "subject_name": detail.subject.subject_name,
+                    },
+                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_time": detail.exam_time,
+                }
+                for detail in exam_details
+            ]
+
+            response_data = {
+                "id": exam.id,
+                "exam": {
+                    "id": exam.id,
+                    "name": exam.name,
+                },
+                "exam_details": exam_details_data,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
