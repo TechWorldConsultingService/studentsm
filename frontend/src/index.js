@@ -41,6 +41,7 @@ import ExamTeacher from "./pages/reports/ExamTeacher";
 import ExamPrincipal from "./pages/reports/ExamPrincipal"
 import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal";
 import StudentRoutine from "./pages/reports/StudentRoutine";
+import ExamPublish from "./pages/reports/ExamPublish";
 
 const router = createBrowserRouter([
   {
@@ -186,6 +187,10 @@ const router = createBrowserRouter([
   {
     path:"/examPrincipal",
     element: <ExamPrincipal/>
+  },
+  {
+    path:"/examPublish",
+    element: <ExamPublish />
   },
   {
     path:"/exam-details/:examId",

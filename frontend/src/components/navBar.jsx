@@ -38,10 +38,8 @@ const NavBar = () => {
   ];
 
   return (
-    <div className="flex items-center justify-between shadow-md p-2  pl-6 pr-4 bg-gradient-to-b from-purple-800 to-purple-700 text-white ">
-      <div className="flex gap-4 items-center">
-        <span className="  font-semibold  ">Dashboard</span>
-      </div>
+    <div className="flex items-center justify-end shadow-md p-2  pl-6 pr-4 bg-gradient-to-b from-purple-800 to-purple-700 text-white ">
+
 
       <div className="flex gap-4  items-center">
 

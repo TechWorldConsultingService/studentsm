@@ -121,7 +121,7 @@ const SubjectList = () => {
           </div>
 
           {loading ? (
-            <div className="mt-6 text-center text-gray-600">Loading subjects...</div>
+            <div className="mt-6 text-center text-gray-600">Loading...</div>
           ) : (
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -133,7 +133,7 @@ const SubjectList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {subjectList.map((subject) => (
+                  {subjectList.length > 0 ?  subjectList.map((subject) => (
                     <tr key={subject.subject_code} className="border-b hover:bg-purple-50">
                       <td className="px-4 py-2">{subject.subject_code}</td>
                       <td className="px-4 py-2">{subject.subject_name}</td>
@@ -158,7 +158,10 @@ const SubjectList = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <span className=" text-gray-600">No subject is added to show.</span>
+                  )
+                  }
                 </tbody>
               </table>
             </div>

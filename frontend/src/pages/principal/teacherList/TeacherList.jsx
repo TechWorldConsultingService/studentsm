@@ -140,7 +140,7 @@ const TeacherList = () => {
 
           {loading ? (
             <div className="mt-6 text-center text-gray-600">
-              Loading teachers...
+              Loading...
             </div>
           ) : (
             <div className="mt-6 overflow-x-auto">
@@ -188,7 +188,7 @@ const TeacherList = () => {
                       </tr>
                     ))
                   ) : (
-                    <div>There is no teacher to show! Add new teacher. </div>
+                    <span className="text-gray-600">Teacher is not added to show. </span>
                   )}
                 </tbody>
               </table>

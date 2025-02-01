@@ -132,7 +132,7 @@ const StudentList = () => {
           </div>
 
           {loading ? (
-            <div className="mt-6 text-center text-gray-600">Loading students...</div>
+            <div className="mt-6 text-center text-gray-600">Loading...</div>
           ) : (
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -144,7 +144,7 @@ const StudentList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {studentList.map((student) => (
+                  {studentList.length > 0 ? studentList.map((student) => (
                     <tr key={student.phone} className="border-b hover:bg-purple-50">
                       <td className="px-4 py-2">{student.class_details.class_name}</td>
                       <td className="px-4 py-2">{student.user.first_name} {student.user.last_name}</td>
@@ -169,7 +169,9 @@ const StudentList = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )): (
+                    <span className="text-gray-600">No student is added to show.</span>
+                  )}
                 </tbody>
               </table>
             </div>
