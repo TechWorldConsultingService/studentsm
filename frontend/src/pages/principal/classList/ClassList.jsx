@@ -132,7 +132,7 @@ const ClassList = () => {
 
           {loading ? (
             <div className="mt-6 text-center text-gray-600">
-              Loading classes...
+              Loading...
             </div>
           ) : (
             <div className="mt-6 overflow-x-auto">
@@ -145,7 +145,7 @@ const ClassList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {classList.map((classItem) => (
+                  {classList.length > 0 ?  classList.map((classItem) => (
                     <tr
                       key={classItem.class_code}
                       className="border-b hover:bg-purple-50"
@@ -173,7 +173,9 @@ const ClassList = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <span className="text-gray-600">No class is added to show.</span>
+                  )}
                 </tbody>
               </table>
             </div>
