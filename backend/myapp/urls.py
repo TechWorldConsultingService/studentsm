@@ -11,6 +11,8 @@ from .views import (
     StudentAssignmentsView,
     SubmitStudentAssignmentView,
     ReviewAssignmentsView,
+    ExamsByClassView,
+    ExamTimetableView
 )
 
 urlpatterns = [
@@ -130,16 +132,26 @@ urlpatterns = [
     path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # Endpoint to retrieve the fee details for a specific student by their `student_id`.
     path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # Endpoint to retrieve the pending fee details for a specific student by their `student_id`.
     
-    path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),
-    path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),
-    path('api/exam-details/', ExamDetailAPIView.as_view(), name='exam-detail-list-create'),
-    path('api/exam-details/<int:exam_detail_id>/', SingleExamDetailAPIView.as_view(), name='single-exam-detail'),
-    path('api/results/', StudentResultAPIView.as_view(), name='student-result-list-create'),
-    path('api/results/<int:result_id>/', SingleStudentResultAPIView.as_view(), name='single-student-result'),
-    path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),
-    path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),
-    path('api/exam-timetable/<int:exam_id>/', ExamTimetableView.as_view(), name='exam-timetable'),
-    path('api/exam-details/<int:examid>/<int:teacherId>/', ExamDetailsByTeacherView.as_view(), name='exam-details-teacher'),
+     # API endpoints for exams management
+    path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),  # Endpoint to list all exams and create new exams.
+    path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),  # Endpoint to retrieve, update, or delete a specific exam by its ID (`exam_id`).
+    path("api/exams/class/<int:class_id>/", ExamsByClassView.as_view(), name="exams_by_class"),
+    
+    # API endpoints for exam details
+    path('api/exam-details/', ExamDetailAPIView.as_view(), name='exam-detail-list-create'),  # Endpoint to list all exam details and create new exam details.
+    path('api/exam-details/<int:exam_detail_id>/', SingleExamDetailAPIView.as_view(), name='single-exam-detail'),  # Endpoint to retrieve, update, or delete a specific exam detail by its ID (`exam_detail_id`).
+    path('api/exam-details/exam/<int:exam_id>/', ExamDetailsByExamView.as_view(), name='exam-details-exam'),  # Endpoint to retrieve all exam details for a specific exam (`exam_id`).
+    path('api/exam-details/<int:examid>/<int:teacherId>/', ExamDetailsByTeacherView.as_view(), name='exam-details-teacher'),  # Endpoint to retrieve exam details assigned to a specific teacher (`teacherId`) for a given exam (`examid`).
+    
+    # API for exam timetable filtered by class
+    path("api/exam-timetable/<int:exam_id>/<int:class_id>/", ExamTimetableView.as_view(), name="exam_timetable"),  # Endpoint to retrieve the timetable for a specific exam (`exam_id`) and class (`class_id`).
+    
+    # API endpoints for student results
+    path('api/results/', StudentResultAPIView.as_view(), name='student-result-list-create'),  # Endpoint to list all student results and create new results.
+    path('api/results/<int:result_id>/', SingleStudentResultAPIView.as_view(), name='single-student-result'),  # Endpoint to retrieve, update, or delete a specific student result by its ID (`result_id`).
+    path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),  # Endpoint to retrieve subject-wise exam results for a specific exam (`exam_id`) and subject (`subject_id`).
+    
+    path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
 
     path('api/messages/', MessageListView.as_view(), name='message-list'),
     path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
