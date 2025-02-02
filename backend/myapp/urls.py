@@ -32,7 +32,8 @@ urlpatterns = [
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
     path('api/students-by-subject/', StudentsBySubjectView.as_view(), name='students-by-subject'),
     path('api/students-by-subject-and-class/', StudentsBySubjectAndClassView.as_view(), name='students-by-subject-and-class'),
-    
+    path('api/students-by-class/', StudentListByClassView.as_view(), name='students-by-class'),
+
     path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
 
     # API endpoints for viewing details of a specific record
