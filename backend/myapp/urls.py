@@ -133,6 +133,7 @@ urlpatterns = [
      # API endpoints for exams management
     path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),  # Endpoint to list all exams and create new exams.
     path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),  # Endpoint to retrieve, update, or delete a specific exam by its ID (`exam_id`).
+    path("api/exams/class/<int:class_id>/", ExamsByClassView.as_view(), name="exams_by_class"),
     
     # API endpoints for exam details
     path('api/exam-details/', ExamDetailAPIView.as_view(), name='exam-detail-list-create'),  # Endpoint to list all exam details and create new exam details.

@@ -2341,3 +2341,37 @@ class ExamTimetableView(APIView):
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ExamsByClassView(APIView):
+    def get(self, request, class_id, *args, **kwargs):
+        try:
+            # Fetch all unique exams linked to the given class via ExamDetail
+            exams = Exam.objects.filter(exam_details__class_assigned_id=class_id).distinct()
+
+            if not exams.exists():
+                return Response({"detail": "No exams found for this class."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Retrieve class details (assuming all exams belong to the same class)
+            class_instance = exams.first().exam_details.filter(class_assigned_id=class_id).first().class_assigned
+
+            # Prepare response data
+            response_data = {
+                "class_details": {
+                    "id": class_instance.id,
+                    "name": class_instance.class_name,
+                    "code": class_instance.class_code,
+                },
+                "exams": [
+                    {
+                        "id": exam.id,
+                        "name": exam.name,
+                    }
+                    for exam in exams
+                ],
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
