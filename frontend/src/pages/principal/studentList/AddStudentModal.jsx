@@ -67,10 +67,9 @@ import Password from "antd/es/input/Password";
     .max(10, "Class code can't exceed 10 characters."),
 });
 
-const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
+const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [classList, setClassList] = useState([]);
   const [subjectList, setSubjectList] = useState([])
 
   const formik = useFormik({
@@ -120,27 +119,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
     }
   };
 
-  const fetchClass = async () => {
-    if (!access) {
-      toast.error("User is not authenticated. Please log in.");
-      return;
-    }
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/classes/", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      setClassList(data);
-    } catch (error) {
-      toast.error("Error fetching class:", error.message || error);
-    }
-  };
 
-  useEffect(() => {
-    fetchClass();
-  }, [access, navigate]);
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">

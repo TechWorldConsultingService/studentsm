@@ -73,7 +73,11 @@
         "id": 5,
         "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/examTeacher"
+        "link": "/examTeacher",
+        "subSidebar": [
+          { "id": 1, "title": "Result", "link": "/examTeacher" },
+          { "id": 2, "title": "Routine", "link": "/examRoutineTeacher" }
+        ]
       },
       {
         "id": 6,

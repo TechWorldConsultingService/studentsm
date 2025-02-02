@@ -173,7 +173,13 @@ const ExamPrincipal = () => {
                         {exam.name}
                       </Link>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 space-x-3">
+                    <button
+                        onClick={() => handleViewExam(exam.id)}
+                        className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
+                      >
+                        View
+                      </button>
                       <button
                         onClick={() => openEditExamModal(exam)}
                         className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
@@ -186,12 +192,7 @@ const ExamPrincipal = () => {
                       >
                         Delete
                       </button>
-                      <button
-                        onClick={() => handleViewExam(exam.id)}
-                        className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
-                      >
-                        View
-                      </button>
+
                     </td>
                   </tr>
                 ))}
@@ -237,9 +238,11 @@ const ExamPrincipal = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md">
             <h2 className="text-xl font-bold text-purple-700">Exam Details</h2>
             <p className="mt-4"><strong className="text-purple-700">Exam Name: </strong> {examDetails.name}</p>
+            <p className=""><strong className="text-purple-700">Routine: </strong> {examDetails.is_timetable_published ? "Published" : "Not Published"}</p>
+            <p className=""><strong className="text-purple-700">Result: </strong> {examDetails.is_result_published ? "Published" : "Not Published"}</p>
             <button
               onClick={() => setExamDetails(null)}
-              className="mt-4 bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
+              className="flex justify-self-center mt-4 bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800"
             >
               Close
             </button>

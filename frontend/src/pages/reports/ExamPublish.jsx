@@ -59,7 +59,7 @@ const ExamPublish = () => {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <h1 className="text-3xl font-extrabold text-purple-800">Exam Publish Panel</h1>
+          <h1 className="text-3xl font-extrabold text-purple-800">Exam Publish</h1>
           <p className="mt-4 text-gray-600">Manage Routine and Result .</p>
 
           <div className="mt-6 overflow-x-auto">
@@ -73,7 +73,7 @@ const ExamPublish = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {exams.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-gray-50 transition duration-300">
+                  <tr key={exam.id} className="hover:bg-purple-100 transition duration-300">
                     <td className="px-6 py-4 font-medium text-purple-800 text-lg">{exam.name}</td>
 
                     <td className="px-6 py-4 text-center">
@@ -83,7 +83,7 @@ const ExamPublish = () => {
                         </span>
                         <button
                           onClick={() => handlePublishToggle(exam, 'timetable')}
-                          className={`px-4 py-2 rounded-lg text-white font-semibold ${exam.is_timetable_published ? 'bg-purple-700 hover:bg-purple-800' : 'bg-gray-500 hover:bg-gray-600'} transition duration-300`}
+                          className={`px-4 py-2 rounded-lg text-white font-semibold ${exam.is_timetable_published ? 'bg-gray-500 hover:bg-gray-600' : 'bg-purple-700 hover:bg-purple-800'} transition duration-300`}
                         >
                           {exam.is_timetable_published ? 'Unpublish' : 'Publish'}
                         </button>
@@ -92,12 +92,12 @@ const ExamPublish = () => {
 
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center space-y-2">
-                        <span className={`px-4 py-1 rounded-full text-sm font-semibold ${exam.is_result_published ? 'bg-purple-200 text-purple-800' : 'bg-gray-200 text-gray-800'}`}>
+                      <span className={`px-4 py-1 rounded-full text-sm font-semibold ${exam.is_result_published ? 'bg-purple-200 text-purple-800' : 'bg-gray-200 text-gray-800'}`}>
                           {exam.is_result_published ? 'Published' : 'Unpublished'}
                         </span>
                         <button
                           onClick={() => handlePublishToggle(exam, 'result')}
-                          className={`px-4 py-2 rounded-lg text-white font-semibold ${exam.is_result_published ? 'bg-purple-700 hover:bg-purple-800' : 'bg-gray-500 hover:bg-gray-600'} transition duration-300`}
+                          className={`px-4 py-2 rounded-lg text-white font-semibold ${exam.is_result_published ? 'bg-gray-500 hover:bg-gray-600' : 'bg-purple-700 hover:bg-purple-800'} transition duration-300`}
                         >
                           {exam.is_result_published ? 'Unpublish' : 'Publish'}
                         </button>

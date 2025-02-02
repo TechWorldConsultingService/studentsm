@@ -18,9 +18,11 @@ const StudentList = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
+  const [classList, setClassList] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState("");
 
   // Fetch students
-  const fetchStudents = async () => {
+  const fetchAllStudents = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
@@ -45,9 +47,63 @@ const StudentList = () => {
     }
   };
 
+  const fetchClassWiseStudents = async () => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data } = await axios.get(`http://localhost:8000/api/students-by-class/?class_id=${selectedClassId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setStudentList(data);
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        navigate("/");
+      } else {
+        toast.error("Error fetching students:", error.message || error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchStudents();
+    if(!selectedClassId){
+      fetchAllStudents();
+    } else {
+      fetchClassWiseStudents()
+    }
+
+  }, [access, navigate, selectedClassId]);
+
+  // fetch class
+  const fetchClass = async () => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/classes/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setClassList(data);
+    } catch (error) {
+      toast.error("Error fetching class:", error.message || error);
+    }
+  };
+
+  useEffect(() => {
+    fetchClass();
   }, [access, navigate]);
+
 
   const handleViewDetails = (studentInfo) => {
     setSelectedStudent(studentInfo);
@@ -65,9 +121,9 @@ const StudentList = () => {
   };
 
   const handleShowEditModal = (studentInfo) => {
-    setIsEditMode(true); 
-    setSelectedStudent(studentInfo);  
-    setShowModal(true);  
+    setIsEditMode(true);
+    setSelectedStudent(studentInfo);
+    setShowModal(true);
   };
 
   const handleCloseModal = () => {
@@ -80,19 +136,22 @@ const StudentList = () => {
   };
 
   const handleDeleteStudent = async () => {
-    console.log('studentToDelete:', studentToDelete);
+    console.log("studentToDelete:", studentToDelete);
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
 
     try {
-      await axios.delete(`http://localhost:8000/api/students/${studentToDelete}/delete/`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      await axios.delete(
+        `http://localhost:8000/api/students/${studentToDelete}/delete/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
 
       setStudentList((prev) =>
         prev.filter((student) => student?.id !== studentToDelete)
@@ -101,7 +160,10 @@ const StudentList = () => {
       toast.success("Student deleted successfully.");
       setShowDeleteModal(false);
     } catch (error) {
-      toast.error("Error deleting student:", error.response?.data?.detail || error.message);
+      toast.error(
+        "Error deleting student:",
+        error.response?.data?.detail || error.message
+      );
     }
   };
 
@@ -115,20 +177,47 @@ const StudentList = () => {
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
           <h1 className="text-3xl font-extrabold text-purple-800">Students</h1>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <button
               onClick={handleShowAddModal}
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
+              className="flex justify-self-end bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
               Add Student
             </button>
           </div>
 
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold text-purple-700">
-              Available Students
-            </h2>
-            <p className="mt-4 text-gray-600">Student list with their details.</p>
+          <div className=" bg-white">
+            <div>
+              <h2 className="text-2xl font-bold text-purple-700">
+                Available Students
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Student list with their details.
+              </p>
+            </div>
+
+            <div className="mt-4 flex space-x-2 items-center">
+              <label className="block text-lg font-semibold text-purple-700 mb-2">
+                Select Class:
+              </label>
+              <select
+                name="selectClass"
+                id="selectClass"
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="w-fit p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+              >
+                <option value="">Select Class</option>
+                {classList.length > 0 &&
+                  classList.map((item) => (
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
+                      {item.class_name}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -144,33 +233,44 @@ const StudentList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {studentList.length > 0 ? studentList.map((student) => (
-                    <tr key={student.phone} className="border-b hover:bg-purple-50">
-                      <td className="px-4 py-2">{student.class_details.class_name}</td>
-                      <td className="px-4 py-2">{student.user.first_name} {student.user.last_name}</td>
-                      <td className="px-4 py-2">
-                        <button
-                          onClick={() => handleViewDetails(student)}
-                          className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => handleShowEditModal(student)}
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleConfirmDelete(student.id)}
-                          className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  )): (
-                    <span className="text-gray-600">No student is added to show.</span>
+                  {studentList.length > 0 ? (
+                    studentList.map((student) => (
+                      <tr
+                        key={student.phone}
+                        className="border-b hover:bg-purple-50"
+                      >
+                        <td className="px-4 py-2">
+                          {student.class_details.class_name}
+                        </td>
+                        <td className="px-4 py-2">
+                          {student.user.first_name} {student.user.last_name}
+                        </td>
+                        <td className="px-4 py-2">
+                          <button
+                            onClick={() => handleViewDetails(student)}
+                            className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => handleShowEditModal(student)}
+                            className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleConfirmDelete(student.id)}
+                            className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <span className="text-gray-600">
+                      No student is added to show.
+                    </span>
                   )}
                 </tbody>
               </table>
@@ -182,13 +282,16 @@ const StudentList = () => {
         {selectedStudent && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">Student Details</h2>
+              <h2 className="text-2xl font-bold text-purple-800">
+                Student Details
+              </h2>
               <div className="mt-4">
                 <p className="text-gray-700">
                   <strong>Username:</strong> {selectedStudent.user.username}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Name:</strong> {selectedStudent.user.first_name} {selectedStudent.user.last_name}
+                  <strong>Name:</strong> {selectedStudent.user.first_name}{" "}
+                  {selectedStudent.user.last_name}
                 </p>
                 <p className="text-gray-700">
                   <strong>Email:</strong> {selectedStudent.user.email}
@@ -203,7 +306,8 @@ const StudentList = () => {
                   <strong>Address:</strong> {selectedStudent.address}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Date of Birth:</strong> {selectedStudent.date_of_birth}
+                  <strong>Date of Birth:</strong>{" "}
+                  {selectedStudent.date_of_birth}
                 </p>
                 <p className="text-gray-700">
                   <strong>Parent's Name:</strong> {selectedStudent.parents}
@@ -212,7 +316,8 @@ const StudentList = () => {
                   <strong>Gender:</strong> {selectedStudent.gender}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Class:</strong> {selectedStudent.class_details.class_name}
+                  <strong>Class:</strong>{" "}
+                  {selectedStudent.class_details.class_name}
                 </p>
               </div>
               <div className="mt-6 text-center">
@@ -253,20 +358,20 @@ const StudentList = () => {
         )}
 
         {/* Add or Edit Modal */}
-        {showModal && (
-          isEditMode ? (
+        {showModal &&
+          (isEditMode ? (
             <EditStudentModal
               studentInfo={selectedStudent}
               handleCloseModal={handleCloseModal}
-              fetchStudents={fetchStudents}
+              fetchStudents={fetchAllStudents}
             />
           ) : (
             <AddStudentModal
               handleCloseModal={handleCloseModal}
-              fetchStudents={fetchStudents}
+              fetchStudents={fetchAllStudents}
+              classList={classList}
             />
-          )
-        )}
+          ))}
       </div>
     </MainLayout>
   );
