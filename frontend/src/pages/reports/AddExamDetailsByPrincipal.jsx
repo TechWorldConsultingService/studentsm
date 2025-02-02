@@ -30,7 +30,7 @@ const AddExamDetailsByPrincipal = () => {
       setIsLoading(true);
       try {
         const { data: examData } = await axios.get(
-          `http://localhost:8000/api/exam-timetable/${examId}/`,
+          `http://localhost:8000/api/exam-details/exam/${examId}/`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -172,7 +172,7 @@ const AddExamDetailsByPrincipal = () => {
       }
 
       // Fetch updated exam details
-      const { data } = await axios.get(`http://localhost:8000/api/exam-timetable/${examId}`, {
+      const { data } = await axios.get(`http://localhost:8000/api/exam-details/exam/${examId}/`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
@@ -223,8 +223,6 @@ const AddExamDetailsByPrincipal = () => {
                   <tr className="bg-purple-700 text-white">
                     <th className="px-6 py-3 text-left">Class</th>
                     <th className="px-6 py-3 text-left">Subject</th>
-                    <th className="px-6 py-3 text-left">Full Marks</th>
-                    <th className="px-6 py-3 text-left">Pass Marks</th>
                     <th className="px-6 py-3 text-left">Exam Date</th>
                     <th className="px-6 py-3 text-left">Actions</th>
                   </tr>
@@ -232,10 +230,8 @@ const AddExamDetailsByPrincipal = () => {
                 <tbody>
                   {examDetails?.exam_details?.map((detail) => (
                     <tr key={detail.id} className="border-b hover:bg-purple-50">
-                      <td className="px-6 py-4">{detail.class_name}</td>
+                      <td className="px-6 py-4">{detail.class_details.name}</td>
                       <td className="px-6 py-4">{detail.subject.subject_name}</td>
-                      <td className="px-6 py-4">{detail.full_marks}</td>
-                      <td className="px-6 py-4">{detail.pass_marks}</td>
                       <td className="px-6 py-4">{detail.exam_date}</td>
                       <td className="px-6 py-4 flex gap-2">
                         <button
@@ -303,11 +299,12 @@ const AddExamDetailsByPrincipal = () => {
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">Exam Detail</h2>
               <div className="mt-4">
-                <p className="text-gray-700"><strong>Class:</strong> {selectedDetail.class_name}</p>
+                <p className="text-gray-700"><strong>Class:</strong> {selectedDetail.class_details.name}</p>
                 <p className="text-gray-700"><strong>Subject:</strong> {selectedDetail.subject.subject_name}</p>
                 <p className="text-gray-700"><strong>Full Marks:</strong> {selectedDetail.full_marks}</p>
                 <p className="text-gray-700"><strong>Pass Marks:</strong> {selectedDetail.pass_marks}</p>
                 <p className="text-gray-700"><strong>Exam Date:</strong> {selectedDetail.exam_date}</p>
+                <p className="text-gray-700"><strong>Exam Time:</strong> {selectedDetail.exam_time}</p>
               </div>
               <div className="mt-6 text-center">
                 <button

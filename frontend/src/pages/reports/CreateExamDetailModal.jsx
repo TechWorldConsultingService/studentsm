@@ -12,7 +12,8 @@ const CreateExamDetailModal = ({ examDetail, exams, classes, onSave, onCancel })
     class_assigned: '',
     full_marks: '',
     pass_marks: '',
-    exam_date: ''
+    exam_date: '',
+    exam_time: ''
   });
 
   // Effect to fetch subjects based on selected class
@@ -163,6 +164,22 @@ const CreateExamDetailModal = ({ examDetail, exams, classes, onSave, onCancel })
               id="exam_date"
               name="exam_date"
               value={formData.exam_date}
+              onChange={handleChange}
+              className="p-2 border border-purple-300 rounded w-full"
+              required
+            />
+          </div>
+
+           {/* Exam time*/}
+           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold mb-2" >
+              Exam Time
+            </label>
+            <input
+              type="time"
+              id="exam_time"
+              name="exam_time"
+              value={formData.exam_time}
               onChange={handleChange}
               className="p-2 border border-purple-300 rounded w-full"
               required
