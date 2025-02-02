@@ -141,6 +141,10 @@ urlpatterns = [
     path('api/exam-timetable/<int:exam_id>/', ExamTimetableView.as_view(), name='exam-timetable'),
     path('api/exam-details/<int:examid>/<int:teacherId>/', ExamDetailsByTeacherView.as_view(), name='exam-details-teacher'),
 
+    path('api/messages/', MessageListView.as_view(), name='message-list'),
+    path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
