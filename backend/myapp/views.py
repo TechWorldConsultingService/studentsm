@@ -508,6 +508,21 @@ class PrincipalUpdateAPIView(APIView):
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# api to get student as per class
+class StudentListByClassView(ListAPIView):
+    serializer_class = StudentSerializer
+
+    def get_queryset(self):
+        class_id = self.request.query_params.get('class_id')
+        if class_id:
+            return Student.objects.filter(class_code_id=class_id)
+        return Student.objects.all()  # Return all students if no class_id is provided
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 # API view to update student info
 class StudentUpdateAPIView(APIView):
     def put(self, request, pk):
