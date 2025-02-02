@@ -309,11 +309,13 @@ class PrincipalSerializer(serializers.ModelSerializer):
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
+    # class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
+    class_details = ClassSerializer(source='class_code', read_only=True)
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
+        # fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -844,4 +846,11 @@ class GetStudentResultSerializer(serializers.ModelSerializer):
             "exam_date": exam_detail.exam_date
         }
 
+from .models import Message
+class MessageSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
 
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'receiver', 'content', 'timestamp', 'is_read', 'sender_username', 'receiver_username']

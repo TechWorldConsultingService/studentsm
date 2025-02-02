@@ -11,6 +11,8 @@ from .views import (
     StudentAssignmentsView,
     SubmitStudentAssignmentView,
     ReviewAssignmentsView,
+    ExamsByClassView,
+    ExamTimetableView
 )
 
 urlpatterns = [
@@ -150,6 +152,10 @@ urlpatterns = [
     path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),  # Endpoint to retrieve subject-wise exam results for a specific exam (`exam_id`) and subject (`subject_id`).
     
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
+
+    path('api/messages/', MessageListView.as_view(), name='message-list'),
+    path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login as auth_login
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status,permissions
+from rest_framework import status,permissions,generics
 from django.contrib.auth.models import User
 from .models import *
 from .serializers import * 
@@ -2294,84 +2294,17 @@ class ExamDetailsByTeacherView(APIView):
         return Response(response_data, status=200)
 
 
-class ExamTimetableView(APIView):
-    def get(self, request, exam_id, class_id, *args, **kwargs):
-        try:
-            # Fetch the exam
-            exam = Exam.objects.get(id=exam_id)
+class MessageListView(generics.ListAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-            # Fetch the exam details for the specific class
-            exam_details = exam.exam_details.filter(class_assigned_id=class_id)
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
 
-            if not exam_details.exists():
-                return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
+class SendMessageView(generics.CreateAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-            # Prepare response data without full_marks and pass_marks
-            exam_details_data = [
-                {
-                    "id": detail.id,
-                    "class_details": {
-                        "id": detail.class_assigned.id,
-                        "name": detail.class_assigned.class_name,
-                        "code": detail.class_assigned.class_code,
-                    },
-                    "subject": {
-                        "id": detail.subject.id,
-                        "subject_code": detail.subject.subject_code,
-                        "subject_name": detail.subject.subject_name,
-                    },
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
-                    "exam_time": detail.exam_time,
-                }
-                for detail in exam_details
-            ]
-
-            response_data = {
-                "id": exam.id,
-                "exam": {
-                    "id": exam.id,
-                    "name": exam.name,
-                },
-                "exam_details": exam_details_data,
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Exam.DoesNotExist:
-            return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ExamsByClassView(APIView):
-    def get(self, request, class_id, *args, **kwargs):
-        try:
-            # Fetch all unique exams linked to the given class via ExamDetail
-            exams = Exam.objects.filter(exam_details__class_assigned_id=class_id).distinct()
-
-            if not exams.exists():
-                return Response({"detail": "No exams found for this class."}, status=status.HTTP_404_NOT_FOUND)
-
-            # Retrieve class details (assuming all exams belong to the same class)
-            class_instance = exams.first().exam_details.filter(class_assigned_id=class_id).first().class_assigned
-
-            # Prepare response data
-            response_data = {
-                "class_details": {
-                    "id": class_instance.id,
-                    "name": class_instance.class_name,
-                    "code": class_instance.class_code,
-                },
-                "exams": [
-                    {
-                        "id": exam.id,
-                        "name": exam.name,
-                    }
-                    for exam in exams
-                ],
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
