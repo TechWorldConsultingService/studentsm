@@ -2045,10 +2045,10 @@ class MarksheetView(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            # Fetch the student and their details
+            # Fetch the student
             student = Student.objects.select_related('user').get(id=student_id)
 
-            # Fetch the results for the student for the given exam
+            # Fetch the student's subject-wise results for the exam
             results = StudentResult.objects.filter(
                 student_id=student_id,
                 exam_detail__exam_id=exam_id
@@ -2060,63 +2060,40 @@ class MarksheetView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Prepare the student details
-            student_details = {
-                "id": student.id,
-                "username": student.user.username,
-                "email": student.user.email,
-                "full_name": f"{student.user.first_name} {student.user.last_name}",
-                "gender": student.gender,
-                "address": student.address,
-                "phone": student.phone,
-                "date_of_birth": student.date_of_birth
-            }
-
             # Prepare result data
             results_data = []
             total_marks_obtained = 0
             total_full_marks = 0
 
             for result in results:
-                # Calculate total marks obtained and full marks
                 total_marks_obtained += result.total_marks or 0
                 total_full_marks += result.exam_detail.full_marks or 0
 
-                # Calculate percentage, GPA, and grade
-                percentage = (result.total_marks / result.exam_detail.full_marks) * 100 if result.exam_detail.full_marks else 0
-                gpa = self.calculate_gpa(percentage)
-                grade = self.calculate_grade(percentage)
-
-                # Save the calculated values to the database if not already stored
-                if result.percentage is None or result.gpa is None or result.grade is None:
-                    result.percentage = round(percentage, 2)
-                    result.gpa = round(gpa, 2)
-                    result.grade = grade
-                    result.save()
-
                 # Serialize the result
                 result_data = GetStudentResultSerializer(result).data
-                result_data.update({
-                    "percentage": round(percentage, 2),
-                    "gpa": round(gpa, 2),
-                    "grade": grade
-                })
                 results_data.append(result_data)
 
-            # Calculate overall percentage, GPA, and grade
-            overall_percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks else 0
-            overall_gpa = self.calculate_gpa(overall_percentage)
-            overall_grade = self.calculate_grade(overall_percentage)
+            # Fetch the overall result from the StudentOverallResult model
+            overall_result = StudentOverallResult.objects.get(student=student, exam=exam)
 
+            # Prepare the response data with all student details and results
             return Response({
-                "student": student_details,
+                "student": {
+                    "id": student.id,
+                    "username": student.user.username,
+                    "full_name": f"{student.user.first_name} {student.user.last_name}",
+                    "gender": student.gender,
+                    "address": student.address,
+                    "phone": student.phone,
+                    "date_of_birth": student.date_of_birth
+                },
                 "exam": exam.name,
                 "results": results_data,
-                "total_marks_obtained": total_marks_obtained,
-                "total_full_marks": total_full_marks,
-                "percentage": round(overall_percentage, 2),
-                "gpa": round(overall_gpa, 2),
-                "grade": overall_grade
+                "total_marks_obtained": overall_result.total_marks_obtained,
+                "total_full_marks": overall_result.total_full_marks,
+                "percentage": round(overall_result.percentage, 2),
+                "gpa": round(overall_result.gpa, 2),
+                "grade": overall_result.grade
             }, status=status.HTTP_200_OK)
 
         except Exam.DoesNotExist:
@@ -2129,45 +2106,17 @@ class MarksheetView(APIView):
                 {"detail": "Student not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
+        except StudentOverallResult.DoesNotExist:
+            return Response(
+                {"detail": "No overall result found for the specified student and exam."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             return Response(
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    def calculate_gpa(self, percentage):
-        if percentage >= 90:
-            return 4.0
-        elif percentage >= 80:
-            return 3.5
-        elif percentage >= 70:
-            return 3.0
-        elif percentage >= 60:
-            return 2.5
-        elif percentage >= 50:
-            return 2.0
-        elif percentage >= 40:
-            return 1.5
-        else:
-            return 0.0
-
-    def calculate_grade(self, percentage):
-        if percentage >= 90:
-            return "A+"
-        elif percentage >= 80:
-            return "A"
-        elif percentage >= 70:
-            return "B+"
-        elif percentage >= 60:
-            return "B"
-        elif percentage >= 50:
-            return "C+"
-        elif percentage >= 40:
-            return "C"
-        elif percentage >= 35:
-            return "D"
-        else:
-            return "NG"  # Not Graded
 
 
 
@@ -2458,6 +2407,153 @@ class BulkUpdateRollNumbersAPIView(APIView):
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db import transaction
+from .models import StudentResult, StudentOverallResult
+
+@receiver(post_save, sender=StudentResult)
+def update_student_overall_result(sender, instance, **kwargs):
+    # Ensure atomicity
+    with transaction.atomic():
+        student = instance.student
+        exam = instance.exam_detail.exam
+        class_instance = student.class_code
+
+        # Calculate the total marks and GPA for the student in this exam
+        results = StudentResult.objects.filter(student=student, exam_detail__exam=exam)
+        total_marks_obtained = sum(result.total_marks or 0 for result in results)
+        total_full_marks = sum(result.exam_detail.full_marks or 0 for result in results)
+
+        if total_full_marks > 0:
+            percentage = (total_marks_obtained / total_full_marks) * 100
+        else:
+            percentage = 0
+
+        # Calculate GPA based on percentage
+        if percentage >= 90:
+            gpa = 4.0
+            grade = 'A+'
+        elif percentage >= 80:
+            gpa = 3.5
+            grade = 'A'
+        elif percentage >= 70:
+            gpa = 3.0
+            grade = 'B+'
+        elif percentage >= 60:
+            gpa = 2.5
+            grade = 'B'
+        elif percentage >= 50:
+            gpa = 2.0
+            grade = 'C+'
+        elif percentage >= 40:
+            gpa = 1.5
+            grade = 'C'
+        elif percentage >= 35:
+            gpa = 1.0
+            grade = 'D'
+        else:
+            gpa = 0.0
+            grade = 'NG'
+
+        # Update or create the overall result
+        student_overall_result, created = StudentOverallResult.objects.update_or_create(
+            student=student, 
+            exam=exam, 
+            defaults={
+                'total_marks_obtained': total_marks_obtained,
+                'total_full_marks': total_full_marks,
+                'percentage': percentage,
+                'gpa': gpa,
+                'grade': grade
+            }
+        )
+
+        # Now that the overall result is updated, recalculate rankings
+        recalculate_rankings(exam, class_instance)
+
+def recalculate_rankings(exam, class_instance):
+    # Fetch all student results for this exam and class
+    student_results = StudentOverallResult.objects.filter(
+        exam=exam, student__class_code=class_instance
+    ).select_related('student')
+
+    # Order by total marks obtained, then by student name (for tie-breaking)
+    ranked_results = student_results.order_by('-total_marks_obtained', 'student__user__username')
+
+    # Recalculate the ranks
+    rank = 1
+    for idx, result in enumerate(ranked_results):
+        # If marks are different from the previous result, increment the rank
+        if idx > 0 and ranked_results[idx-1].total_marks_obtained != result.total_marks_obtained:
+            rank = idx + 1
+
+        # Update the rank in the StudentOverallResult
+        result.rank = rank
+        result.save()
+
+
+class StudentRankingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, exam_id, class_id):
+        try:
+            # Fetch the exam and class instances
+            exam = Exam.objects.get(id=exam_id)
+            class_instance = Class.objects.get(id=class_id)  # Using class_id instead of class_code
+
+            # Check if results are published for the exam
+            if not exam.is_result_published:
+                return Response(
+                    {"detail": "Results for this exam are not published yet."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Fetch all students' overall results for this exam and class
+            student_results = StudentOverallResult.objects.filter(
+                exam=exam, student__class_code=class_instance
+            ).select_related('student')
+
+            # Create the rankings list with the stored rank and result data
+            results_with_ranks = [
+                {
+                    'student': result.student.user.username,
+                    'total_marks_obtained': result.total_marks_obtained,
+                    'rank': result.rank,  # Get the rank directly from the model
+                    'gpa': result.gpa,
+                    'grade': result.grade,
+                }
+                for result in student_results
+            ]
+
+            # Return ranked results
+            return Response({
+                "exam": {"id": exam.id, "name": exam.name},
+                "class": {"id": class_instance.id, "name": class_instance.class_name, "code": class_instance.class_code},
+                "rankings": results_with_ranks
+            }, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response(
+                {"detail": "Exam not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Class.DoesNotExist:
+            return Response(
+                {"detail": "Class not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
+
 
 class MessageListView(generics.ListAPIView):
     serializer_class = MessageSerializer
