@@ -309,13 +309,13 @@ class PrincipalSerializer(serializers.ModelSerializer):
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    # class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
-    class_details = ClassSerializer(source='class_code', read_only=True)
+    class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
+    #class_details = ClassSerializer(source='class_code', read_only=True)
 
     class Meta:
         model = Student
-        # fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
+        #fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')

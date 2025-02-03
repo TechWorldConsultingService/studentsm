@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 import json
+from django.db import transaction
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import UpdateAPIView
@@ -509,19 +510,20 @@ class PrincipalUpdateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # api to get student as per class
-class StudentListByClassView(ListAPIView):
-    serializer_class = StudentSerializer
-
-    def get_queryset(self):
-        class_id = self.request.query_params.get('class_id')
-        if class_id:
-            return Student.objects.filter(class_code_id=class_id)
-        return Student.objects.all()  # Return all students if no class_id is provided
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
+class StudentListByClassAPIView(APIView):
+    def get(self, request, class_code):
+        """
+        API to fetch students based on class_code.
+        Example Request: GET /api/students/class/1/
+        """
+        students = Student.objects.filter(class_code_id=class_code)
+        
+        if not students.exists():
+            return Response({"detail": "No students found for this class."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = GetStudentSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 # API view to update student info
 class StudentUpdateAPIView(APIView):
@@ -2021,6 +2023,13 @@ from .serializers import StudentResultSerializer
 
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import StudentResult, Student, Exam
+from .serializers import GetStudentResultSerializer
+from django.db.models import Sum
+
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2073,13 +2082,31 @@ class MarksheetView(APIView):
                 total_marks_obtained += result.total_marks or 0
                 total_full_marks += result.exam_detail.full_marks or 0
 
+                # Calculate percentage, GPA, and grade
+                percentage = (result.total_marks / result.exam_detail.full_marks) * 100 if result.exam_detail.full_marks else 0
+                gpa = self.calculate_gpa(percentage)
+                grade = self.calculate_grade(percentage)
+
+                # Save the calculated values to the database if not already stored
+                if result.percentage is None or result.gpa is None or result.grade is None:
+                    result.percentage = round(percentage, 2)
+                    result.gpa = round(gpa, 2)
+                    result.grade = grade
+                    result.save()
+
                 # Serialize the result
                 result_data = GetStudentResultSerializer(result).data
+                result_data.update({
+                    "percentage": round(percentage, 2),
+                    "gpa": round(gpa, 2),
+                    "grade": grade
+                })
                 results_data.append(result_data)
 
-            # Calculate percentage and GPA
-            percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks else 0
-            gpa = self.calculate_gpa(percentage)
+            # Calculate overall percentage, GPA, and grade
+            overall_percentage = (total_marks_obtained / total_full_marks) * 100 if total_full_marks else 0
+            overall_gpa = self.calculate_gpa(overall_percentage)
+            overall_grade = self.calculate_grade(overall_percentage)
 
             return Response({
                 "student": student_details,
@@ -2087,8 +2114,9 @@ class MarksheetView(APIView):
                 "results": results_data,
                 "total_marks_obtained": total_marks_obtained,
                 "total_full_marks": total_full_marks,
-                "percentage": round(percentage, 2),
-                "gpa": round(gpa, 2),
+                "percentage": round(overall_percentage, 2),
+                "gpa": round(overall_gpa, 2),
+                "grade": overall_grade
             }, status=status.HTTP_200_OK)
 
         except Exam.DoesNotExist:
@@ -2118,8 +2146,28 @@ class MarksheetView(APIView):
             return 2.5
         elif percentage >= 50:
             return 2.0
+        elif percentage >= 40:
+            return 1.5
         else:
             return 0.0
+
+    def calculate_grade(self, percentage):
+        if percentage >= 90:
+            return "A+"
+        elif percentage >= 80:
+            return "A"
+        elif percentage >= 70:
+            return "B+"
+        elif percentage >= 60:
+            return "B"
+        elif percentage >= 50:
+            return "C+"
+        elif percentage >= 40:
+            return "C"
+        elif percentage >= 35:
+            return "D"
+        else:
+            return "NG"  # Not Graded
 
 
 
@@ -2373,6 +2421,41 @@ class ExamsByClassView(APIView):
                 ],
             }
             return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BulkUpdateRollNumbersAPIView(APIView):
+    def put(self, request, *args, **kwargs):
+        """
+        API to bulk update roll numbers for students.
+        Expects a JSON payload:
+        {
+            "students": [
+                {"id": 1, "first_name": "John", "last_name": "Doe", "roll_no": "101"},
+                {"id": 2, "first_name": "Jane", "last_name": "Smith", "roll_no": "102"}
+            ]
+        }
+        """
+        students_data = request.data.get("students", [])
+
+        if not students_data:
+            return Response({"detail": "Students data is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():  # Ensuring atomicity (all or nothing)
+                for student_data in students_data:
+                    student_id = student_data.get("id")
+                    roll_no = student_data.get("roll_no")
+
+                    if student_id is None or roll_no is None:
+                        return Response({"detail": "Invalid student data format."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    # Update the student's roll number
+                    Student.objects.filter(id=student_id).update(roll_no=roll_no)
+
+            return Response({"detail": "Roll numbers updated successfully."}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
