@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-
+from .models import *
 from .models import (
     Teacher, Principal, Student, LeaveApplication, Subject, 
     Class, DailyAttendance, Event, LessonAttendance, Post, 
@@ -308,3 +308,17 @@ class StudentResultAdmin(admin.ModelAdmin):
         """Display the subject name."""
         return obj.exam_detail.subject.subject_name
     get_subject_name.short_description = 'Subject Name'
+
+
+@admin.register(StudentOverallResult)
+class StudentOverallResultAdmin(admin.ModelAdmin):
+    # Display these fields in the list view
+    list_display = ('student', 'exam', 'total_marks_obtained', 'total_full_marks', 'percentage', 'gpa', 'grade', 'updated_at')
+
+    # Add filters to make it easier to filter by specific fields
+    list_filter = ('exam', 'grade', 'updated_at')
+
+    # Enable search functionality for specific fields
+    search_fields = ('student__user__username', 'exam__name')
+
+    # Sort by most recent result

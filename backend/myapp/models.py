@@ -391,8 +391,25 @@ class StudentResult(models.Model):
     class Meta:
         unique_together = ('student', 'exam_detail')  # Prevent duplicate entries for the same exam detail.
 
+class StudentOverallResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="exam_results")
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_results")
+    total_marks_obtained = models.FloatField(default=0.0)
+    total_full_marks = models.FloatField(default=0.0)
+    percentage = models.FloatField(default=0.0)
+    gpa = models.FloatField(default=0.0)
+    grade = models.CharField(max_length=3, default="NG")  # NG = Not Graded
+    rank = models.IntegerField(null=True, blank=True)  # This field will store the rank
+    updated_at = models.DateTimeField(auto_now=True)  # Auto update when changes happen
+
+    class Meta:
+        unique_together = ("student", "exam")  # Ensures one result per student per exam
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.exam.name}: {self.grade}"
 
 
+    
 
 class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')

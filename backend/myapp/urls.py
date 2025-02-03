@@ -153,6 +153,8 @@ urlpatterns = [
     
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
     path("api/students/update-roll-numbers/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
+    path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
+
 
     path('api/messages/', MessageListView.as_view(), name='message-list'),
     path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
