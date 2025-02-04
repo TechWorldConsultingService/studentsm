@@ -47,7 +47,7 @@ urlpatterns = [
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
     path('api/students-by-subject/', StudentsBySubjectView.as_view(), name='students-by-subject'),
     path('api/students-by-subject-and-class/', StudentsBySubjectAndClassView.as_view(), name='students-by-subject-and-class'),
-    path('api/students-by-class/', StudentListByClassView.as_view(), name='students-by-class'),
+    path('api/students/class/<int:class_code>/', StudentListByClassAPIView.as_view(), name='students-by-class'),
 
     path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
 
@@ -165,6 +165,9 @@ urlpatterns = [
     path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),  # Endpoint to retrieve subject-wise exam results for a specific exam (`exam_id`) and subject (`subject_id`).
     
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
+    path("api/students/update-roll-numbers/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
+    path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
+
 
     path('api/messages/', MessageListView.as_view(), name='message-list'),
     path('api/messages/send/', SendMessageView.as_view(), name='send-message'),

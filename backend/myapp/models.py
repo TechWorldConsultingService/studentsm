@@ -364,6 +364,7 @@ class ExamDetail(models.Model):
 
     class Meta:
         unique_together = ('exam', 'subject', 'class_assigned')  # Prevent duplicate exam details
+
 class StudentResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
     exam_detail = models.ForeignKey(ExamDetail, on_delete=models.CASCADE, related_name="results")
@@ -372,34 +373,51 @@ class StudentResult(models.Model):
     total_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     gpa = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    grade = models.CharField(max_length=5, null=True, blank=True)  # New Grade Field
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # Calculate total_marks, percentage, and gpa before saving
+        # Calculate total_marks
         self.total_marks = (self.practical_marks or 0) + (self.theory_marks or 0)
 
-        # Ensure total_marks do not exceed full_marks of the subject
+        # Ensure total_marks do not exceed full_marks
         if self.total_marks > self.exam_detail.full_marks:
-            raise ValueError(f"Total marks ({self.total_marks}) cannot be greater than the full marks ({self.exam_detail.full_marks}) of the subject.")
+            raise ValueError(
+                f"Total marks ({self.total_marks}) cannot be greater than the full marks ({self.exam_detail.full_marks}) of the subject."
+            )
 
+        # Calculate percentage
         if self.exam_detail.full_marks:
             self.percentage = (self.total_marks / self.exam_detail.full_marks) * 100
         else:
             self.percentage = 0
 
+        # Assign GPA based on percentage
         if self.percentage >= 90:
             self.gpa = 4.0
+            self.grade = "A+"
         elif self.percentage >= 80:
             self.gpa = 3.5
+            self.grade = "A"
         elif self.percentage >= 70:
             self.gpa = 3.0
+            self.grade = "B+"
         elif self.percentage >= 60:
             self.gpa = 2.5
+            self.grade = "B"
         elif self.percentage >= 50:
             self.gpa = 2.0
+            self.grade = "C+"
+        elif self.percentage >= 40:
+            self.gpa = 1.5
+            self.grade = "C"
+        elif self.percentage >= 35:
+            self.gpa = 1.0
+            self.grade = "D"
         else:
             self.gpa = 0.0
+            self.grade = "NG"  # Not Graded
 
         super().save(*args, **kwargs)
 
@@ -409,7 +427,25 @@ class StudentResult(models.Model):
     class Meta:
         unique_together = ('student', 'exam_detail')  # Prevent duplicate entries for the same exam detail.
 
+class StudentOverallResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="exam_results")
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_results")
+    total_marks_obtained = models.FloatField(default=0.0)
+    total_full_marks = models.FloatField(default=0.0)
+    percentage = models.FloatField(default=0.0)
+    gpa = models.FloatField(default=0.0)
+    grade = models.CharField(max_length=3, default="NG")  # NG = Not Graded
+    rank = models.IntegerField(null=True, blank=True)  # This field will store the rank
+    updated_at = models.DateTimeField(auto_now=True)  # Auto update when changes happen
 
+    class Meta:
+        unique_together = ("student", "exam")  # Ensures one result per student per exam
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.exam.name}: {self.grade}"
+
+
+    
 
 class Message(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
