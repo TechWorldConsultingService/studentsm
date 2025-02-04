@@ -5,6 +5,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
+from rest_framework.routers import DefaultRouter
 from .views import (
     AssignHomeworkView,
     FilterSubjectsView,
@@ -12,8 +13,20 @@ from .views import (
     SubmitStudentAssignmentView,
     ReviewAssignmentsView,
     ExamsByClassView,
-    ExamTimetableView
+    ExamTimetableView,
+    SyllabusView,
+    ChapterViewSet,
+    TopicViewSet,
+    SubtopicViewSet,
 )
+
+
+# Initialize the router for syllabus-related views
+router = DefaultRouter()
+router.register(r'chapters', ChapterViewSet)
+router.register(r'topics', TopicViewSet)
+router.register(r'subtopics', SubtopicViewSet)
+
 
 urlpatterns = [
     # Admin site URL
@@ -107,12 +120,12 @@ urlpatterns = [
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
 
 
-    path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
-    path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
-    path('api/syllabus/class/<str:class_code>/', SyllabusPerClassView.as_view(), name='syllabus-per-class'), # to view syllabus as per class
-    path('api/syllabus/update/<int:pk>/', SyllabusUpdateView.as_view(), name='syllabus-update'), #to update syllabus as per id
-    path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
-    path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
+    # path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
+    # path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
+    # path('api/syllabus/class/<str:class_code>/', SyllabusPerClassView.as_view(), name='syllabus-per-class'), # to view syllabus as per class
+    # path('api/syllabus/update/<int:pk>/', SyllabusUpdateView.as_view(), name='syllabus-update'), #to update syllabus as per id
+    # path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
+    # path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
@@ -155,6 +168,11 @@ urlpatterns = [
 
     path('api/messages/', MessageListView.as_view(), name='message-list'),
     path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
+
+    # Syllabus and related endpoints
+    path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
+    path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
+    path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

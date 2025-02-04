@@ -194,27 +194,63 @@ class AssignmentSubmission(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
+# class Syllabus(models.Model):
+#     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
+#     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
+#     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False)
+#     topics = models.TextField()  # A comma-separated list of topics/chapters
+#     completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+
+#     def get_completion_percentage(self):
+#         all_topics = [topic.strip() for topic in self.topics.split(",") if topic.strip()]
+#         completed = [topic.strip() for topic in self.completed_topics.split(",") if topic.strip()]
+#         if not all_topics:
+#             return 0
+#         return round((len(completed) / len(all_topics)) * 100, 2)
+
+#     def ____str____(self):
+#         teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
+#         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
+#         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
+
 class Syllabus(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False,default=1)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False, default=1)
-    # teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, default=1)
-    topics = models.TextField()  # A comma-separated list of topics/chapters
-    completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def get_completion_percentage(self):
-        all_topics = [topic.strip() for topic in self.topics.split(",") if topic.strip()]
-        completed = [topic.strip() for topic in self.completed_topics.split(",") if topic.strip()]
-        if not all_topics:
-            return 0
-        return round((len(completed) / len(all_topics)) * 100, 2)
+    def __str__(self):
+        return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
 
-    def ____str____(self):
-        teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
-        # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
-        return f"{self.class_assigned} - {self.subject} - {teacher_name}"
+
+class Chapter(models.Model):
+    syllabus = models.ForeignKey(Syllabus, on_delete=models.CASCADE, related_name="chapters")
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
+class Topic(models.Model):
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name="topics")
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)  # Mark topic completion
+
+    def __str__(self):
+        return self.name
+
+
+class Subtopic(models.Model):
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="subtopics")
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)  # Mark subtopic completion
+
+    def __str__(self):
+        return self.name
+
 
 class DiscussionPost(models.Model):
     topic = models.CharField(max_length=255)
