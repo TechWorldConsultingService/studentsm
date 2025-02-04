@@ -2308,3 +2308,72 @@ class SendMessageView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
+
+
+class NotesListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        """List all notes (Anyone can view)."""
+        notes = Notes.objects.all()
+        serializer = NotesSerializer(notes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Create a new note (Only teachers can post)."""
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can upload notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = NotesSerializer(data=request.data, context={'request': request})  # Pass request context
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)  # Auto-assign teacher
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotesDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self, pk):
+        try:
+            return Notes.objects.get(pk=pk)
+        except Notes.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        """Retrieve a single note."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = NotesSerializer(note, context={'request': request})  # Pass request context
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """Update a note (Only the creator can update)."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != note.created_by:
+            return Response({"error": "You can only edit your own notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = NotesSerializer(note, data=request.data, context={'request': request}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """Delete a note (Only the creator can delete)."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != note.created_by:
+            return Response({"error": "You can only delete your own notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        note.delete()
+        return Response({"message": "Note deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

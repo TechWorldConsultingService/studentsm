@@ -167,6 +167,9 @@ urlpatterns = [
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
+    
+    path('api/notes/', NotesListCreateView.as_view(), name='notes-list-create'),
+    path('api/notes/<int:pk>/', NotesDetailView.as_view(), name='notes-detail'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

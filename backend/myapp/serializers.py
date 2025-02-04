@@ -849,3 +849,34 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'sender', 'receiver', 'content', 'timestamp', 'is_read', 'sender_username', 'receiver_username']
+
+
+
+class NotesSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Show teacher's username
+    class_code = serializers.SerializerMethodField()  # Auto-fetch class name
+
+    class Meta:
+        model = Notes
+        fields = '__all__'
+
+    def get_class_code(self, obj):  
+        return obj.class_code.class_name if obj.class_code else None  # Fetch class name
+
+    def create(self, validated_data):
+        request = self.context.get('request')  # Get the request object
+
+        if not request or not request.user:
+            raise serializers.ValidationError("User must be authenticated to create a note.")
+
+        subject = validated_data.get('subject')
+        related_classes = subject.classes.all()  # Fetch all classes linked to the subject
+
+        if not related_classes.exists():
+            raise serializers.ValidationError("This subject is not assigned to any class.")
+
+        # Assign first available class and set logged-in user as the creator
+        validated_data['class_code'] = related_classes.first()
+        validated_data['created_by'] = request.user  
+
+        return super().create(validated_data)

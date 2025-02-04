@@ -322,3 +322,11 @@ class StudentOverallResultAdmin(admin.ModelAdmin):
     search_fields = ('student__user__username', 'exam__name')
 
     # Sort by most recent result
+
+
+@admin.register(Notes)
+class NotesAdmin(admin.ModelAdmin):
+    list_display = ('title', 'chapter', 'subject', 'class_code', 'created_by', 'created_at')
+    list_filter = ('subject', 'class_code', 'created_at', 'created_by')
+    search_fields = ('title', 'chapter', 'description', 'created_by__username')
+    readonly_fields = ('created_at',)

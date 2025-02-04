@@ -4,6 +4,7 @@ from django.utils import timezone
 from accounts.models import CustomUser
 from django.utils.timezone import now
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 # For creating Post/reel type content
 class Post(models.Model):
@@ -417,3 +418,25 @@ class Message(models.Model):
     def __str__(self):
         return f"From {self.sender} to {self.receiver} at {self.timestamp}"
     
+
+
+def validate_file_size(value):
+    max_size = 5 * 1024 * 1024  # 5MB limit
+    if value.size > max_size:
+        raise ValidationError("File size cannot exceed 5MB.")
+
+class Notes(models.Model):
+    chapter = models.CharField(max_length=255)  # Chapter name
+    title = models.CharField(max_length=255)  # Note title
+    description = models.TextField(blank=True)  # Optional description
+    file = models.FileField(upload_to='notes/', validators=[validate_file_size], null=True, blank=True)  # File upload
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE, related_name='notes')  # Link to Subject
+    class_code = models.ForeignKey('Class', on_delete=models.CASCADE, related_name='notes')  # Auto-fetch class
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Auto-set teacher
+    created_at = models.DateTimeField(auto_now_add=True)  # Auto timestamp
+
+    class Meta:
+        ordering = ['-created_at']  # Newest first
+
+    def __str__(self):
+        return f"{self.title} - {self.chapter} ({self.created_by.username})"
