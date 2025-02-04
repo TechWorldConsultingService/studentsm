@@ -480,39 +480,120 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
         model = AssignmentSubmission
         fields = ['id','assignment', 'student', 'submission_file','written_submission', 'submitted_on','review_text','is_checked']
 
+# class SyllabusSerializer(serializers.ModelSerializer):
+#     completion_percentage = serializers.SerializerMethodField()
+#     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
+#     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
+#     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
+
+#     class Meta:
+#         model = Syllabus
+#         # fields = '__all__'
+#         fields = [
+#             'id',
+#             'class_assigned',
+#             'class_name',
+#             'subject',
+#             'subject_name',
+#             'teacher',
+#             'teacher_name',
+#             'topics',
+#             'completed_topics',
+#             'completion_percentage',
+#             'created_at',
+#             'updated_at'
+#         ]
+#         # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
+#         extra_kwargs = {
+#             'class_assigned': {'read_only': True},
+#             'subject': {'read_only': True},
+#             'teacher': {'read_only': True},
+#             'topics': {'required': True}
+#         }
+
+#     def get_completion_percentage(self, obj):
+#         return obj.get_completion_percentage()
+
+class SubtopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subtopic
+        fields = ['id', 'name', 'is_completed']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    subtopics = SubtopicSerializer(many=True, required=False)
+
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'is_completed', 'subtopics']
+
+    def create(self, validated_data):
+        subtopics_data = validated_data.pop('subtopics', [])
+        topic = Topic.objects.create(**validated_data)
+        for subtopic_data in subtopics_data:
+            Subtopic.objects.create(topic=topic, **subtopic_data)
+        return topic
+
+    def update(self, instance, validated_data):
+        subtopics_data = validated_data.pop('subtopics', [])
+        instance.name = validated_data.get('name', instance.name)
+        instance.is_completed = validated_data.get('is_completed', instance.is_completed)
+        instance.save()
+
+        # Update subtopics
+        for subtopic_data in subtopics_data:
+            subtopic, created = Subtopic.objects.update_or_create(
+                topic=instance, name=subtopic_data['name'],
+                defaults={'is_completed': subtopic_data.get('is_completed', False)}
+            )
+        return instance
+
+
+class ChapterSerializer(serializers.ModelSerializer):
+    topics = TopicSerializer(many=True, required=False)
+
+    class Meta:
+        model = Chapter
+        fields = ['id', 'name', 'topics']
+
+    def create(self, validated_data):
+        topics_data = validated_data.pop('topics', [])
+        chapter = Chapter.objects.create(**validated_data)
+        for topic_data in topics_data:
+            subtopics_data = topic_data.pop('subtopics', [])
+            topic = Topic.objects.create(chapter=chapter, **topic_data)
+
+            for subtopic_data in subtopics_data:
+                Subtopic.objects.create(topic=topic, **subtopic_data)
+
+        return chapter
+
+
 class SyllabusSerializer(serializers.ModelSerializer):
-    completion_percentage = serializers.SerializerMethodField()
+    chapters = ChapterSerializer(many=True, required=False)
     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
 
     class Meta:
         model = Syllabus
-        # fields = '__all__'
-        fields = [
-            'id',
-            'class_assigned',
-            'class_name',
-            'subject',
-            'subject_name',
-            'teacher',
-            'teacher_name',
-            'topics',
-            'completed_topics',
-            'completion_percentage',
-            'created_at',
-            'updated_at'
-        ]
-        # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
-        extra_kwargs = {
-            'class_assigned': {'read_only': True},
-            'subject': {'read_only': True},
-            'teacher': {'read_only': True},
-            'topics': {'required': True}
-        }
+        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at']
 
-    def get_completion_percentage(self, obj):
-        return obj.get_completion_percentage()
+    def create(self, validated_data):
+        chapters_data = validated_data.pop('chapters', [])
+        syllabus = Syllabus.objects.create(**validated_data)
+
+        for chapter_data in chapters_data:
+            topics_data = chapter_data.pop('topics', [])
+            chapter = Chapter.objects.create(syllabus=syllabus, **chapter_data)
+
+            for topic_data in topics_data:
+                subtopics_data = topic_data.pop('subtopics',[])
+                topic = Topic.objects.create(chapter=chapter, **topic_data)
+
+                for subtopic_data in subtopics_data:
+                    Subtopic.objects.create(topic=topic, **subtopic_data)
+        return syllabus
 
 '''class FeePaymentHistorySerializer(serializers.ModelSerializer):
     class Meta:
