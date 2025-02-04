@@ -2598,7 +2598,6 @@ def recalculate_rankings(exam, class_instance):
         result.rank = rank
         result.save()
 
-
 class StudentRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
