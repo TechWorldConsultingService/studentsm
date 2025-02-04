@@ -17,8 +17,8 @@ import json
 from django.db import transaction
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import UpdateAPIView
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from rest_framework.generics import *
+
 from rest_framework.decorators import action
 
 
@@ -229,8 +229,6 @@ class RegisterStaffView(APIView):
             # Return error response if validation fails
             return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 # API view to list all teachers
 class TeacherListView(APIView):
     def get(self, request, format=None):
@@ -251,7 +249,6 @@ class StudentListView(APIView):
         students = Student.objects.all()  # Retrieve all student instances
         serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-
 
 # API view to list students by subject and class
 class StudentsBySubjectAndClassView(APIView):
@@ -386,7 +383,6 @@ class StudentDetailView(APIView):
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # Retrieve specific staff member details
 class StaffDetailView(APIView):
     """
@@ -400,8 +396,6 @@ class StaffDetailView(APIView):
         except Staff.DoesNotExist:
             # Return an error response if staff member is not found
             return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        
 
 # API view to delete specific teacher
 class TeacherDeleteView(APIView):
@@ -454,7 +448,6 @@ class StudentDeleteView(APIView):
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # Delete a specific staff member
 class StaffDeleteView(APIView):
     """
@@ -469,7 +462,6 @@ class StaffDeleteView(APIView):
             # Return an error response if staff member is not found
             return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # API view to update teacher info
 class TeacherUpdateAPIView(APIView):
     def put(self, request, pk):
@@ -581,13 +573,6 @@ def get_user_role(request):
     )
     return JsonResponse({"role": role})
         
-# API view to list all leave applications for the principal
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-# from .models import LeaveApplication
-# from .serializers import LeaveApplicationSerializer
-
 class TotalLeaveApplicationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -608,19 +593,15 @@ class TotalLeaveApplicationListView(APIView):
                     {"error": "Teacher does not have a class assigned."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # print(f"Teacher's class_teacher: {teacher.class_teacher}")
-
+            
             # Filter leave applications for students in the teacher's class
             leave_applications = LeaveApplication.objects.filter(
                 applicant_type="Student", 
                 applicant__in=Student.objects.filter(class_code=teacher.class_teacher).values_list('user', flat=True)
                 # applicant__student__classes=teacher.class_teacher
             )
-            # print(f"Leave applications for teacher: {leave_applications}")
-            
+           
         elif role == 'Student':
-            # Students can view only their leave applications
-            # leave_applications = LeaveApplication.objects.filter(applicant=user)
             try:
                 student = Student.objects.get(user=user)
             except Student.DoesNotExist:
@@ -689,8 +670,6 @@ class LeaveApplicationCreateView(APIView):
             # Return error message if 'leave_date' or 'message' is not provided
             return Response({"error": "Both 'leave_date' and 'message' are required."}, status=status.HTTP_400_BAD_REQUEST)
         
-
-
         # Determine applicant_type based on user role
         if request.user.is_student:
             applicant_type = 'Student'
@@ -734,7 +713,6 @@ class LeaveApplicationCreateView(APIView):
         # Return validation errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
 # API view to retrieve, update, or delete a specific leave application
 class LeaveApplicationDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -796,7 +774,6 @@ class LeaveApplicationDetailView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
     def delete(self, request, pk, format=None):
         """
         Handle DELETE requests to remove a specific leave application by primary key.
@@ -812,7 +789,6 @@ class LeaveApplicationDetailView(APIView):
         application.delete()
         # Return success message with 204 No Content status
         return Response({"message": "Leave application successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
-
 
 # API view to update the status of a leave application
 class LeaveApplicationStatusUpdateView(APIView):
@@ -960,8 +936,6 @@ class ClassDetailView(APIView):
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
-
-
 # Daily Attendance API View
 class DailyAttendanceView(APIView):
     def post(self, request, class_id, format=None):
@@ -1035,13 +1009,6 @@ class LessonAttendanceView(APIView):
         serializer = LessonAttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-from rest_framework import generics
-from .models import Event,Assignment
-from .serializers import EventSerializer
-from rest_framework.permissions import IsAuthenticated
-
 class EventListView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -1055,16 +1022,7 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
 
-from .serializers import AssignmentSerializer
-
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import AssignmentSerializer
-from .models import Subject, Class
-
 class TeacherAssignmentsView(APIView):
     """
     View for teachers to fetch assignments they created.
@@ -1093,6 +1051,7 @@ class TeacherAssignmentsView(APIView):
         # Serialize assignments and return the response
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class StudentAssignmentsBySubjectView(APIView):
     """
     View for students to fetch assignments based on a specific subject.
@@ -1157,12 +1116,7 @@ class AssignHomeworkView(APIView):
                     {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # Ensure teacher is authorized for the class
-            # if not class_instance in teacher.classes.all():
-            #     return Response(
-            #         {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
-            #         status=status.HTTP_403_FORBIDDEN
-            #     )
+            
             if not teacher.classes.filter(id=class_instance.id).exists():
                 return Response(
                     {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
@@ -1173,11 +1127,6 @@ class AssignHomeworkView(APIView):
             return Response(AssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
         # Return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-from rest_framework.permissions import AllowAny
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from .models import Teacher, Class, Subject
 
 class FilterSubjectsView(APIView):
     permission_classes = [AllowAny]
@@ -1310,7 +1259,6 @@ class SubmitStudentAssignmentView(APIView):
         serializer = AssignmentSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-
 # review list of assignements given by teacher//uses by teacher 
 class ReviewAssignmentsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1354,7 +1302,7 @@ class ReviewAssignmentsView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 # to allow a teacher to review a specific assignment submission
-from rest_framework import status
+# from rest_framework import status
 class ReviewAssignmentSubmissionView(APIView):
     # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
@@ -1396,143 +1344,6 @@ class ReviewAssignmentSubmissionView(APIView):
             {"message": "Review submitted successfully."},
             status=status.HTTP_200_OK
         )
-
-# class SyllabusView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def get(self, request, *args, **kwargs):
-#         syllabus = Syllabus.objects.all()
-#         serializer = SyllabusSerializer(syllabus, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     def post(self, request, *args, **kwargs):
-#     # Ensure the logged-in user is a teacher
-#         if not hasattr(request.user, 'teacher'):
-#             return Response({"error": "Only teachers can create a syllabus."}, status=status.HTTP_403_FORBIDDEN)
-
-#         # Automatically set the teacher field to the logged-in user
-#         teacher = request.user.teacher
-
-#         # Fetch class and subject based on the provided IDs
-#         class_assigned_id = request.data.get('class_assigned')
-#         subject_id = request.data.get('subject')
-
-#         if not class_assigned_id or not subject_id:
-#             return Response(
-#                 {"error": "Both 'class_assigned' and 'subject' fields are required."},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-
-#         try:
-#             class_assigned = Class.objects.get(id=class_assigned_id)
-#             subject = Subject.objects.get(id=subject_id)
-#         except (Class.DoesNotExist, Subject.DoesNotExist) as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Prepare data for serialization
-#         data = request.data.copy()
-#         data['teacher'] = teacher.id
-
-#         serializer = SyllabusSerializer(data=data)
-
-#         if serializer.is_valid():
-#             serializer.save(class_assigned=class_assigned, subject=subject, teacher=teacher)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# class SyllabusPerClassView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def get(self, request, class_code, *args, **kwargs):
-#         try:
-#             # Fetch the Class object using the class_code
-#             class_instance = Class.objects.get(class_code=class_code)
-            
-#             # Fetch the syllabus related to the class
-#             syllabus = Syllabus.objects.filter(class_assigned=class_instance)
-            
-#             if not syllabus:
-#                 return Response({"error": "Syllabus not found for this class."}, status=status.HTTP_404_NOT_FOUND)
-            
-#             serializer = SyllabusSerializer(syllabus, many=True)
-#             return Response(serializer.data)
-
-#         except Class.DoesNotExist:
-#             return Response({"error": "Class with this code not found."}, status=status.HTTP_404_NOT_FOUND)
-
-# class SyllabusDetailView(APIView):
-# #     permission_classes = [permissions.IsAuthenticated]
-
-#     def get(self, request, pk, *args, **kwargs):
-#         try:
-#             syllabus = Syllabus.objects.get(pk=pk)
-#         except Syllabus.DoesNotExist:
-#             return Response({"error": "Syllabus not found"}, status=status.HTTP_404_NOT_FOUND)
-#         serializer = SyllabusSerializer(syllabus)
-#         return Response(serializer.data)
-
-#     def patch(self, request, pk, *args, **kwargs):
-#         try:
-#             syllabus = Syllabus.objects.get(pk=pk)
-#         except Syllabus.DoesNotExist:
-#             return Response({"error": "Syllabus not found"}, status=status.HTTP_404_NOT_FOUND)
-#         serializer = SyllabusSerializer(syllabus, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# class SyllabusUpdateView(UpdateAPIView):
-#     queryset = Syllabus.objects.all()
-#     serializer_class = SyllabusSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def perform_update(self, serializer):
-#         """
-#         Perform the update while ensuring only the teacher who created the syllabus can update it.
-#         """
-#         syllabus = self.get_object()
-#         # Ensure the logged-in user is the teacher of the syllabus
-#         if self.request.user != syllabus.teacher.user:
-#             raise PermissionDenied("You do not have permission to update this syllabus.")
-#         serializer.save()
-
-# class SyllabusDeleteView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-#     def delete(self, request, pk=None, *args, **kwargs):
-#         # Check if a specific syllabus ID is provided
-#         if pk:
-#             try:
-#                 syllabus = Syllabus.objects.get(pk=pk)
-#                 # Ensure only the teacher who created the syllabus can delete it
-#                 if request.user != syllabus.teacher.user:
-#                     return Response(
-#                         {"error": "You do not have permission to delete this syllabus."},
-#                         status=status.HTTP_403_FORBIDDEN
-#                     )
-#                 syllabus.delete()
-#                 return Response(
-#                     {"message": "Syllabus deleted successfully."},
-#                     status=status.HTTP_200_OK
-#                 )
-#             except Syllabus.DoesNotExist:
-#                 return Response({"error": "Syllabus not found."}, status=status.HTTP_404_NOT_FOUND)
-#         else:
-#             # For bulk delete, ensure the user is a teacher
-#             if not hasattr(request.user, 'teacher'):
-#                 return Response(
-#                     {"error": "Only teachers can delete all syllabi."},
-#                     status=status.HTTP_403_FORBIDDEN
-#                 )
-#             # Delete all syllabi created by the logged-in teacher
-#             teacher_syllabi = Syllabus.objects.filter(teacher=request.user.teacher)
-#             count = teacher_syllabi.delete()[0]  # delete() returns a tuple (number of objects deleted, _)
-#             return Response(
-#                 {"message": f"Deleted {count} syllabus entries."},
-#                 status=status.HTTP_200_OK
-#             )
         
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1610,7 +1421,6 @@ class ChapterViewSet(viewsets.ModelViewSet):
     serializer_class = ChapterSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
@@ -1622,7 +1432,6 @@ class TopicViewSet(viewsets.ModelViewSet):
         topic.is_completed = True
         topic.save()
         return Response({"message": "Topic marked as completed"}, status=status.HTTP_200_OK)
-
 
 class SubtopicViewSet(viewsets.ModelViewSet):
     queryset = Subtopic.objects.all()
@@ -1636,108 +1445,11 @@ class SubtopicViewSet(viewsets.ModelViewSet):
         subtopic.save()
         return Response({"message": "Subtopic marked as completed"}, status=status.HTTP_200_OK)
 
-
-'''# List and Create Fees
-class FeeListCreateView(ListCreateAPIView):
-    queryset = Fees.objects.all()
-    serializer_class = FeesSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Retrieve, Update, and Delete Specific Fee
-class FeeDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Fees.objects.all()
-    serializer_class = FeesSerializer
-
-    def get(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        serializer = self.serializer_class(fee)
-        return Response(serializer.data)
-
-    def put(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        serializer = self.serializer_class(fee, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        fee.delete()
-        return Response({"message": "Fee record deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
-# List Fees for a Specific Student
-class StudentFeeListView(ListAPIView):
-    serializer_class = FeesSerializer
-
-    def get_queryset(self):
-        student_id = self.kwargs['student_id']
-        return Fees.objects.filter(student_id=student_id)
-
-    def get(self, request, student_id, *args, **kwargs):
-        fees = self.get_queryset()
-        serializer = self.serializer_class(fees, many=True)
-        return Response(serializer.data)
-
-# List Pending Fees for a Specific Student
-class StudentPendingFeesView(ListAPIView):
-    serializer_class = FeesSerializer
-
-    def get_queryset(self):
-        student_id = self.kwargs['student_id']
-        return Fees.objects.filter(student_id=student_id, status='pending')
-
-    def get(self, request, student_id, *args, **kwargs):
-        pending_fees = self.get_queryset()
-        serializer = self.serializer_class(pending_fees, many=True)
-        return Response(serializer.data) '''
-    
-# from rest_framework.permissions import AllowAny
-# class UpdateStaffLocationView(APIView):
-#     # permission_classes = [IsAuthenticated]
-#     permission_classes = [AllowAny]
-
-#     def get(self, request):
-#         # locations = StaffLocation.objects.all()  # Assuming all staff locations
-#         # serializer = StaffLocationSerializer(locations, many=True)
-#         # return Response({"locations": serializer.data})
-#         staff_locations = StaffLocation.objects.all()
-#         locations = [
-#             {
-#                 'staff': location.staff.user.username,
-#                 'latitude': location.latitude,
-#                 'longitude': location.longitude,
-#                 'timestamp': location.timestamp
-#             }
-#             for location in staff_locations
-#             # print(locations)
-#         ]
-#         # data = {"message": "Staff locations retrieved successfully"}
-#         print(locations)
-
-#         return Response({"locations":locations})
-
-#     def post(self, request):
-#         serializer = StaffLocationSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(staff=request.user.staff)
-#             return Response({"message": "Location updated successfully"})
-#         return Response(serializer.errors, status=400)
-
-
-
 # Discussion Post API Views
 class DiscussionPostAPIView(APIView):
     """
     API View to list and create posts.
     """
-
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
@@ -1758,7 +1470,6 @@ class DiscussionCommentAPIView(APIView):
     """
     API View to list and create comments under a specific post.
     """
-
     def get(self, request, post_id):
         comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
         serializer = DiscussionCommentSerializer(comments, many=True)
@@ -1772,9 +1483,6 @@ class DiscussionCommentAPIView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 class DiscussionPostDeleteAPIView(APIView):
     """
@@ -1790,10 +1498,8 @@ class DiscussionPostDeleteAPIView(APIView):
 
         if post.created_by != request.user:
             raise PermissionDenied("You are not authorized to delete this post.")
-
         post.delete()
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
 
 class DiscussionCommentDeleteAPIView(APIView):
     """
@@ -1813,15 +1519,6 @@ class DiscussionCommentDeleteAPIView(APIView):
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import FeeCategory
-from .serializers import FeeCategorySerializer
-
-
 class FeeCategoryListCreateView(APIView):
     def get(self, request):
         fee_categories = FeeCategory.objects.all()
@@ -1834,7 +1531,6 @@ class FeeCategoryListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class FeeCategoryDetailView(APIView):
     def get(self, request, pk):
@@ -1864,11 +1560,6 @@ class FeeCategoryDetailView(APIView):
         fee_category.delete()
         return Response({'message': 'FeeCategory deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-
-from .models import FeeStructure
-from .serializers import FeeStructureSerializer
-
-
 class FeeStructureListCreateView(APIView):
     def get(self, request):
         fee_structures = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories')
@@ -1881,7 +1572,6 @@ class FeeStructureListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class FeeStructureDetailView(APIView):
     def get(self, request, pk):
@@ -1911,29 +1601,17 @@ class FeeStructureDetailView(APIView):
         fee_structure.delete()
         return Response({'message': 'FeeStructure deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-
-from .models import PaymentTransaction
-from .serializers import PaymentTransactionSerializer
-
-
 class StudentFeeListView(APIView):
     def get(self, request, student_id):
         transactions = PaymentTransaction.objects.filter(student_id=student_id)
         serializer = PaymentTransactionSerializer(transactions, many=True)
         return Response(serializer.data)
 
-
 class StudentPendingFeesView(APIView):
     def get(self, request, student_id):
         transactions = PaymentTransaction.objects.filter(student_id=student_id, remaining_dues__gt=0)
         serializer = PaymentTransactionSerializer(transactions, many=True)
         return Response(serializer.data)
-
-
-
-from .models import PaymentTransaction
-from .serializers import PaymentTransactionSerializer
-
 
 class PaymentTransactionListCreateView(APIView):
     def get(self, request):
@@ -1947,7 +1625,6 @@ class PaymentTransactionListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class PaymentTransactionDetailView(APIView):
     def get(self, request, pk):
@@ -1977,7 +1654,6 @@ class PaymentTransactionDetailView(APIView):
         transaction.delete()
         return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
     
-
 class ExamAPIView(APIView):
     def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
@@ -1990,7 +1666,6 @@ class ExamAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ExamDetailAPIView(APIView):
     def get(self, request):
@@ -2008,8 +1683,6 @@ class ExamDetailAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 class StudentResultAPIView(APIView):
     def get(self, request):
         results = StudentResult.objects.all()
@@ -2023,8 +1696,6 @@ class StudentResultAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# Single Exam APIView
 # Single Exam APIView
 class SingleExamAPIView(APIView):
     def get_object(self, exam_id):
@@ -2059,7 +1730,6 @@ class SingleExamAPIView(APIView):
         exam.delete()
         return Response({"message": "Exam deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-
 # Single ExamDetail APIView
 class SingleExamDetailAPIView(APIView):
     def get_object(self, exam_detail_id):
@@ -2090,7 +1760,6 @@ class SingleExamDetailAPIView(APIView):
         exam_detail.delete()
         return Response({"message": "Exam detail deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-
 # Single StudentResult APIView
 class SingleStudentResultAPIView(APIView):
     def get_object(self, result_id):
@@ -2116,23 +1785,6 @@ class SingleStudentResultAPIView(APIView):
         student_result = self.get_object(result_id)
         student_result.delete()
         return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
-from .models import StudentResult, Exam, ExamDetail
-from .serializers import StudentResultSerializer
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import StudentResult, Student, Exam
-from .serializers import GetStudentResultSerializer
-from django.db.models import Sum
 
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2221,9 +1873,6 @@ class MarksheetView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
-
-
 class ExamDetailsByExamView(APIView):
     def get(self, request, exam_id, *args, **kwargs):
         try:
@@ -2249,7 +1898,6 @@ class ExamDetailsByExamView(APIView):
                     "pass_marks": detail.pass_marks,
                     "exam_date": detail.exam_date,  # Keeping only necessary fields
                     "exam_time": detail.exam_time,
-                    
                 })
 
             response_data = {
@@ -2260,15 +1908,11 @@ class ExamDetailsByExamView(APIView):
                 },
                 "exam_details": exam_details,
             }
-
             return Response(response_data, status=status.HTTP_200_OK)
-
         except Exam.DoesNotExist:
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
-
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class SubjectWiseExamResultsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2391,12 +2035,7 @@ class ExamDetailsByTeacherView(APIView):
                     "class_name": detail.class_assigned.class_name if detail.class_assigned else None,
                 },
             })
-
         return Response(response_data, status=200)
-
-
-
-
 
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, class_id, *args, **kwargs):
@@ -2653,9 +2292,6 @@ class StudentRankingView(APIView):
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-
-
 
 
 class MessageListView(generics.ListAPIView):

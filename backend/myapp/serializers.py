@@ -480,40 +480,6 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
         model = AssignmentSubmission
         fields = ['id','assignment', 'student', 'submission_file','written_submission', 'submitted_on','review_text','is_checked']
 
-# class SyllabusSerializer(serializers.ModelSerializer):
-#     completion_percentage = serializers.SerializerMethodField()
-#     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
-#     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
-#     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
-
-#     class Meta:
-#         model = Syllabus
-#         # fields = '__all__'
-#         fields = [
-#             'id',
-#             'class_assigned',
-#             'class_name',
-#             'subject',
-#             'subject_name',
-#             'teacher',
-#             'teacher_name',
-#             'topics',
-#             'completed_topics',
-#             'completion_percentage',
-#             'created_at',
-#             'updated_at'
-#         ]
-#         # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
-#         extra_kwargs = {
-#             'class_assigned': {'read_only': True},
-#             'subject': {'read_only': True},
-#             'teacher': {'read_only': True},
-#             'topics': {'required': True}
-#         }
-
-#     def get_completion_percentage(self, obj):
-#         return obj.get_completion_percentage()
-
 class SubtopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subtopic
@@ -594,58 +560,6 @@ class SyllabusSerializer(serializers.ModelSerializer):
                 for subtopic_data in subtopics_data:
                     Subtopic.objects.create(topic=topic, **subtopic_data)
         return syllabus
-
-'''class FeePaymentHistorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FeePaymentHistory
-        fields = [
-            'id',
-            'fee_record',
-            'amount_paid',
-            'payment_date',
-            'mode_of_payment',
-            'transaction_id',
-            'notes'
-        ]
-        read_only_fields = ['id', 'payment_date']
-
-class FeesSerializer(serializers.ModelSerializer):
-    payment_history = FeePaymentHistorySerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Fees
-        fields = [
-            'id',
-            'student',
-            'total_amount',
-            'amount_paid',
-            'pending_amount',
-            'due_date',
-            'last_payment_date',
-            'status',
-            'created_at',
-            'updated_at',
-            'payment_history',
-        ]
-        read_only_fields = ['id', 'pending_amount', 'status', 'created_at', 'updated_at']
-
-    def update(self, instance, validated_data):
-        """
-        Override the update method to handle updating the amount_paid and recalculate pending_amount.
-        """
-        instance.amount_paid = validated_data.get('amount_paid', instance.amount_paid)
-        instance.save()
-        return instance '''
-    
-# from rest_framework import serializers
-# from .models import StaffLocation
-
-# class StaffLocationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = StaffLocation
-#         fields = ['staff', 'latitude', 'longitude', 'timestamp']
-
-
 
 class DiscussionPostSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')

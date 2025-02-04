@@ -136,25 +136,6 @@ class LessonAttendance(models.Model):
     def __str__(self):
         return f"{self.student.user.username} - {self.subject.name} - {self.date}"
 
-class Enrollment(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    date_enrolled = models.DateField()
-
-    def __str__(self):
-        return f'{self.student} in {self.class_assigned}'
-
-
-class Timetable(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10, choices=[('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday')])
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-
-    def __str__(self):
-        return f'{self.class_assigned} - {self.subject} on {self.day_of_week}'
 
 from django.conf import settings
 
@@ -193,27 +174,6 @@ class AssignmentSubmission(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
-
-# class Syllabus(models.Model):
-#     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
-#     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
-#     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False)
-#     topics = models.TextField()  # A comma-separated list of topics/chapters
-#     completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def get_completion_percentage(self):
-#         all_topics = [topic.strip() for topic in self.topics.split(",") if topic.strip()]
-#         completed = [topic.strip() for topic in self.completed_topics.split(",") if topic.strip()]
-#         if not all_topics:
-#             return 0
-#         return round((len(completed) / len(all_topics)) * 100, 2)
-
-#     def ____str____(self):
-#         teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
-#         # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
-#         return f"{self.class_assigned} - {self.subject} - {teacher_name}"
 
 class Syllabus(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus")

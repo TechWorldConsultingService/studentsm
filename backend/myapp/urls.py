@@ -20,7 +20,6 @@ from .views import (
     SubtopicViewSet,
 )
 
-
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
 router.register(r'chapters', ChapterViewSet)
@@ -41,7 +40,7 @@ urlpatterns = [
     path('api/register/student/', RegisterStudentView.as_view(), name='register-student'),  # URL for student registration API
     path('api/register/staff/', RegisterStaffView.as_view(), name='register_staff'), # URL for staff registration API
     
-     # API endpoints for user lists
+    # API endpoints for user lists
     path('api/teachers/', TeacherListView.as_view(), name='teacher-list'),  # Endpoint for listing teachers
     path('api/principals/', PrincipalListView.as_view(), name='principal-list'),  # Endpoint for listing principals
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
@@ -118,14 +117,6 @@ urlpatterns = [
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
-
-
-    # path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
-    # path('api/syllabus/<int:pk>/', SyllabusDetailView.as_view(), name='syllabus-detail'),
-    # path('api/syllabus/class/<str:class_code>/', SyllabusPerClassView.as_view(), name='syllabus-per-class'), # to view syllabus as per class
-    # path('api/syllabus/update/<int:pk>/', SyllabusUpdateView.as_view(), name='syllabus-update'), #to update syllabus as per id
-    # path('api/syllabus/delete/<int:pk>/', SyllabusDeleteView.as_view(), name='syllabus-delete-single'),
-    # path('api/syllabus/delete/', SyllabusDeleteView.as_view(), name='syllabus-delete-all'),
 
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
