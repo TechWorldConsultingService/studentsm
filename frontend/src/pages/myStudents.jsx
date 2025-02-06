@@ -15,7 +15,7 @@ const MyStudents = () => {
   const classId = searchParams.get('class_id');
 
   // Fetch data from API when component mounts
-  useEffect(() => {
+  useEffect(() => {  
     if (classId) {
       setLoading(true);
       axios.get(`http://localhost:8000/api/students/?class_id=${classId}`)

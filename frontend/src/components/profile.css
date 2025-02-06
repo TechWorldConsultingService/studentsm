@@ -1,0 +1,83 @@
+/* profile.css */
+
+/* Container for the entire profile page */
+.profile-page {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background-color: #eb66e2; /* Optional: light background color */
+}
+
+/* Styling for the Ant Design Card containing the profile */
+.profile-card {
+  width: 100%;
+  max-width: 600px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #69f392;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers content in the card */
+  padding: 20px;
+}
+
+/* Container for the profile picture and name */
+.profile-picture-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centers the picture and name horizontally */
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Styling the profile image as a large, circular image */
+.profile-picture {
+  width: 200px;         /* Large image width */
+  height: 200px;        /* Large image height */
+  border-radius: 50%;   /* Makes the image circular */
+  object-fit: cover;    /* Ensures the image fills the container */
+  border: none;         /* Removes any default border */
+  box-shadow: 0 2px 8px rgba(115, 21, 21, 0.15); /* Optional: adds a subtle shadow */
+  margin-bottom: 10px;  /* Optional: adds space between image and name */
+}
+
+/* The user's name is centered and capitalized */
+.profile-name {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: capitalize; /* Capitalizes the first letter of each word */
+  margin: 0;
+}
+
+/* Container for the rest of the profile details */
+.profile-info {
+  padding: 0 20px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* Optional: style for paragraphs within profile-info */
+.profile-info p {
+  margin: 8px 0;
+}
+
+.general-info table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.general-info td {
+  padding: 8px;
+  border-bottom: 1px solid #c99696;
+  font-size: 15px;
+}
+
+.other-info p {
+  font-size: 14px;
+  color: #d281f2;
+  line-height: 1.5;
+}
