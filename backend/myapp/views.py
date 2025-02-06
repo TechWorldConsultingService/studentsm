@@ -404,14 +404,10 @@ class TeacherDeleteView(APIView):
         Handle DELETE requests to remove a specific Teacher by primary key.
         """
         try:
-            # Retrieve the Teacher instance by primary key
             teacher = Teacher.objects.get(pk=pk)
-            # Delete the Teacher instance
             teacher.delete()
-            # Return success message with 204 No Content status
             return Response({"message": "Teacher deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except Teacher.DoesNotExist:
-            # Return error message with 404 Not Found status if Teacher does not exist
             return Response({"error": "Teacher not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # API view to delete specific principal

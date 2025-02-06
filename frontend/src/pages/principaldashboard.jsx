@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'rec
 const barchatData = [
   {
     name: "Class 1",
-    present: 4000,
+    present: 4000, 
     absent: 2400,
   },
   {
