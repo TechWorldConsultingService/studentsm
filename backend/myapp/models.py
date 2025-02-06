@@ -71,11 +71,10 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
-    
+
     def delete(self, *args, **kwargs):
         self.user.delete()  # Delete the associated user
         super().delete(*args, **kwargs)  # Call the parent delete method
-    
 
 class Student(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -133,10 +132,8 @@ class LessonAttendance(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='lesson_attendance')
     date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
-
     def __str__(self):
         return f"{self.student.user.username} - {self.subject.name} - {self.date}"
-
 
 from django.conf import settings
 
@@ -182,36 +179,28 @@ class Syllabus(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     def __str__(self):
         return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
-
 
 class Chapter(models.Model):
     syllabus = models.ForeignKey(Syllabus, on_delete=models.CASCADE, related_name="chapters")
     name = models.CharField(max_length=255)
-
     def __str__(self):
         return self.name
-
 
 class Topic(models.Model):
     chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name="topics")
     name = models.CharField(max_length=255)
     is_completed = models.BooleanField(default=False)  # Mark topic completion
-
     def __str__(self):
         return self.name
-
-
+    
 class Subtopic(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="subtopics")
     name = models.CharField(max_length=255)
     is_completed = models.BooleanField(default=False)  # Mark subtopic completion
-
     def __str__(self):
         return self.name
-
 
 class DiscussionPost(models.Model):
     topic = models.CharField(max_length=255)
@@ -237,7 +226,7 @@ class FeeCategory(models.Model):
     name = models.CharField(max_length=100)  # e.g., Sports Fee, Exam Fee
     amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount for this fee
     per_months = models.BooleanField(default=True)  # Flag to decide if the fee is multiplied by months
-
+    
     def __str__(self):
         return self.name
 
