@@ -1,16 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import useFetchData from "../../hooks/useFetch";
+
+
+
 
 const ClassNotes = () => {
   const {
     access,
     id: teacher_id,
     selectedClass,
+    selectedClassID
   } = useSelector((state) => state.user);
+
+    const navigate = useNavigate();
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false)
@@ -38,8 +47,10 @@ const ClassNotes = () => {
     }
   }, [access, teacher_id, selectedClass]);
 
+
+
   const fetchNotesList = async () => {
-    if (!access || !selectedSubject) {
+    if (!access || !selectedSubject ) {
       toast.error("Please select a subject first.");
       return;
     }
@@ -56,16 +67,15 @@ const ClassNotes = () => {
       setNoteList([]);
       setErrorNotes(
         error.response?.data?.message || "No notes found. Please add some."
-      );
-      console.error("Error fetching notes:", error);
+      )
     }
   };
   
   useEffect(() => {
-    if (selectedSubject) {
+    if (selectedSubject && selectedClassID) {
       fetchNotesList();
     }
-  }, [selectedSubject]);
+  }, [selectedClassID, selectedSubject]);
 
 
 
