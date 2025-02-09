@@ -139,12 +139,12 @@ urlpatterns = [
     
     # API for exam timetable filtered by class
     path("api/exam-timetable/<int:exam_id>/<int:class_id>/", ExamTimetableView.as_view(), name="exam_timetable"),  # Endpoint to retrieve the timetable for a specific exam (`exam_id`) and class (`class_id`).
-    
+
     # API endpoints for student results
     path('api/results/', StudentResultAPIView.as_view(), name='student-result-list-create'),  # Endpoint to list all student results and create new results.
     path('api/results/<int:result_id>/', SingleStudentResultAPIView.as_view(), name='single-student-result'),  # Endpoint to retrieve, update, or delete a specific student result by its ID (`result_id`).
     path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),  # Endpoint to retrieve subject-wise exam results for a specific exam (`exam_id`) and subject (`subject_id`).
-    
+
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
     path("api/students/update-roll-numbers/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
     path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
