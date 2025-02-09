@@ -2169,14 +2169,8 @@ class SendMessageView(generics.CreateAPIView):
         serializer.save(sender=self.request.user)
 
 
-class NotesListCreateView(APIView):
+class NotesCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get(self, request):
-        """List all notes (Anyone can view)."""
-        notes = Notes.objects.all()
-        serializer = NotesSerializer(notes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create a new note (Only teachers can post)."""
@@ -2236,6 +2230,23 @@ class NotesDetailView(APIView):
 
         note.delete()
         return Response({"message": "Note deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+class NotesBySubjectAPIView(APIView):
+    def get(self, request, subjectid):
+        try:
+            # Fetch the subject by its ID
+            subject = Subject.objects.get(id=subjectid)
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch all notes for the given subject
+        notes = Notes.objects.filter(subject=subject)
+
+        # Serialize the notes data
+        serializer = NotesSerializer(notes, many=True)
+
+        # Return the serialized data
+        return Response({"notes": serializer.data}, status=status.HTTP_200_OK)
     
 
 class DailyAttendanceAPIView(APIView):
@@ -2402,3 +2413,5 @@ class AttendanceByClassAPIView(APIView):
 
         # Return the data
         return Response({"attendance": serializer.data}, status=status.HTTP_200_OK)
+    
+

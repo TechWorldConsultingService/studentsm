@@ -158,8 +158,9 @@ urlpatterns = [
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
     
-    path('api/notes/', NotesListCreateView.as_view(), name='notes-list-create'),
+    path('api/notes/', NotesCreateView.as_view(), name='notes-list-create'),
     path('api/notes/<int:pk>/', NotesDetailView.as_view(), name='notes-detail'),
+    path('api/notes/subject/<int:subjectid>/', NotesBySubjectAPIView.as_view(), name='subject-wise-notes'),
 
     path('api/attendance/', DailyAttendanceAPIView.as_view(), name='daily-attendance'),
     path('api/attendance/<int:classid>/<str:date>/', AttendanceByClassAPIView.as_view(), name='attendance-by-class'),
