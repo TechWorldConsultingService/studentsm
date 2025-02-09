@@ -122,9 +122,13 @@ class LeaveApplication(models.Model):
 class DailyAttendance(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='daily_attendance')
     date = models.DateField(default=timezone.now)
-    status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
+    status = models.BooleanField(default=True)  # True = Present, False = Absent
+    recorded_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)  # Who took attendance?
 
     def __str__(self):
+<<<<<<< HEAD
+        return f"{self.student.user.username} - {self.date} - {'Present' if self.status else 'Absent'}"
+=======
         return f"{self.student.user.username} - {self.date}"
 
 class LessonAttendance(models.Model):
@@ -134,6 +138,7 @@ class LessonAttendance(models.Model):
     status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
     def __str__(self):
         return f"{self.student.user.username} - {self.subject.name} - {self.date}"
+>>>>>>> 975e3cea3dc39849b2d7bb4fbd610d085e50ded3
 
 from django.conf import settings
 

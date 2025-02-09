@@ -435,16 +435,6 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         validated_data['applicant_name'] = user.get_full_name()
         return LeaveApplication.objects.create(**validated_data)
 
-class DailyAttendanceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DailyAttendance
-        fields = ['student', 'date', 'status']
-
-class LessonAttendanceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonAttendance
-        fields = ['student', 'subject', 'date', 'status']
-
 
 from .models import Event
 
@@ -880,3 +870,18 @@ class NotesSerializer(serializers.ModelSerializer):
         validated_data['created_by'] = request.user  
 
         return super().create(validated_data)
+    
+
+class DailyAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'date', 'status', 'recorded_by']
+
+
+class AttendanceDetailSerializer(serializers.ModelSerializer):
+    student = GetStudentSerializer()
+    status = serializers.BooleanField()
+
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'status', 'date']

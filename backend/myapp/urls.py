@@ -44,8 +44,6 @@ urlpatterns = [
     path('api/teachers/', TeacherListView.as_view(), name='teacher-list'),  # Endpoint for listing teachers
     path('api/principals/', PrincipalListView.as_view(), name='principal-list'),  # Endpoint for listing principals
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
-    path('api/students-by-subject/', StudentsBySubjectView.as_view(), name='students-by-subject'),
-    path('api/students-by-subject-and-class/', StudentsBySubjectAndClassView.as_view(), name='students-by-subject-and-class'),
     path('api/students/class/<int:class_code>/', StudentListByClassAPIView.as_view(), name='students-by-class'),
 
     path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
@@ -83,14 +81,6 @@ urlpatterns = [
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
     # path('api/classes/<str:class_code>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
-    
-    # Daily Attendance URLs  (we may need to change class_id )
-    path('api/classes/<int:class_id>/daily-attendance/', DailyAttendanceView.as_view(), name='daily-attendance-create'),
-    path('api/classes/<int:class_id>/daily-attendance/<str:date>/', DailyAttendanceView.as_view(), name='daily-attendance-list'),
-
-    # Lesson Attendance URLs
-    path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/', LessonAttendanceView.as_view(), name='lesson-attendance-create'),
-    path('api/classes/<int:class_id>/subjects/<int:subject_id>/lesson-attendance/<str:date>/', LessonAttendanceView.as_view(), name='lesson-attendance-list'),
 
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
@@ -168,8 +158,12 @@ urlpatterns = [
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
     
-    path('api/notes/', NotesListCreateView.as_view(), name='notes-list-create'),
+    path('api/notes/', NotesCreateView.as_view(), name='notes-list-create'),
     path('api/notes/<int:pk>/', NotesDetailView.as_view(), name='notes-detail'),
+    path('api/notes/subject/<int:subjectid>/', NotesBySubjectAPIView.as_view(), name='subject-wise-notes'),
+
+    path('api/attendance/', DailyAttendanceAPIView.as_view(), name='daily-attendance'),
+    path('api/attendance/<int:classid>/<str:date>/', AttendanceByClassAPIView.as_view(), name='attendance-by-class'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
