@@ -18,6 +18,8 @@ from django.db import transaction
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import *
+from rest_framework import status
+
 
 from rest_framework.decorators import action
 
@@ -249,78 +251,6 @@ class StudentListView(APIView):
         students = Student.objects.all()  # Retrieve all student instances
         serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-
-# API view to list students by subject and class
-class StudentsBySubjectAndClassView(APIView):
-    def get(self, request, format=None):
-        # Retrieve subject ID and class ID from query parameters
-        subject_id = request.query_params.get('subject_id')
-        class_id = request.query_params.get('class_id')
-
-        if not subject_id or not class_id:
-            return Response(
-                {"error": "Both subject_id and class_id query parameters are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # Ensure the subject exists
-            subject_instance = Subject.objects.get(id=subject_id)
-            # Ensure the class exists
-            class_instance = Class.objects.get(id=class_id)
-
-            # Check if the subject is associated with the class
-            if not class_instance.subjects.filter(id=subject_instance.id).exists():
-                return Response(
-                    {"error": "The specified subject is not associated with the given class."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Filter students in the specified class
-            students = Student.objects.filter(class_code=class_instance)
-
-        except Subject.DoesNotExist:
-            return Response(
-                {"error": "Subject with the given ID does not exist."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Class.DoesNotExist:
-            return Response(
-                {"error": "Class with the given ID does not exist."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Serialize the student data
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class StudentsBySubjectView(APIView):
-    def get(self, request, format=None):
-        # Retrieve subject ID from query parameters
-        subject_id = request.query_params.get('subject_id')
-
-        if subject_id:
-            try:
-                # Ensure the subject exists
-                subject_instance = Subject.objects.get(id=subject_id)
-                # Get all classes associated with the subject
-                classes_with_subject = subject_instance.classes.all()
-                # Get students in those classes
-                students = Student.objects.filter(class_code__in=classes_with_subject)
-            except Subject.DoesNotExist:
-                return Response(
-                    {"error": "Subject with the given ID does not exist."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        else:
-            return Response(
-                {"error": "subject_id query parameter is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Serialize the student data
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # List all staff members
 class StaffListView(APIView):
@@ -936,78 +866,7 @@ class ClassDetailView(APIView):
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
-# Daily Attendance API View
-class DailyAttendanceView(APIView):
-    def post(self, request, class_id, format=None):
-        """
-        Record daily attendance for all students in a specific class.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance_data = request.data.get('attendance', [])
-        
-        for data in attendance_data:
-            data['date'] = timezone.now().date()  # Today's date for daily attendance
-            serializer = DailyAttendanceSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"message": "Daily attendance recorded successfully."}, status=status.HTTP_201_CREATED)
-
-    def get(self, request, class_id, date=None, format=None):
-        """
-        Retrieve daily attendance records for a specific class and optionally filter by date.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance = DailyAttendance.objects.filter(student__in=students)
-
-        if date:
-            attendance_date = parse_date(date)
-            if attendance_date:
-                attendance = attendance.filter(date=attendance_date)
-            else:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = DailyAttendanceSerializer(attendance, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-# Lesson Attendance API View
-class LessonAttendanceView(APIView):
-    def post(self, request, class_id, subject_id, format=None):
-        """
-        Record lesson-wise attendance for all students in a specific class and subject.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance_data = request.data.get('attendance', [])
-
-        for data in attendance_data:
-            data['subject'] = subject_id
-            data['date'] = timezone.now().date()  # Today's date for lesson attendance
-            serializer = LessonAttendanceSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"message": "Lesson attendance recorded successfully."}, status=status.HTTP_201_CREATED)
-
-    def get(self, request, class_id, subject_id, date=None, format=None):
-        """
-        Retrieve lesson attendance records for a specific class, subject, and optionally filter by date.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance = LessonAttendance.objects.filter(student__in=students, subject__id=subject_id)
-
-        if date:
-            attendance_date = parse_date(date)
-            if attendance_date:
-                attendance = attendance.filter(date=attendance_date)
-            else:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = LessonAttendanceSerializer(attendance, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EventListView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
@@ -2377,3 +2236,169 @@ class NotesDetailView(APIView):
 
         note.delete()
         return Response({"message": "Note deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class DailyAttendanceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        today = timezone.now().date()
+        user = request.user  # Logged-in user (CustomUser)
+
+        # Ensure the logged-in user is a teacher
+        try:
+            teacher = Teacher.objects.get(user=user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # To track the students whose attendance is already recorded
+        already_recorded_students = []
+        new_attendance_students = []
+
+        # Flag to check if all attendance records are already taken
+        all_records_taken = True
+
+        try:
+            with transaction.atomic():  # Wrap the entire operation in a transaction
+                for attendance in attendance_data:
+                    student = attendance.get('student')
+                    status_value = attendance.get('status')
+
+                    # Check if the record exists for the student on the given day
+                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
+
+                    if existing_record:
+                        # If record already exists, skip this student
+                        already_recorded_students.append(student)
+                    else:
+                        # Create a new record for students without today's attendance
+                        DailyAttendance.objects.create(
+                            student_id=student,
+                            date=today,
+                            status=status_value,
+                            recorded_by=teacher
+                        )
+                        new_attendance_students.append(student)
+                        all_records_taken = False  # Mark as False if there are new records
+
+            if all_records_taken:
+                return Response({"detail": "Attendance already taken for the day."}, status=status.HTTP_400_BAD_REQUEST)
+
+            response_data = {
+                "detail": "Attendance records processed successfully.",
+                "already_recorded_students": already_recorded_students,
+                "new_attendance_students": new_attendance_students
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # If any error occurs, the entire transaction will be rolled back
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def put(self, request):
+        today = timezone.now().date()
+        user = request.user  # Logged-in user (CustomUser)
+
+        # Ensure the logged-in user is a teacher
+        try:
+            teacher = Teacher.objects.get(user=user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():  # Wrap the entire operation in a transaction
+                for attendance in attendance_data:
+                    student = attendance.get('student')
+                    status_value = attendance.get('status')
+
+                    # Check if the record exists for the student on the given day
+                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
+
+                    if existing_record:
+                        # Update the existing record
+                        existing_record.status = status_value
+                        existing_record.recorded_by = teacher
+                        existing_record.save()
+                    else:
+                        # If no record exists, return an error
+                        return Response({"detail": f"Attendance record for student {student} does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Attendance records updated successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # If any error occurs, the entire transaction will be rolled back
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        today = timezone.now().date()
+        user = request.user  # Logged-in user (CustomUser)
+
+        # Ensure the logged-in user is a teacher
+        try:
+            teacher = Teacher.objects.get(user=user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():  # Wrap the entire operation in a transaction
+                for attendance in attendance_data:
+                    student = attendance.get('student')
+
+                    # Check if the record exists for the student on the given day
+                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
+
+                    if existing_record:
+                        # Delete the attendance record
+                        existing_record.delete()
+                    else:
+                        # If no record exists, return an error
+                        return Response({"detail": f"Attendance record for student {student} does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Attendance records deleted successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            # If any error occurs, the entire transaction will be rolled back
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class AttendanceByClassAPIView(APIView):
+    def get(self, request, classid, date):
+        try:
+            # Convert the date string to a date object
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Get the class object using the classid from the URL
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all students in the specified class
+        students_in_class = Student.objects.filter(class_code=class_obj)
+
+        # Fetch attendance records for the students in the class on the specified date
+        attendance_records = DailyAttendance.objects.filter(student__in=students_in_class, date=date_obj)
+
+        # Serialize the attendance data
+        serializer = AttendanceDetailSerializer(attendance_records, many=True)
+
+        # Return the data
+        return Response({"attendance": serializer.data}, status=status.HTTP_200_OK)
