@@ -2196,7 +2196,7 @@ class NotesDetailView(APIView):
         if note is None:
             return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = NotesSerializer(note, context={'request': request})  # Pass request context
+        serializer = GetNotesSerializer(note, context={'request': request})  # Pass request context
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
@@ -2239,7 +2239,7 @@ class NotesBySubjectAPIView(APIView):
         notes = Notes.objects.filter(subject=subject)
 
         # Serialize the notes data
-        serializer = NotesSerializer(notes, many=True)
+        serializer = GetNotesSerializer(notes, many=True)
 
         # Return the serialized data
         return Response({"notes": serializer.data}, status=status.HTTP_200_OK)
