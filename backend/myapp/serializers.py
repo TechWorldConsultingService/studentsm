@@ -871,6 +871,36 @@ class NotesSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
     
+class GetNotesSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Show teacher's username
+    class_code = serializers.SerializerMethodField()  # Fetch class details
+    subject = serializers.SerializerMethodField()  # Fetch subject details
+
+    class Meta:
+        model = Notes
+        fields = '__all__'
+
+    def get_class_code(self, obj):
+        """Return class details (id, class_name, class_code)"""
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_name": obj.class_code.class_name,
+                "class_code": obj.class_code.class_code,
+            }
+        return None
+
+    def get_subject(self, obj):
+        """Return subject details instead of just the ID"""
+        if obj.subject:
+            return {
+                "id": obj.subject.id,
+                "subject_name": obj.subject.subject_name,
+                "subject_code": obj.subject.subject_code,
+            }
+        return None
+
+
 
 class DailyAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
