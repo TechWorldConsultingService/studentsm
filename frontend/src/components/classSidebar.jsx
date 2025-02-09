@@ -3,14 +3,18 @@ import { useSelector,useDispatch } from 'react-redux';
 import { NavLink } from "react-router-dom";
 import { HiOutlineHome } from "react-icons/hi";
 import { SiGoogleclassroom } from "react-icons/si";
-import { setSelectedClass } from "../redux/reducerSlices/userSlice"; // Import the new action
+import { setSelectedClass, setSelectedClassId } from "../redux/reducerSlices/userSlice"; // Import the new action
 
 const ClassSidebar = () => {
     const { classes } = useSelector((state) => state.user);
     const dispatch = useDispatch();
 
-    const handleClassClick = (className) => {
-        dispatch(setSelectedClass({ className })); 
+    const handleClassClick = (item) => {
+        if (!item) 
+        return;
+
+        dispatch(setSelectedClass({className: item.class_name})); 
+        dispatch(setSelectedClassId({classId: item.id}))
     };
 
     return (
@@ -41,7 +45,7 @@ const ClassSidebar = () => {
                             <div key={item.class_code} >
                                 <NavLink
                                     to={`/tms/${item.class_name.toLowerCase()}`}
-                                    onClick={() => handleClassClick(item.class_name)}
+                                    onClick={() => handleClassClick(item)}
                                     className={({ isActive }) =>
                                         `flex items-center text-white hover:text-purple-200  hover:bg-purple-800 rounded-md p-3  ${isActive ? 'text-lg bg-purple-950' : ''}`
                                 }

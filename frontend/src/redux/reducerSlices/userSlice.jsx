@@ -24,6 +24,7 @@ const initialState = {
   class_teacher:{},
   selectedClass: "", 
   selectedSubject:"",
+  selectedClassID: ""
 };
 
 const userSlice = createSlice({
@@ -49,7 +50,7 @@ const userSlice = createSlice({
         first_name,
         last_name,
         class_teacher,
-        date_of_joining
+        date_of_joining,
       } = action.payload;
 
       return {
@@ -92,9 +93,16 @@ const userSlice = createSlice({
         ...state,
         selectedSubject: subjectId
       }
+    },
+    setSelectedClassId (state,action) {
+      const {classId} = action.payload
+      return{
+        ...state,
+        selectedClassID: classId
+      }
     }
   },
 });
 
-export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject } = userSlice.actions;
+export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject, setSelectedClassId } = userSlice.actions;
 export default userSlice.reducer;
