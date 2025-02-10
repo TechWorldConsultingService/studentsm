@@ -1,0 +1,78 @@
+# # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# # dependencies
+# node_modules/
+
+# # Expo
+# .expo/
+# dist/
+# web-build/
+# expo-env.d.ts
+
+# # Native
+# *.orig.*
+# *.jks
+# *.p8
+# *.p12
+# *.key
+# *.mobileprovision
+
+# # Metro
+# .metro-health-check*
+
+# # debug
+# npm-debug.*
+# yarn-debug.*
+# yarn-error.*
+
+# # macOS
+# .DS_Store
+# *.pem
+
+# # local env files
+# .env*.local
+
+# # typescript
+# *.tsbuildinfo
+
+# app-example
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Node Modules
+node_modules/
+
+# Expo related files
+.expo/                # Expo cache and configuration
+dist/                 # Build output for web
+web-build/            # If you're building a web version with Expo
+expo-env.d.ts         # TypeScript environment definitions for Expo
+
+# Native files (Android/iOS certificates, provisioning profiles, etc.)
+*.orig.*              # Backup files that shouldn't be versioned
+*.jks                 # Java keystore files (Android signing)
+*.p8                  # iOS push notification keys
+*.p12                 # iOS certificates (PKCS12 format)
+*.key                 # Private keys (for signing or push notifications)
+*.mobileprovision     # iOS provisioning profiles
+
+# Metro (React Native bundler) cache and health checks
+.metro-health-check*  # Health check files for Metro bundler
+*.metro               # Metro bundler cache
+
+# Debug logs
+npm-debug.*           # npm debug logs
+yarn-debug.*          # yarn debug logs
+yarn-error.*          # yarn error logs
+
+# macOS specific files
+.DS_Store             # macOS Finder specific files
+*.pem                 # PEM certificate files
+
+# Local environment variables files
+.env*.local           # Environment files with local settings (e.g., .env.local, .env.production.local)
+
+# TypeScript build info files
+*.tsbuildinfo         # TypeScript incremental build information
+
+# App-specific example or demo files
+app-example           # (If this is an example app or demo file, you can ignore it)
