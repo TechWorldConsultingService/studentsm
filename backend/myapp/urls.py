@@ -164,7 +164,7 @@ urlpatterns = [
 
     path('api/attendance/', DailyAttendanceAPIView.as_view(), name='daily-attendance'),
     path('api/attendance/<int:classid>/<str:date>/', AttendanceByClassAPIView.as_view(), name='attendance-by-class'),
-
+    path('api/attendance/student/<int:class_id>/', StudentsByClassAttendanceAPIView.as_view(), name='students-by-class'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

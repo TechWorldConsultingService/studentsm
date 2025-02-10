@@ -915,3 +915,24 @@ class AttendanceDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyAttendance
         fields = ['student', 'status', 'date']
+
+
+class StudentListAttendanceSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    class_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'roll_no', 'class_details']
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip()
+
+    def get_class_details(self, obj):
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_name": obj.class_code.class_name,
+                "class_code": obj.class_code.class_code,
+            }
+        return None
