@@ -936,3 +936,12 @@ class StudentListAttendanceSerializer(serializers.ModelSerializer):
                 "class_code": obj.class_code.class_code,
             }
         return None
+    
+class SimpleAttendanceSerializer(serializers.ModelSerializer):
+    student = StudentListAttendanceSerializer()
+    date = serializers.DateField()
+    status = serializers.BooleanField()
+
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'date', 'status']

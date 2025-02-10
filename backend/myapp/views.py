@@ -2308,107 +2308,105 @@ class DailyAttendanceAPIView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-    def put(self, request):
-        today = timezone.now().date()
-        user = request.user  # Logged-in user (CustomUser)
-
-        # Ensure the logged-in user is a teacher
-        try:
-            teacher = Teacher.objects.get(user=user)
-        except Teacher.DoesNotExist:
-            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
-
-        attendance_data = request.data.get('attendance', [])
-
-        if not attendance_data:
-            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            with transaction.atomic():  # Wrap the entire operation in a transaction
-                for attendance in attendance_data:
-                    student = attendance.get('student')
-                    status_value = attendance.get('status')
-
-                    # Check if the record exists for the student on the given day
-                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
-
-                    if existing_record:
-                        # Update the existing record
-                        existing_record.status = status_value
-                        existing_record.recorded_by = teacher
-                        existing_record.save()
-                    else:
-                        # If no record exists, return an error
-                        return Response({"detail": f"Attendance record for student {student} does not exist."}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": "Attendance records updated successfully."}, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            # If any error occurs, the entire transaction will be rolled back
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request):
-        today = timezone.now().date()
-        user = request.user  # Logged-in user (CustomUser)
-
-        # Ensure the logged-in user is a teacher
-        try:
-            teacher = Teacher.objects.get(user=user)
-        except Teacher.DoesNotExist:
-            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
-
-        attendance_data = request.data.get('attendance', [])
-
-        if not attendance_data:
-            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            with transaction.atomic():  # Wrap the entire operation in a transaction
-                for attendance in attendance_data:
-                    student = attendance.get('student')
-
-                    # Check if the record exists for the student on the given day
-                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
-
-                    if existing_record:
-                        # Delete the attendance record
-                        existing_record.delete()
-                    else:
-                        # If no record exists, return an error
-                        return Response({"detail": f"Attendance record for student {student} does not exist."}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": "Attendance records deleted successfully."}, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            # If any error occurs, the entire transaction will be rolled back
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
 class AttendanceByClassAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
+
     def get(self, request, classid, date):
+        """Retrieve attendance records for a class on a specific date."""
         try:
-            # Convert the date string to a date object
             date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
         except ValueError:
             return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Get the class object using the classid from the URL
             class_obj = Class.objects.get(id=classid)
         except Class.DoesNotExist:
             return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Get all students in the specified class
-        students_in_class = Student.objects.filter(class_code=class_obj)
+        attendance_records = DailyAttendance.objects.filter(student__class_code=class_obj, date=date_obj)
 
-        # Fetch attendance records for the students in the class on the specified date
-        attendance_records = DailyAttendance.objects.filter(student__in=students_in_class, date=date_obj)
+        # Serialize data
+        serialized_data = []
+        for record in attendance_records:
+            student_data = {
+                "student_id": record.student.id,
+                "full_name": f"{record.student.user.first_name} {record.student.user.last_name}".strip(),
+                "roll_no": record.student.roll_no,
+                "date": record.date,
+                "status": record.status
+            }
+            serialized_data.append(student_data)
 
-        # Serialize the attendance data
-        serializer = AttendanceDetailSerializer(attendance_records, many=True)
+        return Response({"attendance": serialized_data}, status=status.HTTP_200_OK)
 
-        # Return the data
-        return Response({"attendance": serializer.data}, status=status.HTTP_200_OK)
+    def put(self, request, classid, date):
+        """Update attendance for a class on a specific date."""
+        try:
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for record in attendance_data:
+                    student_id = record.get('student')
+                    status_value = record.get('status')
+
+                    attendance_record = DailyAttendance.objects.filter(
+                        student_id=student_id, date=date_obj, student__class_code=class_obj
+                    ).first()
+
+                    if attendance_record:
+                        attendance_record.status = status_value
+                        attendance_record.save()
+                    else:
+                        return Response(
+                            {"detail": f"Attendance record for student {student_id} does not exist."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+            return Response({"detail": "Class attendance updated successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, classid, date):
+        """Delete attendance records for a class on a specific date."""
+        try:
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            with transaction.atomic():
+                attendance_records = DailyAttendance.objects.filter(student__class_code=class_obj, date=date_obj)
+
+                if not attendance_records.exists():
+                    return Response({"detail": "No attendance records found for the specified class and date."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                attendance_records.delete()
+
+            return Response({"detail": "Class attendance records deleted successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     
 
 class StudentsByClassAttendanceAPIView(APIView):
