@@ -2411,3 +2411,10 @@ class AttendanceByClassAPIView(APIView):
         return Response({"attendance": serializer.data}, status=status.HTTP_200_OK)
     
 
+class StudentsByClassAttendanceAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # Restrict access to authenticated users
+
+    def get(self, request, class_id):
+        students = Student.objects.filter(class_code_id=class_id)
+        serializer = StudentListAttendanceSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
