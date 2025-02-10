@@ -1,12 +1,6 @@
 from django.contrib import admin
 from django import forms
 from .models import *
-from .models import (
-    Teacher, Principal, Student, LeaveApplication, Subject, 
-    Class, DailyAttendance, Event, LessonAttendance, Post, 
-    # StaffLocation, 
-    Staff, Assignment, Syllabus, DiscussionPost, DiscussionComment,
-)
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -72,16 +66,16 @@ class ClassAdmin(admin.ModelAdmin):
 # DailyAttendance admin customization
 @admin.register(DailyAttendance)
 class DailyAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'date', 'status')
-    list_filter = ('date', 'status')
-    search_fields = ('student__user__username',)
+    list_display = ("student", "date", "status", "recorded_by")  # Display key fields
+    list_filter = ("date", "status",)  # Use actual fields
+    search_fields = ("student__user__username", "recorded_by__user__username")  # Search by student or teacher
+    ordering = ("-date",)  # Show latest attendance first
 
-# LessonAttendance admin customization
-@admin.register(LessonAttendance)
-class LessonAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'subject', 'date', 'status')
-    list_filter = ('date', 'status', 'subject')
-    search_fields = ('student__user__username', 'subject__name')
+    def student(self, obj):
+        return obj.student.user.username  # Show student username
+
+    def recorded_by(self, obj):
+        return obj.recorded_by.user.username if obj.recorded_by else "N/A"  # Show teacher name
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):

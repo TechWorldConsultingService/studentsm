@@ -29,6 +29,7 @@ const initialState = {
   selectedClass: "", 
   selectedSubject:"",
   chatSocketUrl: "", // WebSocket connection URL
+  selectedClassID: ""
 };
 
 const userSlice = createSlice({
@@ -54,7 +55,7 @@ const userSlice = createSlice({
         first_name,
         last_name,
         class_teacher,
-        date_of_joining
+        date_of_joining,
       } = action.payload;
 
 
@@ -100,11 +101,16 @@ const userSlice = createSlice({
         selectedSubject: subjectId
       }
     },
-    setChatSocketUrl(state, action) {
-      state.chatSocketUrl = action.payload;
-    },
+    setSelectedClassId (state,action) {
+      const {classId} = action.payload
+      return{
+        ...state,
+        selectedClassID: classId
+      }
+    }
+    
   },
 });
 
-export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject,setChatSocketUrl } = userSlice.actions;
+export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject, setSelectedClassId } = userSlice.actions;
 export default userSlice.reducer;

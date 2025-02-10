@@ -435,16 +435,6 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         validated_data['applicant_name'] = user.get_full_name()
         return LeaveApplication.objects.create(**validated_data)
 
-class DailyAttendanceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DailyAttendance
-        fields = ['student', 'date', 'status']
-
-class LessonAttendanceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonAttendance
-        fields = ['student', 'subject', 'date', 'status']
-
 
 from .models import Event
 
@@ -880,3 +870,78 @@ class NotesSerializer(serializers.ModelSerializer):
         validated_data['created_by'] = request.user  
 
         return super().create(validated_data)
+    
+class GetNotesSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Show teacher's username
+    class_code = serializers.SerializerMethodField()  # Fetch class details
+    subject = serializers.SerializerMethodField()  # Fetch subject details
+
+    class Meta:
+        model = Notes
+        fields = '__all__'
+
+    def get_class_code(self, obj):
+        """Return class details (id, class_name, class_code)"""
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_name": obj.class_code.class_name,
+                "class_code": obj.class_code.class_code,
+            }
+        return None
+
+    def get_subject(self, obj):
+        """Return subject details instead of just the ID"""
+        if obj.subject:
+            return {
+                "id": obj.subject.id,
+                "subject_name": obj.subject.subject_name,
+                "subject_code": obj.subject.subject_code,
+            }
+        return None
+
+
+
+class DailyAttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'date', 'status', 'recorded_by']
+
+
+class AttendanceDetailSerializer(serializers.ModelSerializer):
+    student = GetStudentSerializer()
+    status = serializers.BooleanField()
+
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'status', 'date']
+
+
+class StudentListAttendanceSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    class_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = ['id', 'full_name', 'roll_no', 'class_details']
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}".strip()
+
+    def get_class_details(self, obj):
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_name": obj.class_code.class_name,
+                "class_code": obj.class_code.class_code,
+            }
+        return None
+    
+class SimpleAttendanceSerializer(serializers.ModelSerializer):
+    student = StudentListAttendanceSerializer()
+    date = serializers.DateField()
+    status = serializers.BooleanField()
+
+    class Meta:
+        model = DailyAttendance
+        fields = ['student', 'date', 'status']

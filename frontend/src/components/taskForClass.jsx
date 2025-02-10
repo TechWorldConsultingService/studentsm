@@ -5,7 +5,7 @@ import "./taskForSubject.css";
 const ClassHome = lazy(() => import("../pages/TMS/classHome"));
 const ClassNotes = lazy(() => import("../pages/TMS/classNotes"));
 const ClassHomework = lazy(() => import("../pages/TMS/classHomework"));
-const ClassSyllabus = lazy(() => import("../pages/TMS/classSyllabus"));
+const ClassSyllabus = lazy(() => import("../pages/TMS/syllabus/classSyllabus"));
 
 const options = [
   {
