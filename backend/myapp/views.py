@@ -2325,19 +2325,29 @@ class AttendanceByClassAPIView(APIView):
 
         attendance_records = DailyAttendance.objects.filter(student__class_code=class_obj, date=date_obj)
 
-        # Serialize data
-        serialized_data = []
-        for record in attendance_records:
-            student_data = {
+        # Serialize class details
+        class_details = {
+            "id": class_obj.id,
+            "name": class_obj.class_name,
+            "code": class_obj.class_code
+        }
+
+        # Serialize attendance data
+        attendance_list = [
+            {
                 "student_id": record.student.id,
                 "full_name": f"{record.student.user.first_name} {record.student.user.last_name}".strip(),
                 "roll_no": record.student.roll_no,
-                "date": record.date,
                 "status": record.status
             }
-            serialized_data.append(student_data)
+            for record in attendance_records
+        ]
 
-        return Response({"attendance": serialized_data}, status=status.HTTP_200_OK)
+        return Response({
+            "date": date_obj,
+            "class": class_details,
+            "attendance": attendance_list
+        }, status=status.HTTP_200_OK)
 
     def put(self, request, classid, date):
         """Update attendance for a class on a specific date."""
