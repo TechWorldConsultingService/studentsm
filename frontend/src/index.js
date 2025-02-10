@@ -43,6 +43,8 @@ import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal
 import StudentRoutine from "./pages/reports/StudentRoutine";
 import ExamPublish from "./pages/reports/ExamPublish";
 import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher"
+import Chat from "./components/Chat"
+
 
 const router = createBrowserRouter([
   {
@@ -67,7 +69,10 @@ const router = createBrowserRouter([
     path: "/principaldashboard",
     element: <PrincipalHomePage />,
   },
-
+  {
+    path: "/chat",
+    element: <Chat />,
+  },
   {
     path: "/teacherdashboard",
     element: <TeacherHomePage />,
