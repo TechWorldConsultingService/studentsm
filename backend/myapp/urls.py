@@ -156,6 +156,8 @@ urlpatterns = [
     # Syllabus and related endpoints
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
+    path("api/syllabus/filter/", SyllabusFilterView.as_view(), name="syllabus-filter"), 
+    # /api/syllabus/filter/?subject_id=2  to get syllabus as per subject id
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
     
     path('api/notes/', NotesCreateView.as_view(), name='notes-list-create'),
