@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 // import userSlice from '../redux/reducerSlices/userSlice';
 
+// Load user from localStorage if available
+// const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+
+
 // Initial state based on the structure of the response data
 const initialState = {
   isLoggedIn: false,
@@ -24,6 +28,7 @@ const initialState = {
   class_teacher:{},
   selectedClass: "", 
   selectedSubject:"",
+  chatSocketUrl: "", // WebSocket connection URL
   selectedClassID: ""
 };
 
@@ -52,6 +57,8 @@ const userSlice = createSlice({
         class_teacher,
         date_of_joining,
       } = action.payload;
+
+
 
       return {
         ...state,
@@ -101,6 +108,7 @@ const userSlice = createSlice({
         selectedClassID: classId
       }
     }
+    
   },
 });
 

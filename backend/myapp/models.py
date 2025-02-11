@@ -389,17 +389,9 @@ class StudentOverallResult(models.Model):
 
 
     
+from django.contrib.auth import get_user_model
 
-class Message(models.Model):
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"From {self.sender} to {self.receiver} at {self.timestamp}"
-    
+User = get_user_model()
 
 
 def validate_file_size(value):
@@ -422,3 +414,19 @@ class Notes(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.chapter} ({self.created_by.username})"
+    
+
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender} -> {self.receiver}: {self.message}"
