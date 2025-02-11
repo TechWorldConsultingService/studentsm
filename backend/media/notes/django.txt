@@ -1,0 +1,18 @@
+https://freetutsdownload.net/udemy/build-an-animal-shelter-website-with-django-for-beginners.html
+
+https://freetutsdownload.net/udemy/django-build-a-chatbot-as-a-personal-assistant-using-ai.html
+
+
+1. Implement CRUD operations -- Build To-do list / Blog 
+2. Authentication with email - verification ( Can also add mobile verification with OTP) 
+    Learn and implement JWT and session authentication.
+3. Payment Gateway Integration
+4. Web Scrapping
+5. Integrate Celery with Django
+6. Implement WebSockets using channels
+
+
+
+As an INFP, my inner world can be a complex and contradictory place. There are times when I feel the weight of the world on my shoulders and believe that I should be more serious about life. Yet, at other moments, I find myself embracing the present and feeling like there's plenty of time to explore and enjoy life. On one hand, I feel the need to take life more seriously, but on the other hand, I am naturally inclined towards a calm and relaxed approach. This internal conflict can be difficult to navigate, and I often question whether it's a healthy part of who I am.
+
+
