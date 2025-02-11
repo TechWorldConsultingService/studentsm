@@ -1270,6 +1270,25 @@ class SyllabusView(APIView):
         serializer = SyllabusSerializer(syllabus)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# syllabus get / filter by subject id
+class SyllabusFilterView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_id = request.query_params.get("subject_id")
+
+        if not subject_id:
+            return Response({"error": "Subject ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        syllabus = Syllabus.objects.filter(subject_id=subject_id)
+
+        if not syllabus.exists():
+            return Response({"message": "No syllabus found for this subject."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SyllabusSerializer(syllabus, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 from rest_framework import viewsets
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all()
