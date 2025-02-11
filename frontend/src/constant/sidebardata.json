@@ -99,9 +99,9 @@
       },
       {
         "id": 8,
-        "title": "Attendence",
+        "title": "Attendance",
         "icon": "LuFileSpreadsheet",
-        "link": "/attendence"
+        "link": "/selectClassForAttendence"
       },
       {
         "id": 9,
@@ -186,7 +186,7 @@
         "id": 9,
         "title": "Attendence",
         "icon": "LuFileSpreadsheet",
-        "link": "/attendence"
+        "link": "/attendancePrincipal"
       },
       {
         "id": 10,
