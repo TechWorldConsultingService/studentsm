@@ -1972,15 +1972,21 @@ class ExamsByClassView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.db import transaction
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Student, Class
+
 class BulkUpdateRollNumbersAPIView(APIView):
-    def put(self, request, *args, **kwargs):
+    def put(self, request, class_id, *args, **kwargs):
         """
-        API to bulk update roll numbers for students.
-        Expects a JSON payload:
+        API to bulk update roll numbers for students within a given class.
+        Expects JSON:
         {
             "students": [
-                {"id": 1, "first_name": "John", "last_name": "Doe", "roll_no": "101"},
-                {"id": 2, "first_name": "Jane", "last_name": "Smith", "roll_no": "102"}
+                {"id": 1, "roll_no": "3"},
+                {"id": 2, "roll_no": "4"}
             ]
         }
         """
@@ -1990,27 +1996,55 @@ class BulkUpdateRollNumbersAPIView(APIView):
             return Response({"detail": "Students data is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            with transaction.atomic():  # Ensuring atomicity (all or nothing)
-                for student_data in students_data:
-                    student_id = student_data.get("id")
-                    roll_no = student_data.get("roll_no")
+            # Validate class exists
+            if not Class.objects.filter(id=class_id).exists():
+                return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
 
-                    if student_id is None or roll_no is None:
-                        return Response({"detail": "Invalid student data format."}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                student_ids = [s["id"] for s in students_data]
 
-                    # Update the student's roll number
-                    Student.objects.filter(id=student_id).update(roll_no=roll_no)
+                # Fetch students from database who belong to the given class
+                students = Student.objects.filter(id__in=student_ids, class_code_id=class_id)
+
+                if students.count() != len(students_data):
+                    return Response({"detail": "Some students do not belong to the given class."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Get existing roll numbers in the class (excluding the students being updated)
+                existing_rolls = set(
+                    Student.objects.filter(class_code_id=class_id)
+                    .exclude(id__in=student_ids)
+                    .values_list("roll_no", flat=True)
+                )
+
+                # Get new roll numbers from request
+                new_roll_numbers = {s["roll_no"] for s in students_data}
+
+                # Ensure no duplicate roll numbers within the class
+                if len(new_roll_numbers) != len(students_data):
+                    return Response({"detail": "Duplicate roll numbers detected."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if existing_rolls & new_roll_numbers:
+                    return Response({"detail": "Roll number conflict in the class."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Temporarily clear roll numbers for students being updated
+                Student.objects.filter(id__in=student_ids).update(roll_no=None)
+
+                # Assign new roll numbers
+                roll_no_map = {s["id"]: s["roll_no"] for s in students_data}
+                for student in students:
+                    student.roll_no = roll_no_map[student.id]
+
+                Student.objects.bulk_update(students, ["roll_no"])
 
             return Response({"detail": "Roll numbers updated successfully."}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-from .models import StudentResult, StudentOverallResult
 
 @receiver(post_save, sender=StudentResult)
 def update_student_overall_result(sender, instance, **kwargs):

@@ -84,7 +84,7 @@ class Student(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
     class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
-    roll_no = models.CharField(max_length=10, unique=True, null=True, blank=True)  # Add Roll Number Field
+    roll_no = models.CharField(max_length=10, null=True, blank=True)  # Add Roll Number Field
 
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"

@@ -146,7 +146,7 @@ urlpatterns = [
     path('api/results/<int:exam_id>/<int:subject_id>/', SubjectWiseExamResultsView.as_view(), name='subject-wise-exam-results'),  # Endpoint to retrieve subject-wise exam results for a specific exam (`exam_id`) and subject (`subject_id`).
 
     path('api/marksheet/<int:student_id>/<int:exam_id>/', MarksheetView.as_view(), name='marksheet'),  # Endpoint to retrieve a student's marksheet for a specific exam (`exam_id`).
-    path("api/students/update-roll-numbers/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
+    path("api/students/update-roll-numbers/<int:class_id>/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
     path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
 
 
