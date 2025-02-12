@@ -80,7 +80,9 @@ const ExamTeacher = () => {
   }, [fetchSubjectDetails]);
 
   /**
-   * Fetch Student List for the selected subject
+   * Fetch Student List for the selected subject using the NEW endpoint:
+   * /api/students/subject/:subjectId/
+   * This endpoint returns an object { subject, students: [...] }
    */
   const fetchStudentList = useCallback(async () => {
     if (!access || !selectedSubject) return;
@@ -88,7 +90,7 @@ const ExamTeacher = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `http://localhost:8000/api/students-by-subject/?subject_id=${selectedSubject}`,
+        `http://localhost:8000/api/students/subject/${selectedSubject}/`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -96,7 +98,14 @@ const ExamTeacher = () => {
           },
         }
       );
-      setStudentList(data);
+
+      // The new structure:
+      // {
+      //   "subject": {...},
+      //   "students": [...]
+      // }
+      // If you need subject details from here, you can access them with data.subject
+      setStudentList(data.students || []);
     } catch (error) {
       toast.error("Error fetching student list.");
     } finally {
