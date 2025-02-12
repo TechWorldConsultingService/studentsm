@@ -2479,3 +2479,24 @@ class StudentsByClassAttendanceAPIView(APIView):
         students = Student.objects.filter(class_code_id=class_id)
         serializer = StudentListAttendanceSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class SubjectWiseStudentListAPIView(APIView):
+    def get(self, request, subject_id):
+        """Retrieve students enrolled in a given subject."""
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        students = Student.objects.filter(class_code__subjects=subject).distinct()
+        serializer = GetStudentSerializer(students, many=True)
+
+        return Response({
+            "subject": {
+                "id": subject.id,
+                "name": subject.subject_name,
+                "code": subject.subject_code
+            },
+            "students": serializer.data
+        }, status=status.HTTP_200_OK)
