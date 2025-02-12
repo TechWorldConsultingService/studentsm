@@ -114,6 +114,14 @@
         "title": "My Buses",
         "icon": "LuFileSpreadsheet",
         "link": "/mybus"
+      },
+      {
+        "id": 10,
+        "title": "Add",
+        "icon": "MdCoPresent",
+        "subSidebar": [
+          { "id": 1, "title": "Roll Number", "link": "/addRollNumber" }
+        ]
       }
 
     ],

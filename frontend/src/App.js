@@ -38,6 +38,7 @@ import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal
 import StudentRoutine from "./pages/reports/StudentRoutine";
 import ExamPublish from "./pages/reports/ExamPublish";
 import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher";
+import AddRollNumber from "./pages/Teacher/AddRollNumber"
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -77,6 +78,7 @@ function App() {
     { path: "/examPublish", element: <ExamPublish /> },
     { path: "/exam-details/:examId", element: <AddExamDetailsByPrincipal /> },
     { path: "/examRoutine", element: <StudentRoutine /> },
+    {path: "/addRollNumber", element: <AddRollNumber />},
 {path: "/attendancePrincipal", element: <AttendancePrincipal />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
