@@ -239,6 +239,28 @@ class TeacherSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class GetTeacherSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+    class_details = ClassSerializer(source='classes', many=True, read_only=True)
+    class_teacher_details = serializers.SerializerMethodField()  # Add this for class teacher details
+
+    class Meta:
+        model = Teacher
+        fields = ['id', 'user', 'phone', 'address', 'date_of_joining', 'gender',
+                  'subject_details', 'class_details', 'class_teacher_details']
+
+    def get_class_teacher_details(self, obj):
+        """Retrieve class_code and class_name of the class teacher"""
+        if obj.class_teacher:
+            return {
+                "class_code": obj.class_teacher.class_code,
+                "class_name": obj.class_teacher.class_name
+            }
+        return None  # Return None if class_teacher is not assigned
+
+
+
 # Serializer for the Principal model
 class PrincipalSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the principal
@@ -269,90 +291,84 @@ class PrincipalSerializer(serializers.ModelSerializer):
         
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
-        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        
+        # Update user instance only with provided fields
+        user_serializer = UserSerializer(instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
-            user = user_serializer.save()
-            user.is_principal = True  # Ensure is_principal is set to True on update
-            user.save()
+            user_serializer.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
+        # Update the Principal instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
+
     
 # Serializer for the Student model
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested serializer for the user associated with the student
-    subjects = SubjectSerializer(many=True, source='classes.subjects', read_only=True)  # Dynamically get subjects from the associated class
-    #parents = serializers.PrimaryKeyRelatedField(queryset=Parent.objects.all(), many=True)  # Handle multiple parent relationships
+    user = UserSerializer()
     class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
-    
+    #class_details = ClassSerializer(source='class_code', read_only=True)
+
     class Meta:
         model = Student
-        # Define which fields should be included in the serialized output
-        fields = ['id','user', 'phone', 'address', 'date_of_birth', 'parents', 'gender',
-                'class_code','subjects'
-                ]
-        # Ensure password is write-only (won't be returned in response)
-        extra_kwargs = {'user.password': {'write_only': True}}
-
-    def validate_classes(self, value):
-        """
-        Validate the `classes` value and retrieve the corresponding class instance.
-        """
-        try:
-            class_instance = Class.objects.get(classes=value)
-            return class_instance
-        except Class.DoesNotExist:
-            raise serializers.ValidationError(f"Class with code '{value}' does not exist.")
-        # return class_instance
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
+        #fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
 
     def create(self, validated_data):
-        # Extract user and parents data from the validated data
         user_data = validated_data.pop('user')
         class_instance = validated_data.pop('class_code')
-        # Mark the user as a student
         user_data['is_student'] = True
 
-        # Serialize the user data
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
-            # Save the user and get the created user instance
             user = user_serializer.save()
-
-            # Create and save the Student instance
             student = Student.objects.create(user=user, class_code=class_instance, **validated_data)
-            # student.classes.add(class_instance) # Use `add()` to associate the class
             return student
         else:
-            # Raise validation error if user data is invalid
             raise serializers.ValidationError(user_serializer.errors)
-        
-    def update(self, instance, validated_data):
-        # Extract user data and classes
-        user_data = validated_data.pop('user', {})
-        class_instance = validated_data.pop('classes', None)
 
-        # Update user data
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        class_instance = validated_data.pop('class_code', None)
+
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            user.is_student = True  # Ensure is_student is set to True on update
+            user.is_student = True
             user.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
-        # Update other fields of the Student instance
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
         if class_instance:
-            # instance.classes.set([class_instances])  # Update associated classes
-            instance.classes = class_instance  # Update associated class
+            instance.class_code = class_instance
         return instance
+
+
+class GetStudentSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+    class_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Student
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
+
+    def get_class_details(self, obj):
+        if obj.class_code:
+            return {
+                "id": obj.class_code.id,
+                "class_code": obj.class_code.class_code,
+                "class_name": obj.class_code.class_name
+            }
+        return None
+
+
        
 class StaffSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the staff
@@ -462,93 +478,88 @@ class AssignmentSerializer(serializers.ModelSerializer):
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignmentSubmission
-        fields = ['assignment', 'student', 'submission_file', 'submitted_on']
+        fields = ['id','assignment', 'student', 'submission_file','written_submission', 'submitted_on','review_text','is_checked']
+
+class SubtopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subtopic
+        fields = ['id', 'name', 'is_completed']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    subtopics = SubtopicSerializer(many=True, required=False)
+
+    class Meta:
+        model = Topic
+        fields = ['id', 'name', 'is_completed', 'subtopics']
+
+    def create(self, validated_data):
+        subtopics_data = validated_data.pop('subtopics', [])
+        topic = Topic.objects.create(**validated_data)
+        for subtopic_data in subtopics_data:
+            Subtopic.objects.create(topic=topic, **subtopic_data)
+        return topic
+
+    def update(self, instance, validated_data):
+        subtopics_data = validated_data.pop('subtopics', [])
+        instance.name = validated_data.get('name', instance.name)
+        instance.is_completed = validated_data.get('is_completed', instance.is_completed)
+        instance.save()
+
+        # Update subtopics
+        for subtopic_data in subtopics_data:
+            subtopic, created = Subtopic.objects.update_or_create(
+                topic=instance, name=subtopic_data['name'],
+                defaults={'is_completed': subtopic_data.get('is_completed', False)}
+            )
+        return instance
+
+
+class ChapterSerializer(serializers.ModelSerializer):
+    topics = TopicSerializer(many=True, required=False)
+
+    class Meta:
+        model = Chapter
+        fields = ['id', 'name', 'topics']
+
+    def create(self, validated_data):
+        topics_data = validated_data.pop('topics', [])
+        chapter = Chapter.objects.create(**validated_data)
+        for topic_data in topics_data:
+            subtopics_data = topic_data.pop('subtopics', [])
+            topic = Topic.objects.create(chapter=chapter, **topic_data)
+
+            for subtopic_data in subtopics_data:
+                Subtopic.objects.create(topic=topic, **subtopic_data)
+
+        return chapter
+
 
 class SyllabusSerializer(serializers.ModelSerializer):
-    completion_percentage = serializers.SerializerMethodField()
+    chapters = ChapterSerializer(many=True, required=False)
     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
 
     class Meta:
         model = Syllabus
-        # fields = '__all__'
-        fields = [
-            'id',
-            'class_assigned',
-            'class_name',
-            'subject',
-            'subject_name',
-            'teacher',
-            'teacher_name',
-            'topics',
-            'completed_topics',
-            'completion_percentage',
-            'created_at',
-            'updated_at'
-        ]
-        # fields = ['id', 'class_assigned', 'subject', 'teacher', 'topics', 'completed_topics', 'completion_percentage', 'created_at', 'updated_at']
-        extra_kwargs = {
-            'class_assigned': {'read_only': True},
-            'subject': {'read_only': True},
-            'teacher': {'read_only': True},
-            'topics': {'required': True}
-        }
+        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at']
 
-    def get_completion_percentage(self, obj):
-        return obj.get_completion_percentage()
+    def create(self, validated_data):
+        chapters_data = validated_data.pop('chapters', [])
+        syllabus = Syllabus.objects.create(**validated_data)
 
-'''class FeePaymentHistorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FeePaymentHistory
-        fields = [
-            'id',
-            'fee_record',
-            'amount_paid',
-            'payment_date',
-            'mode_of_payment',
-            'transaction_id',
-            'notes'
-        ]
-        read_only_fields = ['id', 'payment_date']
+        for chapter_data in chapters_data:
+            topics_data = chapter_data.pop('topics', [])
+            chapter = Chapter.objects.create(syllabus=syllabus, **chapter_data)
 
-class FeesSerializer(serializers.ModelSerializer):
-    payment_history = FeePaymentHistorySerializer(many=True, read_only=True)
+            for topic_data in topics_data:
+                subtopics_data = topic_data.pop('subtopics',[])
+                topic = Topic.objects.create(chapter=chapter, **topic_data)
 
-    class Meta:
-        model = Fees
-        fields = [
-            'id',
-            'student',
-            'total_amount',
-            'amount_paid',
-            'pending_amount',
-            'due_date',
-            'last_payment_date',
-            'status',
-            'created_at',
-            'updated_at',
-            'payment_history',
-        ]
-        read_only_fields = ['id', 'pending_amount', 'status', 'created_at', 'updated_at']
-
-    def update(self, instance, validated_data):
-        """
-        Override the update method to handle updating the amount_paid and recalculate pending_amount.
-        """
-        instance.amount_paid = validated_data.get('amount_paid', instance.amount_paid)
-        instance.save()
-        return instance '''
-    
-# from rest_framework import serializers
-# from .models import StaffLocation
-
-# class StaffLocationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = StaffLocation
-#         fields = ['staff', 'latitude', 'longitude', 'timestamp']
-
-
+                for subtopic_data in subtopics_data:
+                    Subtopic.objects.create(topic=topic, **subtopic_data)
+        return syllabus
 
 class DiscussionPostSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
@@ -697,36 +708,175 @@ class PaymentTransactionSerializer(serializers.ModelSerializer):
 
 
 class ExamSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Exam
-        fields = ['id', 'name', 'exam_type', 'date']
-        read_only_fields = ['class_name']
+        fields = ['id', 'name', 'is_timetable_published', 'is_result_published']
 
-class StudentResultSerializer(serializers.ModelSerializer):
+
+
+class ExamDetailSerializer(serializers.ModelSerializer):
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
-        model = StudentResult
-        fields = ['student', 'exam', 'subject', 'internal_marks', 'external_marks', 'remarks']
+        model = ExamDetail
+        fields = ['exam', 'subject', 'full_marks', 'pass_marks', 'exam_date', 'exam_time', 'class_assigned', 'created_by']  # Added exam_time
+        read_only_fields = ['class_assigned', 'created_by']
 
     def validate(self, data):
-        student = data['student']
-        exam = data['exam']
-        subject = data['subject']
-
-        # Check if the result already exists
-        if StudentResult.objects.filter(student=student, exam=exam, subject=subject).exists():
-            raise serializers.ValidationError("This result for the given student, exam, and subject already exists.")
-        
+        # Check if class_assigned needs to be automatically filled based on the subject
+        if not data.get('class_assigned'):
+            subject = data.get('subject')
+            associated_classes = subject.classes.all()
+            if associated_classes.count() == 1:
+                data['class_assigned'] = associated_classes.first()
+            elif associated_classes.count() > 1:
+                raise serializers.ValidationError(f"The subject '{subject.subject_name}' is associated with multiple classes. Please specify the class explicitly.")
+            else:
+                raise serializers.ValidationError(f"The subject '{subject.subject_name}' is not associated with any class.")
         return data
 
+    def update(self, instance, validated_data):
+        # Check if the request context is passed and set the 'created_by' accordingly
+        request = self.context.get('request')
+        if request and request.user:
+            instance.created_by = request.user
+        # Call the parent `update` method to save the validated data
+        return super().update(instance, validated_data)
+
+
+class GetExamDetailSerializer(serializers.ModelSerializer):
+    exam = serializers.SerializerMethodField()  # Field to fetch exam details
+    subject_details = serializers.SerializerMethodField()  # Field to fetch subject details
+    class_details = serializers.SerializerMethodField()  # Field to fetch class details
+
+    class Meta:
+        model = ExamDetail
+        fields = ['id', 'exam', 'full_marks', 'pass_marks', 'exam_date', 'exam_time', 'subject_details', 'class_details']  # Added exam_time
+
+    def get_exam(self, obj):
+        return {
+            "id": obj.exam.id,
+            "name": obj.exam.name,
+        }
+
+    def get_subject_details(self, obj):
+        return {
+            "id": obj.subject.id,
+            "subject_code": obj.subject.subject_code,
+            "subject_name": obj.subject.subject_name
+        }
+
+    def get_class_details(self, obj):
+        return {
+            "id": obj.class_assigned.id,
+            "class_code": obj.class_assigned.class_code,
+            "class_name": obj.class_assigned.class_name,
+            "subject_details": [
+                {
+                    "id": subject.id,
+                    "subject_code": subject.subject_code,
+                    "subject_name": subject.subject_name
+                }
+                for subject in obj.class_assigned.subjects.all()
+            ]
+        }
+
+
+
+class StudentResultSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # To show the creator's username
+
+    class Meta:
+        model = StudentResult
+        fields = [
+            'id', 'student', 'exam_detail', 'practical_marks', 'theory_marks',
+            'total_marks', 'percentage', 'gpa', 'created_by', 'created_at'
+        ]
+
+class GetStudentResultSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Display the creator's username
+    student_details = serializers.SerializerMethodField()  # Fetch student details
+    exam_detail = serializers.SerializerMethodField()  # Fetch detailed exam information
+
+    class Meta:
+        model = StudentResult
+        fields = [
+            'id', 'student_details', 'exam_detail', 'practical_marks', 'theory_marks',
+            'total_marks', 'percentage', 'gpa', 'created_by', 'created_at'
+        ]
+
+    def get_student_details(self, obj):
+        student = obj.student
+        return {
+            "id": student.id,
+            "username": student.user.username,
+            "email": student.user.email,
+            "full_name": f"{student.user.first_name} {student.user.last_name}",
+            "gender": student.gender,
+            "address": student.address,
+            "phone": student.phone,
+            "date_of_birth": student.date_of_birth
+        }
+
+    def get_exam_detail(self, obj):
+        exam_detail = obj.exam_detail
+        return {
+            "id": exam_detail.id,
+            "exam": {
+                "id": exam_detail.exam.id,
+                "name": exam_detail.exam.name
+            },
+            "subject": {
+                "id": exam_detail.subject.id,
+                "subject_code": exam_detail.subject.subject_code,
+                "subject_name": exam_detail.subject.subject_name
+            },
+            "class_assigned": {
+                "id": exam_detail.class_assigned.id,
+                "class_code": exam_detail.class_assigned.class_code,
+                "class_name": exam_detail.class_assigned.class_name
+            },
+            "full_marks": exam_detail.full_marks,
+            "pass_marks": exam_detail.pass_marks,
+            "exam_date": exam_detail.exam_date
+        }
+
+from .models import Message
+class MessageSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'receiver', 'content', 'timestamp', 'is_read', 'sender_username', 'receiver_username']
+
+
+
+class NotesSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')  # Show teacher's username
+    class_code = serializers.SerializerMethodField()  # Auto-fetch class name
+
+    class Meta:
+        model = Notes
+        fields = '__all__'
+
+    def get_class_code(self, obj):  
+        return obj.class_code.class_name if obj.class_code else None  # Fetch class name
+
     def create(self, validated_data):
-        # Retrieve teacher from the context
-        teacher = self.context.get('teacher')
-        if not teacher:
-            raise serializers.ValidationError("Teacher is required to save a result.")
+        request = self.context.get('request')  # Get the request object
 
-        # Add teacher to validated data
-        validated_data['teacher'] = teacher
+        if not request or not request.user:
+            raise serializers.ValidationError("User must be authenticated to create a note.")
 
-        # Create the StudentResult instance
+        subject = validated_data.get('subject')
+        related_classes = subject.classes.all()  # Fetch all classes linked to the subject
+
+        if not related_classes.exists():
+            raise serializers.ValidationError("This subject is not assigned to any class.")
+
+        # Assign first available class and set logged-in user as the creator
+        validated_data['class_code'] = related_classes.first()
+        validated_data['created_by'] = request.user  
+
         return super().create(validated_data)

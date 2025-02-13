@@ -1,12 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+//import Reports from "./pages/reports/index.js";
+//import Profile from "./pages/profile/index";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import ChatPage from "./pages/ChatPage";
-//import NavBar from "./components/navBar";
+//import NavBar from "./components/navBar" 
 import Reports from "./pages/reports";
 import MyBus from "./pages/mybus";
 import Attendence from "./pages/attendence";
@@ -40,6 +41,183 @@ import ClassList from "./pages/principal/classList/ClassList";
 import SubjectList from "./pages/principal/subjectList/SubjectList";
 import StudentList from "./pages/principal/studentList/StudentList";
 import TeacherList from "./pages/principal/teacherList/TeacherList";
+import ExamTeacher from "./pages/reports/ExamTeacher";
+import ExamPrincipal from "./pages/reports/ExamPrincipal"
+import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal";
+import StudentRoutine from "./pages/reports/StudentRoutine";
+import ExamPublish from "./pages/reports/ExamPublish";
+import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher"
+//import Profile from "./pages/profile"
+import StudentReports from "./pages/reports/StudentReports"
+//import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+  },
+  /*{
+    path: "/profile",
+    element: <Profile />,
+  },*/
+
+  {
+    path: "/homepage",
+    element: <HomePage />,
+  },
+  {
+    path: "/studentdashboard",
+    element: <StudentHomePage />,
+  },
+
+  {
+    path: "/masterdashboard",
+    element: <MasterHomePage />,
+  },
+
+  {
+    path: "/principaldashboard",
+    element: <PrincipalHomePage />,
+  },
+
+  {
+    path: "/teacherdashboard",
+    element: <TeacherHomePage />,
+  },
+
+  {
+    path: "/calendar",
+    element: <AcademicCalendar />,
+  },
+
+  {
+    path: "/studentResult",
+    element: <StudentReports /> ,
+  },
+
+  {
+    path: "/myrequest",
+    element: <MyRequest />,
+  },
+
+  {
+    path: "/allrequest",
+    element: <AllRequest />,
+  },
+
+  {
+    path: "/mybus",
+    element: <StaffMap />,
+  },
+
+  {
+    path: "/applyLeave",
+    element: <ApplyLeave />,
+  },
+  {
+    path: "/viewLeave",
+    element: <ViewLeave />,
+  },
+  {
+    path:"/leave-view/:id",
+    element:<LeaveDetail />
+  },
+  {
+    path: "/myLeave",
+    element: <Myleave />,
+  },
+
+  {
+    path: "/attendence",
+    element: <Attendence />,
+  },
+
+  /*{
+    path: "/profile",
+    element: <Profile />,
+  },*/
+  {
+    path: "/myStudents",
+    element: <MyStudents />,
+  },
+  {
+    path:"/lms",
+    element:<LearningManagemanetSystem />
+  },
+  {
+    path: "/lms/:subject",
+    element: <Subject />
+
+  },
+  {
+    path:"/assignment/:assignmentId",
+     element:<AssignmentDetailPage />
+  },
+  {
+    path:"/tms",
+    element: <TeachingManagementSystem />
+  },
+  {
+    path:"/tms/:classes",
+    element:<Classes />
+  },
+  {
+    path: "/submissions/:assignmentId",
+     element: <AssignmentSubmissions />
+  },
+  {
+    path: "/new-assignment" ,
+    element: <NewAssignment />
+  },
+  {
+    path:"/new-tip" ,
+    element:<AddNewNote />
+  },
+  {
+    path:"/view-tip/:id",
+     element:<ViewNotes />
+  },
+  {
+    path:"/classList",
+    element: <ClassList />
+  },
+  {
+    path:"/subjectList",
+    element: <SubjectList />
+  },
+  {
+    path: "/studentList",
+    element: <StudentList />
+  },
+  {
+    path: "/teacherList",
+    element: <TeacherList />
+  },
+  {
+    path:"/examTeacher",
+    element: <ExamTeacher />
+  },
+  {
+    path:"/examPrincipal",
+    element: <ExamPrincipal/>
+  },
+  {
+    path:"/examRoutineTeacher",
+    element: <ExamRoutineTeacher />
+  },
+  {
+    path:"/examPublish",
+    element: <ExamPublish />
+  },
+  {
+    path:"/exam-details/:examId",
+     element:<AddExamDetailsByPrincipal />
+  },
+  {
+    path:"/examRoutine",
+    element: <StudentRoutine />
+  }
+]);
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -55,7 +233,6 @@ root.render(
           <Route path="/principaldashboard" element={<PrincipalHomePage />} />
           <Route path="/teacherdashboard" element={<TeacherHomePage />} />
           <Route path="/calendar" element={<AcademicCalendar />} />
-          <Route path="/reports" element={<Reports />} />
           <Route path="/myrequest" element={<MyRequest />} />
           <Route path="/allrequest" element={<AllRequest />} />
           <Route path="/mybus" element={<StaffMap />} />

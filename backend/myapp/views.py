@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login as auth_login
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status,permissions
+from rest_framework import status,permissions,generics
 from django.contrib.auth.models import User
 from .models import *
 from .serializers import * 
@@ -14,10 +14,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 import json
+from django.db import transaction
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import UpdateAPIView
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from rest_framework.generics import *
+
+from rest_framework.decorators import action
 
 
 class PostListCreateView(generics.ListCreateAPIView):
@@ -227,13 +229,11 @@ class RegisterStaffView(APIView):
             # Return error response if validation fails
             return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
 # API view to list all teachers
 class TeacherListView(APIView):
     def get(self, request, format=None):
         teachers = Teacher.objects.all()  # Retrieve all teacher instances
-        serializer = TeacherSerializer(teachers, many=True)  # Serialize the teacher data
+        serializer = GetTeacherSerializer(teachers, many=True)  # Serialize the teacher data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
 # API view to list all principals
@@ -246,29 +246,8 @@ class PrincipalListView(APIView):
 # API view to list all students
 class StudentListView(APIView):
     def get(self, request, format=None):
-
-        # Retrieve class ID from query parameters
-        class_id = request.query_params.get('class_id')
-
-        if class_id:
-            try:
-                # Ensure the class exists
-                class_instance = Class.objects.get(id=class_id)
-                # Filter students by the class
-                students = Student.objects.filter(class_code=class_instance)
-            except Class.DoesNotExist:
-                return Response(
-                    {"error": "Class with the given ID does not exist."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            # Filter students by class if class_id is provided
-            # students = Student.objects.filter(classes__id=class_id)
-        else:
-            # Retrieve all students if no class_id is provided
-            students = Student.objects.all()
-
-        # students = Student.objects.all()  # Retrieve all student instances
-        serializer = StudentSerializer(students, many=True)  # Serialize the student data
+        students = Student.objects.all()  # Retrieve all student instances
+        serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
 # API view to list students by subject and class
@@ -363,7 +342,7 @@ class TeacherDetailView(APIView):
             # Retrieve the Teacher instance by primary key
             teacher = Teacher.objects.get(pk=pk)
             # Serialize the Teacher instance
-            serializer = TeacherSerializer(teacher)
+            serializer = GetTeacherSerializer(teacher)
             # Return serialized data with 200 OK status
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Teacher.DoesNotExist:
@@ -397,14 +376,13 @@ class StudentDetailView(APIView):
             # Retrieve the Student instance by primary key
             student = Student.objects.get(pk=pk)
             # Serialize the Student instance
-            serializer = StudentSerializer(student)
+            serializer = GetStudentSerializer(student)
             # Return serialized data with 200 OK status
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Student.DoesNotExist:
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # Retrieve specific staff member details
 class StaffDetailView(APIView):
     """
@@ -419,8 +397,6 @@ class StaffDetailView(APIView):
             # Return an error response if staff member is not found
             return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        
-
 # API view to delete specific teacher
 class TeacherDeleteView(APIView):
     def delete(self, request, pk, format=None):
@@ -428,14 +404,10 @@ class TeacherDeleteView(APIView):
         Handle DELETE requests to remove a specific Teacher by primary key.
         """
         try:
-            # Retrieve the Teacher instance by primary key
             teacher = Teacher.objects.get(pk=pk)
-            # Delete the Teacher instance
             teacher.delete()
-            # Return success message with 204 No Content status
             return Response({"message": "Teacher deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except Teacher.DoesNotExist:
-            # Return error message with 404 Not Found status if Teacher does not exist
             return Response({"error": "Teacher not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # API view to delete specific principal
@@ -472,7 +444,6 @@ class StudentDeleteView(APIView):
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # Delete a specific staff member
 class StaffDeleteView(APIView):
     """
@@ -487,7 +458,6 @@ class StaffDeleteView(APIView):
             # Return an error response if staff member is not found
             return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
         
-
 # API view to update teacher info
 class TeacherUpdateAPIView(APIView):
     def put(self, request, pk):
@@ -527,6 +497,22 @@ class PrincipalUpdateAPIView(APIView):
             return Response(PrincipalSerializer(principal).data)
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# api to get student as per class
+class StudentListByClassAPIView(APIView):
+    def get(self, request, class_code):
+        """
+        API to fetch students based on class_code.
+        Example Request: GET /api/students/class/1/
+        """
+        students = Student.objects.filter(class_code_id=class_code)
+        
+        if not students.exists():
+            return Response({"detail": "No students found for this class."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = GetStudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 # API view to update student info
 class StudentUpdateAPIView(APIView):
@@ -583,13 +569,6 @@ def get_user_role(request):
     )
     return JsonResponse({"role": role})
         
-# API view to list all leave applications for the principal
-# from rest_framework.permissions import IsAuthenticated
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-# from .models import LeaveApplication
-# from .serializers import LeaveApplicationSerializer
-
 class TotalLeaveApplicationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -610,19 +589,15 @@ class TotalLeaveApplicationListView(APIView):
                     {"error": "Teacher does not have a class assigned."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # print(f"Teacher's class_teacher: {teacher.class_teacher}")
-
+            
             # Filter leave applications for students in the teacher's class
             leave_applications = LeaveApplication.objects.filter(
                 applicant_type="Student", 
                 applicant__in=Student.objects.filter(class_code=teacher.class_teacher).values_list('user', flat=True)
                 # applicant__student__classes=teacher.class_teacher
             )
-            # print(f"Leave applications for teacher: {leave_applications}")
-            
+           
         elif role == 'Student':
-            # Students can view only their leave applications
-            # leave_applications = LeaveApplication.objects.filter(applicant=user)
             try:
                 student = Student.objects.get(user=user)
             except Student.DoesNotExist:
@@ -691,8 +666,6 @@ class LeaveApplicationCreateView(APIView):
             # Return error message if 'leave_date' or 'message' is not provided
             return Response({"error": "Both 'leave_date' and 'message' are required."}, status=status.HTTP_400_BAD_REQUEST)
         
-
-
         # Determine applicant_type based on user role
         if request.user.is_student:
             applicant_type = 'Student'
@@ -736,7 +709,6 @@ class LeaveApplicationCreateView(APIView):
         # Return validation errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
 # API view to retrieve, update, or delete a specific leave application
 class LeaveApplicationDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -798,7 +770,6 @@ class LeaveApplicationDetailView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
     def delete(self, request, pk, format=None):
         """
         Handle DELETE requests to remove a specific leave application by primary key.
@@ -814,7 +785,6 @@ class LeaveApplicationDetailView(APIView):
         application.delete()
         # Return success message with 204 No Content status
         return Response({"message": "Leave application successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
-
 
 # API view to update the status of a leave application
 class LeaveApplicationStatusUpdateView(APIView):
@@ -931,22 +901,22 @@ class ClassListCreateView(APIView):
 
 # API view to retrieve, update, or delete a specific class
 class ClassDetailView(APIView):
-    # def get(self, request, pk, format=None):
-    def get(self, request, class_code, format=None):
+    def get(self, request, pk, format=None):
+    # def get(self, request, class_code, format=None):
         """
         Handle GET requests to retrieve the details of a specific Class by primary key.
         """
-        # class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by class_code
-        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by class_code
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by class_code
+        # class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by class_code
         serializer = ClassSerializer(class_instance)  # Serialize the Class instance
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
     # def put(self, request, pk, format=None):
-    def put(self, request, class_code, format=None):
+    def put(self, request, pk, format=None):
         """
         Handle PUT requests to update a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by primary key
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
             serializer.save()
@@ -954,15 +924,13 @@ class ClassDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
 
     # def delete(self, request, pk, format=None):
-    def delete(self, request, class_code, format=None):
+    def delete(self, request, pk, format=None):
         """
         Handle DELETE requests to remove a specific Class by primary key.
         """
-        class_instance = get_object_or_404(Class, class_code=class_code)  # Retrieve the Class instance by primary key
+        class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
-
-
 
 # Daily Attendance API View
 class DailyAttendanceView(APIView):
@@ -1037,13 +1005,6 @@ class LessonAttendanceView(APIView):
         serializer = LessonAttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-from rest_framework import generics
-from .models import Event,Assignment
-from .serializers import EventSerializer
-from rest_framework.permissions import IsAuthenticated
-
 class EventListView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -1057,15 +1018,7 @@ class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
 
-from .serializers import AssignmentSerializer
-
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import AssignmentSerializer
-from .models import Subject, Class
 class TeacherAssignmentsView(APIView):
     """
     View for teachers to fetch assignments they created.
@@ -1094,6 +1047,7 @@ class TeacherAssignmentsView(APIView):
         # Serialize assignments and return the response
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class StudentAssignmentsBySubjectView(APIView):
     """
     View for students to fetch assignments based on a specific subject.
@@ -1136,6 +1090,7 @@ class StudentAssignmentsBySubjectView(APIView):
 
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         # Ensure the request has a logged-in user
         if not request.user.is_authenticated:
@@ -1157,9 +1112,8 @@ class AssignHomeworkView(APIView):
                     {"error": f"The subject '{subject_instance.subject_name}' is not part of the class '{class_instance.class_name}'."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            # Ensure teacher is authorized for the class
-            # if not hasattr(teacher, 'teacher') or not class_instance in teacher.teacher.classes.all():
-            if not class_instance in teacher.classes.all():
+            
+            if not teacher.classes.filter(id=class_instance.id).exists():
                 return Response(
                     {"error": f"You are not authorized to assign homework for the class '{class_instance.class_name}'."},
                     status=status.HTTP_403_FORBIDDEN
@@ -1169,11 +1123,6 @@ class AssignHomeworkView(APIView):
             return Response(AssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
         # Return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-from rest_framework.permissions import AllowAny
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from .models import Teacher, Class, Subject
 
 class FilterSubjectsView(APIView):
     permission_classes = [AllowAny]
@@ -1254,33 +1203,34 @@ class SubmitStudentAssignmentView(APIView):
         """
         Submit an assignment for a student.
         """
+        try:
+            student = request.user.student  # Ensure the user is linked to a Student instance
+
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can submit assignments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
         # Check if the student is trying to submit a valid assignment
         assignment_id = request.data.get('assignment_id')
         submission_file = request.FILES.get('submission_file')
+        written_submission = request.data.get('written_submission')
 
         if not assignment_id:
             return Response(
                 {"error": "Assignment ID are required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        if not submission_file:
+        if not submission_file and not written_submission:
             return Response(
-                {"error": "Submission file are required."},
+                {"error": "Either a submission file or written submission is required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        # assignment = get_object_or_404(Assignment, id=assignment_id)
-        # student = get_object_or_404(Student, user=request.user)
-
-        try:
-            student = get_object_or_404(Student, user=request.user)
-        except Student.DoesNotExist:
-            return Response(
-                {"error": "You are not authorized to submit this assignment."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # Retrieve the assignment
         assignment = get_object_or_404(Assignment, id=assignment_id)
         
-
+        # Check if the assignment is for the student's class
         if student.class_code != assignment.class_assigned:
             return Response(
                 {"error": "This assignment is not for your class."}, 
@@ -1288,7 +1238,7 @@ class SubmitStudentAssignmentView(APIView):
 
         # Check if the student has already submitted
         if AssignmentSubmission.objects.filter(
-            assignment=assignment,student=student
+            assignment=assignment,student=request.user
             ).exists():
             return Response(
                 {"error": "You have already submitted this assignment."}, 
@@ -1297,43 +1247,100 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=student,  # Use CustomUser instance
-            submission_file=submission_file
+            student=request.user,  # # Pass the CustomUser instance
+            submission_file=submission_file,
+            written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-
+# review list of assignements given by teacher//uses by teacher 
 class ReviewAssignmentsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        user = request.user
-        # user = request.user
-
-        # Ensure the user is a teacher
+        """
+        Fetch assignments and their submissions for the teacher's assigned classes and subjects.
+        """
         try:
-            teacher = user.teacher # Assuming a OneToOneField relationship exists between Teacher and AUTH_USER_MODEL
+            teacher = request.user.teacher  # Ensure the request user is a teacher
         except Teacher.DoesNotExist:
-            return Response({"error": "You are not authorized to view this content."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "You are not authorized to view this content."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
-        # Fetch assignments related to the teacher's subjects
-        # assignments = Assignment.objects.filter(subject__teachers=teacher_instance)
-        assignments = Assignment.objects.filter(subject__teachers=teacher)
+        # Fetch assignments for the teacher's classes and subjects
+        assignments = Assignment.objects.filter(
+            class_assigned__in=teacher.classes.all(),
+            subject__in=teacher.subjects.all()
+        )
 
-        # Prepare data for response
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for your assigned classes or subjects."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Prepare detailed response for each assignment
         data = []
-
         for assignment in assignments:
             submissions = AssignmentSubmission.objects.filter(assignment=assignment)
+            
+            # If there is no `status` field, we will not include the breakdown
             data.append({
                 "assignment": AssignmentSerializer(assignment).data,
-                "submissions": AssignmentSubmissionSerializer(submissions, many=True).data
+                "submissions": AssignmentSubmissionSerializer(submissions, many=True).data,
+                "total_submissions": submissions.count(),
             })
-        
+
         return Response(data, status=status.HTTP_200_OK)
 
+# to allow a teacher to review a specific assignment submission
+# from rest_framework import status
+class ReviewAssignmentSubmissionView(APIView):
+    # permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    def post(self, request, submission_id, format=None):
+        """
+        Allow a teacher to review a student's assignment submission.
+        """
+        try:
+            teacher = request.user.teacher  # Ensure the user is a teacher
+            print(teacher)
+        except Teacher.DoesNotExist:
+            return Response(
+                {"error": "You are not authorized to review assignmentss."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Fetch the submission
+        submission = get_object_or_404(AssignmentSubmission, id=submission_id)
+
+        # Ensure the assignment belongs to the teacher
+        if submission.assignment.teacher != teacher:
+            return Response(
+                {"error": "You are not authorized to review this assignment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Get review data from the request
+        review_text = request.data.get('review_text', '').strip()
+        is_checked = request.data.get('is_checked', False)
+
+        # Update the submission
+        submission.reviewed_by = teacher
+        submission.review_text = review_text
+        submission.is_checked = is_checked
+        submission.save()
+
+        return Response(
+            {"message": "Review submitted successfully."},
+            status=status.HTTP_200_OK
+        )
+        
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1343,235 +1350,102 @@ class SyllabusView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
-    # Ensure the logged-in user is a teacher
         if not hasattr(request.user, 'teacher'):
             return Response({"error": "Only teachers can create a syllabus."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Automatically set the teacher field to the logged-in user
         teacher = request.user.teacher
-
-        # Fetch class and subject based on the provided IDs
-        class_assigned_id = request.data.get('class_assigned')
-        subject_id = request.data.get('subject')
-
-        if not class_assigned_id or not subject_id:
-            return Response(
-                {"error": "Both 'class_assigned' and 'subject' fields are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            class_assigned = Class.objects.get(id=class_assigned_id)
-            subject = Subject.objects.get(id=subject_id)
-        except (Class.DoesNotExist, Subject.DoesNotExist) as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Prepare data for serialization
         data = request.data.copy()
-        data['teacher'] = teacher.id
+        data['teacher'] = teacher.id    # Ensure teacher ID is included
+
+        # Get subject ID from request data
+        subject_id = data.get('subject')
+
+        # Check if teacher is assigned to the subject
+        if not teacher.subjects.filter(id=subject_id).exists():
+            return Response(
+                {"error": "You can only add a syllabus for subjects you teach."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         serializer = SyllabusSerializer(data=data)
 
         if serializer.is_valid():
-            serializer.save(class_assigned=class_assigned, subject=subject, teacher=teacher)
+            serializer.save(teacher=teacher)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SyllabusPerClassView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    def patch(self, request, *args, **kwargs):
+        """ Allows teachers to update the completion status of topics and subtopics """
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can update the syllabus."}, status=status.HTTP_403_FORBIDDEN)
 
-    def get(self, request, class_code, *args, **kwargs):
+        teacher = request.user.teacher
+        syllabus_id = kwargs.get("pk")  # Get the syllabus ID from URL
+
         try:
-            # Fetch the Class object using the class_code
-            class_instance = Class.objects.get(class_code=class_code)
-            
-            # Fetch the syllabus related to the class
-            syllabus = Syllabus.objects.filter(class_assigned=class_instance)
-            
-            if not syllabus:
-                return Response({"error": "Syllabus not found for this class."}, status=status.HTTP_404_NOT_FOUND)
-            
-            serializer = SyllabusSerializer(syllabus, many=True)
-            return Response(serializer.data)
-
-        except Class.DoesNotExist:
-            return Response({"error": "Class with this code not found."}, status=status.HTTP_404_NOT_FOUND)
-
-class SyllabusDetailView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, pk, *args, **kwargs):
-        try:
-            syllabus = Syllabus.objects.get(pk=pk)
+            syllabus = Syllabus.objects.get(id=syllabus_id, teacher=teacher)
         except Syllabus.DoesNotExist:
-            return Response({"error": "Syllabus not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "You do not have permission to update this syllabus."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        for chapter_data in data.get("chapters", []):
+            for topic_data in chapter_data.get("topics", []):
+                topic_id = topic_data.get("id")
+                if topic_id:
+                    topic = Topic.objects.filter(id=topic_id, chapter__syllabus=syllabus).first()
+                    if topic:
+                        topic.is_completed = topic_data.get("is_completed", topic.is_completed)
+                        topic.save()
+
+                        # Update subtopics if provided
+                        for subtopic_data in topic_data.get("subtopics", []):
+                            subtopic_id = subtopic_data.get("id")
+                            if subtopic_id:
+                                subtopic = Subtopic.objects.filter(id=subtopic_id, topic=topic).first()
+                                if subtopic:
+                                    subtopic.is_completed = subtopic_data.get("is_completed", subtopic.is_completed)
+                                    subtopic.save()
+
         serializer = SyllabusSerializer(syllabus)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def patch(self, request, pk, *args, **kwargs):
-        try:
-            syllabus = Syllabus.objects.get(pk=pk)
-        except Syllabus.DoesNotExist:
-            return Response({"error": "Syllabus not found"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = SyllabusSerializer(syllabus, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class SyllabusUpdateView(UpdateAPIView):
-    queryset = Syllabus.objects.all()
-    serializer_class = SyllabusSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_update(self, serializer):
-        """
-        Perform the update while ensuring only the teacher who created the syllabus can update it.
-        """
-        syllabus = self.get_object()
-        # Ensure the logged-in user is the teacher of the syllabus
-        if self.request.user != syllabus.teacher.user:
-            raise PermissionDenied("You do not have permission to update this syllabus.")
-        serializer.save()
-
-class SyllabusDeleteView(APIView):
+from rest_framework import viewsets
+class ChapterViewSet(viewsets.ModelViewSet):
+    queryset = Chapter.objects.all()
+    serializer_class = ChapterSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, pk=None, *args, **kwargs):
-        # Check if a specific syllabus ID is provided
-        if pk:
-            try:
-                syllabus = Syllabus.objects.get(pk=pk)
-                # Ensure only the teacher who created the syllabus can delete it
-                if request.user != syllabus.teacher.user:
-                    return Response(
-                        {"error": "You do not have permission to delete this syllabus."},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-                syllabus.delete()
-                return Response(
-                    {"message": "Syllabus deleted successfully."},
-                    status=status.HTTP_200_OK
-                )
-            except Syllabus.DoesNotExist:
-                return Response({"error": "Syllabus not found."}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            # For bulk delete, ensure the user is a teacher
-            if not hasattr(request.user, 'teacher'):
-                return Response(
-                    {"error": "Only teachers can delete all syllabi."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            # Delete all syllabi created by the logged-in teacher
-            teacher_syllabi = Syllabus.objects.filter(teacher=request.user.teacher)
-            count = teacher_syllabi.delete()[0]  # delete() returns a tuple (number of objects deleted, _)
-            return Response(
-                {"message": f"Deleted {count} syllabus entries."},
-                status=status.HTTP_200_OK
-            )
-        
-'''# List and Create Fees
-class FeeListCreateView(ListCreateAPIView):
-    queryset = Fees.objects.all()
-    serializer_class = FeesSerializer
+class TopicViewSet(viewsets.ModelViewSet):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=['patch'])
+    def mark_complete(self, request, pk=None):
+        topic = self.get_object()
+        topic.is_completed = True
+        topic.save()
+        return Response({"message": "Topic marked as completed"}, status=status.HTTP_200_OK)
 
-# Retrieve, Update, and Delete Specific Fee
-class FeeDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Fees.objects.all()
-    serializer_class = FeesSerializer
+class SubtopicViewSet(viewsets.ModelViewSet):
+    queryset = Subtopic.objects.all()
+    serializer_class = SubtopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        serializer = self.serializer_class(fee)
-        return Response(serializer.data)
-
-    def put(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        serializer = self.serializer_class(fee, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, *args, **kwargs):
-        fee = get_object_or_404(Fees, pk=pk)
-        fee.delete()
-        return Response({"message": "Fee record deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
-# List Fees for a Specific Student
-class StudentFeeListView(ListAPIView):
-    serializer_class = FeesSerializer
-
-    def get_queryset(self):
-        student_id = self.kwargs['student_id']
-        return Fees.objects.filter(student_id=student_id)
-
-    def get(self, request, student_id, *args, **kwargs):
-        fees = self.get_queryset()
-        serializer = self.serializer_class(fees, many=True)
-        return Response(serializer.data)
-
-# List Pending Fees for a Specific Student
-class StudentPendingFeesView(ListAPIView):
-    serializer_class = FeesSerializer
-
-    def get_queryset(self):
-        student_id = self.kwargs['student_id']
-        return Fees.objects.filter(student_id=student_id, status='pending')
-
-    def get(self, request, student_id, *args, **kwargs):
-        pending_fees = self.get_queryset()
-        serializer = self.serializer_class(pending_fees, many=True)
-        return Response(serializer.data) '''
-    
-# from rest_framework.permissions import AllowAny
-# class UpdateStaffLocationView(APIView):
-#     # permission_classes = [IsAuthenticated]
-#     permission_classes = [AllowAny]
-
-#     def get(self, request):
-#         # locations = StaffLocation.objects.all()  # Assuming all staff locations
-#         # serializer = StaffLocationSerializer(locations, many=True)
-#         # return Response({"locations": serializer.data})
-#         staff_locations = StaffLocation.objects.all()
-#         locations = [
-#             {
-#                 'staff': location.staff.user.username,
-#                 'latitude': location.latitude,
-#                 'longitude': location.longitude,
-#                 'timestamp': location.timestamp
-#             }
-#             for location in staff_locations
-#             # print(locations)
-#         ]
-#         # data = {"message": "Staff locations retrieved successfully"}
-#         print(locations)
-
-#         return Response({"locations":locations})
-
-#     def post(self, request):
-#         serializer = StaffLocationSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(staff=request.user.staff)
-#             return Response({"message": "Location updated successfully"})
-#         return Response(serializer.errors, status=400)
-
-
+    @action(detail=True, methods=['patch'])
+    def mark_complete(self, request, pk=None):
+        subtopic = self.get_object()
+        subtopic.is_completed = True
+        subtopic.save()
+        return Response({"message": "Subtopic marked as completed"}, status=status.HTTP_200_OK)
 
 # Discussion Post API Views
 class DiscussionPostAPIView(APIView):
     """
     API View to list and create posts.
     """
-
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
@@ -1592,7 +1466,6 @@ class DiscussionCommentAPIView(APIView):
     """
     API View to list and create comments under a specific post.
     """
-
     def get(self, request, post_id):
         comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
         serializer = DiscussionCommentSerializer(comments, many=True)
@@ -1606,9 +1479,6 @@ class DiscussionCommentAPIView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 class DiscussionPostDeleteAPIView(APIView):
     """
@@ -1624,10 +1494,8 @@ class DiscussionPostDeleteAPIView(APIView):
 
         if post.created_by != request.user:
             raise PermissionDenied("You are not authorized to delete this post.")
-
         post.delete()
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-
 
 class DiscussionCommentDeleteAPIView(APIView):
     """
@@ -1647,15 +1515,6 @@ class DiscussionCommentDeleteAPIView(APIView):
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import FeeCategory
-from .serializers import FeeCategorySerializer
-
-
 class FeeCategoryListCreateView(APIView):
     def get(self, request):
         fee_categories = FeeCategory.objects.all()
@@ -1668,7 +1527,6 @@ class FeeCategoryListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class FeeCategoryDetailView(APIView):
     def get(self, request, pk):
@@ -1698,11 +1556,6 @@ class FeeCategoryDetailView(APIView):
         fee_category.delete()
         return Response({'message': 'FeeCategory deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-
-from .models import FeeStructure
-from .serializers import FeeStructureSerializer
-
-
 class FeeStructureListCreateView(APIView):
     def get(self, request):
         fee_structures = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories')
@@ -1715,7 +1568,6 @@ class FeeStructureListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class FeeStructureDetailView(APIView):
     def get(self, request, pk):
@@ -1745,29 +1597,17 @@ class FeeStructureDetailView(APIView):
         fee_structure.delete()
         return Response({'message': 'FeeStructure deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-
-from .models import PaymentTransaction
-from .serializers import PaymentTransactionSerializer
-
-
 class StudentFeeListView(APIView):
     def get(self, request, student_id):
         transactions = PaymentTransaction.objects.filter(student_id=student_id)
         serializer = PaymentTransactionSerializer(transactions, many=True)
         return Response(serializer.data)
 
-
 class StudentPendingFeesView(APIView):
     def get(self, request, student_id):
         transactions = PaymentTransaction.objects.filter(student_id=student_id, remaining_dues__gt=0)
         serializer = PaymentTransactionSerializer(transactions, many=True)
         return Response(serializer.data)
-
-
-
-from .models import PaymentTransaction
-from .serializers import PaymentTransactionSerializer
-
 
 class PaymentTransactionListCreateView(APIView):
     def get(self, request):
@@ -1781,7 +1621,6 @@ class PaymentTransactionListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class PaymentTransactionDetailView(APIView):
     def get(self, request, pk):
@@ -1811,107 +1650,726 @@ class PaymentTransactionDetailView(APIView):
         transaction.delete()
         return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
     
-
-
-class ExamListCreateView(APIView):
-    """
-    Handles GET and POST requests for the Exam model.
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """
-        Retrieves the list of all exams.
-        """
+class ExamAPIView(APIView):
+    def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
         serializer = ExamSerializer(exams, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request):
-        """
-        Creates a new exam.
-        """
+    def post(self, request, *args, **kwargs):
         serializer = ExamSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class AddResultView(APIView):
-    permission_classes = [IsAuthenticated]
-
+class ExamDetailAPIView(APIView):
     def get(self, request):
-        teacher = request.user.teacher
-        exam_id = request.query_params.get('exam')  # Filter by exam (optional)
-        student_id = request.query_params.get('student')  # Filter by student (optional)
-
-        results = StudentResult.objects.filter(teacher=teacher)
-
-        if exam_id:
-            results = results.filter(exam_id=exam_id)
-
-        if student_id:
-            results = results.filter(student_id=student_id)
-
-        serializer = StudentResultSerializer(results, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        teacher = request.user.teacher  # Fetch the teacher associated with the logged-in user
-        serializer = StudentResultSerializer(
-            data=request.data,
-            context={'request': request, 'teacher': teacher}  # Pass teacher in context
-        )
+        """
+        Retrieve all exam details.
+        """
+        details = ExamDetail.objects.all()
+        serializer = GetExamDetailSerializer(details, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        serializer = ExamDetailSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Result added successfully", "data": serializer.data}, status=201)
-        return Response(serializer.errors, status=400)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class StudentResultAPIView(APIView):
+    def get(self, request):
+        results = StudentResult.objects.all()
+        serializer = GetStudentResultSerializer(results, many=True)
+        return Response(serializer.data)
 
+    def post(self, request, *args, **kwargs):
+        serializer = StudentResultSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# Single Exam APIView
+class SingleExamAPIView(APIView):
+    def get_object(self, exam_id):
+        try:
+            return Exam.objects.get(id=exam_id)
+        except Exam.DoesNotExist:
+            raise NotFound("Exam not found.")
+
+    def get(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        serializer = ExamSerializer(exam)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        data = request.data.copy()  # Copy request data to modify safely
+
+        # Ensure boolean fields are updated properly
+        if 'is_timetable_published' not in data:
+            data['is_timetable_published'] = exam.is_timetable_published
+        if 'is_result_published' not in data:
+            data['is_result_published'] = exam.is_result_published
+
+        serializer = ExamSerializer(exam, data=data, partial=True)  # Allow partial updates
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, exam_id):
+        exam = self.get_object(exam_id)
+        exam.delete()
+        return Response({"message": "Exam deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# Single ExamDetail APIView
+class SingleExamDetailAPIView(APIView):
+    def get_object(self, exam_detail_id):
+        try:
+            return ExamDetail.objects.get(id=exam_detail_id)
+        except ExamDetail.DoesNotExist:
+            raise NotFound("Exam detail not found.")
+
+    def get(self, request, exam_detail_id):
+        exam_detail = self.get_object(exam_detail_id)
+        serializer = GetExamDetailSerializer(exam_detail)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, exam_detail_id):
+        try:
+            exam_detail = ExamDetail.objects.get(pk=exam_detail_id)
+        except ExamDetail.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ExamDetailSerializer(exam_detail, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, exam_detail_id):
+        exam_detail = self.get_object(exam_detail_id)
+        exam_detail.delete()
+        return Response({"message": "Exam detail deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# Single StudentResult APIView
+class SingleStudentResultAPIView(APIView):
+    def get_object(self, result_id):
+        try:
+            return StudentResult.objects.get(id=result_id)
+        except StudentResult.DoesNotExist:
+            raise NotFound("Student result not found.")
+
+    def get(self, request, result_id):
+        student_result = self.get_object(result_id)
+        serializer = GetStudentResultSerializer(student_result)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, result_id):
+        student_result = self.get_object(result_id)
+        serializer = StudentResultSerializer(student_result, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, result_id):
+        student_result = self.get_object(result_id)
+        student_result.delete()
+        return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id, exam_id):
         try:
-            student = Student.objects.get(id=student_id)
+            # Fetch the exam
             exam = Exam.objects.get(id=exam_id)
 
-            # Get all subjects for the student's class
-            class_subjects = student.class_code.subjects.all()
+            # Check if results are published
+            if not exam.is_result_published:
+                return Response(
+                    {"detail": "Results for this exam are not published yet."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-            # Filter results for this student, exam, and class subjects
+            # Fetch the student
+            student = Student.objects.select_related('user').get(id=student_id)
+
+            # Fetch the student's subject-wise results for the exam
             results = StudentResult.objects.filter(
-                student=student, 
-                exam=exam, 
-                subject__in=class_subjects
+                student_id=student_id,
+                exam_detail__exam_id=exam_id
+            ).select_related('exam_detail', 'exam_detail__subject', 'exam_detail__class_assigned')
+
+            if not results.exists():
+                return Response(
+                    {"detail": "No results found for the specified student and exam."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Prepare result data
+            results_data = []
+            total_marks_obtained = 0
+            total_full_marks = 0
+
+            for result in results:
+                total_marks_obtained += result.total_marks or 0
+                total_full_marks += result.exam_detail.full_marks or 0
+
+                # Serialize the result
+                result_data = GetStudentResultSerializer(result).data
+                results_data.append(result_data)
+
+            # Fetch the overall result from the StudentOverallResult model
+            overall_result = StudentOverallResult.objects.get(student=student, exam=exam)
+
+            # Prepare the response data with all student details and results
+            return Response({
+                "student": {
+                    "id": student.id,
+                    "username": student.user.username,
+                    "full_name": f"{student.user.first_name} {student.user.last_name}",
+                    "gender": student.gender,
+                    "address": student.address,
+                    "phone": student.phone,
+                    "date_of_birth": student.date_of_birth
+                },
+                "exam": exam.name,
+                "results": results_data,
+                "total_marks_obtained": overall_result.total_marks_obtained,
+                "total_full_marks": overall_result.total_full_marks,
+                "percentage": round(overall_result.percentage, 2),
+                "gpa": round(overall_result.gpa, 2),
+                "grade": overall_result.grade
+            }, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response(
+                {"detail": "Exam not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Student.DoesNotExist:
+            return Response(
+                {"detail": "Student not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except StudentOverallResult.DoesNotExist:
+            return Response(
+                {"detail": "No overall result found for the specified student and exam."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+class ExamDetailsByExamView(APIView):
+    def get(self, request, exam_id, *args, **kwargs):
+        try:
+            # Fetch the exam
+            exam = Exam.objects.get(id=exam_id)      
+
+            # Fetch the related exam details
+            exam_details = []
+            for detail in exam.exam_details.all():
+                exam_details.append({
+                    "id": detail.id,
+                    "class_details": {
+                        "id": detail.class_assigned.id,
+                        "name": detail.class_assigned.class_name,
+                        "code": detail.class_assigned.class_code,
+                    },
+                    "subject": {
+                        "id": detail.subject.id,
+                        "subject_code": detail.subject.subject_code,
+                        "subject_name": detail.subject.subject_name,
+                    },
+                    "full_marks": detail.full_marks,
+                    "pass_marks": detail.pass_marks,
+                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_time": detail.exam_time,
+                })
+
+            response_data = {
+                "id": exam.id,
+                "exam": {
+                    "id": exam.id,
+                    "name": exam.name,
+                },
+                "exam_details": exam_details,
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exam.DoesNotExist:
+            return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class SubjectWiseExamResultsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, exam_id, subject_id, *args, **kwargs):
+        try:
+            # Fetch the results for the specified exam and subject
+            results = StudentResult.objects.filter(
+                exam_detail__exam_id=exam_id,
+                exam_detail__subject_id=subject_id
+            ).select_related(
+                'student__user', 'exam_detail__exam', 'exam_detail__subject', 'exam_detail__class_assigned'
             )
 
             if not results.exists():
-                return Response({"error": "No results found for this student and exam."}, status=404)
+                return Response(
+                    {"detail": "No results found for the specified exam and subject."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-            # Build the marksheet
-            marksheet = {
-                "student_name": student.user.username,
-                "class_name": student.class_code.class_name,
-                "exam_name": exam.name,
-                "exam_type": exam.exam_type,
-                "subjects": []
+            # Prepare exam and subject details
+            exam_detail = results[0].exam_detail
+            exam_details = {
+                "exam_id": exam_detail.exam.id,
+                "exam_name": exam_detail.exam.name,
+                "exam_detail_id": exam_detail.id,  # Include the exam_detail ID
+                "subject_id": exam_detail.subject.id,
+                "subject_code": exam_detail.subject.subject_code,
+                "subject_name": exam_detail.subject.subject_name,
+                "full_marks": exam_detail.full_marks,
+                "pass_marks": exam_detail.pass_marks,
+                "exam_date": exam_detail.exam_date,
             }
 
+            # Prepare results data for all students
+            results_data = []
             for result in results:
-                marksheet["subjects"].append({
-                    "subject_name": result.subject.subject_name,
-                    "internal_marks": result.internal_marks,
-                    "external_marks": result.external_marks,
-                    "total_marks": (result.internal_marks or 0) + (result.external_marks or 0),
-                    "remarks": result.remarks,
+                student = result.student
+                results_data.append({
+                    "result_id": result.id,  # Include the result ID
+                    "student": {
+                        "id": student.id,
+                        "username": student.user.username,
+                        "full_name": f"{student.user.first_name} {student.user.last_name}",
+                        "class": {
+                            "id": student.class_code.id,
+                            "class_code": student.class_code.class_code,
+                            "class_name": student.class_code.class_name,
+                        } if student.class_code else None,
+                        "gender": student.gender,
+                    },
+                    "practical_marks": result.practical_marks,
+                    "theory_marks": result.theory_marks,
+                    "total_marks": result.total_marks,
+                    "percentage": result.percentage,
+                    "gpa": result.gpa,
                 })
 
-            return Response(marksheet)
-        except (Student.DoesNotExist, Exam.DoesNotExist):
-            return Response({"error": "Student or exam not found"}, status=404)
+            return Response({
+                "exam_details": exam_details,
+                "results": results_data,
+            }, status=status.HTTP_200_OK)
+
+        except StudentResult.DoesNotExist:
+            return Response(
+                {"detail": "Results not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ExamDetailsByTeacherView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
+
+    def get(self, request, examid, teacherId):
+        # Fetch the teacher
+        try:
+            teacher = Teacher.objects.get(id=teacherId)
+        except Teacher.DoesNotExist:
+            raise NotFound("Teacher not found.")
+
+        # Get subjects taught by the teacher
+        teacher_subjects = teacher.subjects.all()
+
+        # Fetch exam details for the given exam ID and teacher's subjects
+        exam_details = ExamDetail.objects.filter(
+            exam_id=examid,
+            subject__in=teacher_subjects
+        ).select_related('subject', 'exam', 'class_assigned')  # Optimize queries
+
+        if not exam_details.exists():
+            return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
+
+        # Prepare the response with the desired structure
+        response_data = []
+        for detail in exam_details:
+            response_data.append({
+                "exam_details": {
+                    "id": detail.id,  # Exam detail ID
+                    "full_marks": detail.full_marks,
+                    "pass_marks": detail.pass_marks,
+                    "exam_date": detail.exam_date,
+                },
+                "exam": {
+                    "id": detail.exam.id,
+                    "name": detail.exam.name,
+                },
+                "subject_details": {
+                    "id": detail.subject.id,
+                    "subject_code": detail.subject.subject_code,
+                    "subject_name": detail.subject.subject_name,
+                },
+                "class_details": {
+                    "id": detail.class_assigned.id if detail.class_assigned else None,
+                    "class_code": detail.class_assigned.class_code if detail.class_assigned else None,
+                    "class_name": detail.class_assigned.class_name if detail.class_assigned else None,
+                },
+            })
+        return Response(response_data, status=200)
+
+class ExamTimetableView(APIView):
+    def get(self, request, exam_id, class_id, *args, **kwargs):
+        try:
+            # Fetch the exam
+            exam = Exam.objects.get(id=exam_id)
+
+            # Fetch the exam details for the specific class
+            exam_details = exam.exam_details.filter(class_assigned_id=class_id)
+
+            if not exam_details.exists():
+                return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare response data without full_marks and pass_marks
+            exam_details_data = [
+                {
+                    "id": detail.id,
+                    "class_details": {
+                        "id": detail.class_assigned.id,
+                        "name": detail.class_assigned.class_name,
+                        "code": detail.class_assigned.class_code,
+                    },
+                    "subject": {
+                        "id": detail.subject.id,
+                        "subject_code": detail.subject.subject_code,
+                        "subject_name": detail.subject.subject_name,
+                    },
+                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_time": detail.exam_time,
+                }
+                for detail in exam_details
+            ]
+
+            response_data = {
+                "id": exam.id,
+                "exam": {
+                    "id": exam.id,
+                    "name": exam.name,
+                },
+                "exam_details": exam_details_data,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class ExamsByClassView(APIView):
+    def get(self, request, class_id, *args, **kwargs):
+        try:
+            # Fetch all unique exams linked to the given class via ExamDetail
+            exams = Exam.objects.filter(exam_details__class_assigned_id=class_id).distinct()
+
+            if not exams.exists():
+                return Response({"detail": "No exams found for this class."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Retrieve class details (assuming all exams belong to the same class)
+            class_instance = exams.first().exam_details.filter(class_assigned_id=class_id).first().class_assigned
+
+            # Prepare response data
+            response_data = {
+                "class_details": {
+                    "id": class_instance.id,
+                    "name": class_instance.class_name,
+                    "code": class_instance.class_code,
+                },
+                "exams": [
+                    {
+                        "id": exam.id,
+                        "name": exam.name,
+                    }
+                    for exam in exams
+                ],
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BulkUpdateRollNumbersAPIView(APIView):
+    def put(self, request, *args, **kwargs):
+        """
+        API to bulk update roll numbers for students.
+        Expects a JSON payload:
+        {
+            "students": [
+                {"id": 1, "first_name": "John", "last_name": "Doe", "roll_no": "101"},
+                {"id": 2, "first_name": "Jane", "last_name": "Smith", "roll_no": "102"}
+            ]
+        }
+        """
+        students_data = request.data.get("students", [])
+
+        if not students_data:
+            return Response({"detail": "Students data is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():  # Ensuring atomicity (all or nothing)
+                for student_data in students_data:
+                    student_id = student_data.get("id")
+                    roll_no = student_data.get("roll_no")
+
+                    if student_id is None or roll_no is None:
+                        return Response({"detail": "Invalid student data format."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    # Update the student's roll number
+                    Student.objects.filter(id=student_id).update(roll_no=roll_no)
+
+            return Response({"detail": "Roll numbers updated successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db import transaction
+from .models import StudentResult, StudentOverallResult
+
+@receiver(post_save, sender=StudentResult)
+def update_student_overall_result(sender, instance, **kwargs):
+    # Ensure atomicity
+    with transaction.atomic():
+        student = instance.student
+        exam = instance.exam_detail.exam
+        class_instance = student.class_code
+
+        # Calculate the total marks and GPA for the student in this exam
+        results = StudentResult.objects.filter(student=student, exam_detail__exam=exam)
+        total_marks_obtained = sum(result.total_marks or 0 for result in results)
+        total_full_marks = sum(result.exam_detail.full_marks or 0 for result in results)
+
+        if total_full_marks > 0:
+            percentage = (total_marks_obtained / total_full_marks) * 100
+        else:
+            percentage = 0
+
+        # Calculate GPA based on percentage
+        if percentage >= 90:
+            gpa = 4.0
+            grade = 'A+'
+        elif percentage >= 80:
+            gpa = 3.5
+            grade = 'A'
+        elif percentage >= 70:
+            gpa = 3.0
+            grade = 'B+'
+        elif percentage >= 60:
+            gpa = 2.5
+            grade = 'B'
+        elif percentage >= 50:
+            gpa = 2.0
+            grade = 'C+'
+        elif percentage >= 40:
+            gpa = 1.5
+            grade = 'C'
+        elif percentage >= 35:
+            gpa = 1.0
+            grade = 'D'
+        else:
+            gpa = 0.0
+            grade = 'NG'
+
+        # Update or create the overall result
+        student_overall_result, created = StudentOverallResult.objects.update_or_create(
+            student=student, 
+            exam=exam, 
+            defaults={
+                'total_marks_obtained': total_marks_obtained,
+                'total_full_marks': total_full_marks,
+                'percentage': percentage,
+                'gpa': gpa,
+                'grade': grade
+            }
+        )
+
+        # Now that the overall result is updated, recalculate rankings
+        recalculate_rankings(exam, class_instance)
+
+def recalculate_rankings(exam, class_instance):
+    # Fetch all student results for this exam and class
+    student_results = StudentOverallResult.objects.filter(
+        exam=exam, student__class_code=class_instance
+    ).select_related('student')
+
+    # Order by total marks obtained, then by student name (for tie-breaking)
+    ranked_results = student_results.order_by('-total_marks_obtained', 'student__user__username')
+
+    # Recalculate the ranks
+    rank = 1
+    for idx, result in enumerate(ranked_results):
+        # If marks are different from the previous result, increment the rank
+        if idx > 0 and ranked_results[idx-1].total_marks_obtained != result.total_marks_obtained:
+            rank = idx + 1
+
+        # Update the rank in the StudentOverallResult
+        result.rank = rank
+        result.save()
+
+class StudentRankingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, exam_id, class_id):
+        try:
+            # Fetch the exam and class instances
+            exam = Exam.objects.get(id=exam_id)
+            class_instance = Class.objects.get(id=class_id)  # Using class_id instead of class_code
+
+            # Check if results are published for the exam
+            if not exam.is_result_published:
+                return Response(
+                    {"detail": "Results for this exam are not published yet."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Fetch all students' overall results for this exam and class
+            student_results = StudentOverallResult.objects.filter(
+                exam=exam, student__class_code=class_instance
+            ).select_related('student')
+
+            # Create the rankings list with the stored rank and result data
+            results_with_ranks = [
+                {
+                    'student': result.student.user.username,
+                    'total_marks_obtained': result.total_marks_obtained,
+                    'rank': result.rank,  # Get the rank directly from the model
+                    'gpa': result.gpa,
+                    'grade': result.grade,
+                }
+                for result in student_results
+            ]
+
+            # Return ranked results
+            return Response({
+                "exam": {"id": exam.id, "name": exam.name},
+                "class": {"id": class_instance.id, "name": class_instance.class_name, "code": class_instance.class_code},
+                "rankings": results_with_ranks
+            }, status=status.HTTP_200_OK)
+
+        except Exam.DoesNotExist:
+            return Response(
+                {"detail": "Exam not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Class.DoesNotExist:
+            return Response(
+                {"detail": "Class not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class MessageListView(generics.ListAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
+
+class SendMessageView(generics.CreateAPIView):
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+
+class NotesListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        """List all notes (Anyone can view)."""
+        notes = Notes.objects.all()
+        serializer = NotesSerializer(notes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Create a new note (Only teachers can post)."""
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can upload notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = NotesSerializer(data=request.data, context={'request': request})  # Pass request context
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)  # Auto-assign teacher
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotesDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self, pk):
+        try:
+            return Notes.objects.get(pk=pk)
+        except Notes.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        """Retrieve a single note."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = NotesSerializer(note, context={'request': request})  # Pass request context
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """Update a note (Only the creator can update)."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != note.created_by:
+            return Response({"error": "You can only edit your own notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = NotesSerializer(note, data=request.data, context={'request': request}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """Delete a note (Only the creator can delete)."""
+        note = self.get_object(pk)
+        if note is None:
+            return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user != note.created_by:
+            return Response({"error": "You can only delete your own notes."}, status=status.HTTP_403_FORBIDDEN)
+
+        note.delete()
+        return Response({"message": "Note deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

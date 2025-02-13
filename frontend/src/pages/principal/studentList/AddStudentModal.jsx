@@ -42,7 +42,7 @@ import Password from "antd/es/input/Password";
   address: Yup.string()
     .required("Address is required.")
     .min(5, "Address must be at least 5 characters long.")
-    .max(25, "Address can't exceed 25 characters."),
+    .max(50, "Address can't exceed 50 characters."),
   date_of_birth: Yup.date()
     .required("Date of birth is required.")
     .max(new Date(), "Date of birth cannot be in the future.")
@@ -67,10 +67,9 @@ import Password from "antd/es/input/Password";
     .max(10, "Class code can't exceed 10 characters."),
 });
 
-const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
+const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [classList, setClassList] = useState([]);
   const [subjectList, setSubjectList] = useState([])
 
   const formik = useFormik({
@@ -120,27 +119,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
     }
   };
 
-  const fetchClass = async () => {
-    if (!access) {
-      toast.error("User is not authenticated. Please log in.");
-      return;
-    }
-    try {
-      const { data } = await axios.get("http://localhost:8000/api/classes/", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      setClassList(data);
-    } catch (error) {
-      toast.error("Error fetching class:", error.message || error);
-    }
-  };
 
-  useEffect(() => {
-    fetchClass();
-  }, [access, navigate]);
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
@@ -342,7 +321,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents }) => {
               <option value="">Select Class</option>
               {classList.length > 0 &&
                 classList.map((item) => (
-                  <option key={item.id} value={item.class_code}>
+                  <option key={item.id} value={item.id}>
                     {item.class_name}
                   </option>
                 ))}

@@ -20,9 +20,12 @@
       },
       {
         "id": 5,
-        "title": "Reports",
+        "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/reports"
+        "subSidebar": [
+          { "id": 1, "title": "Result", "link": "/studentResult" },
+          { "id": 2, "title": "Routine", "link": "/examRoutine" }
+        ]
       },
       {
         "id": 6,
@@ -68,9 +71,13 @@
       },
       {
         "id": 5,
-        "title": "Reports",
+        "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/reports"
+        "link": "/examTeacher",
+        "subSidebar": [
+          { "id": 1, "title": "Result", "link": "/examTeacher" },
+          { "id": 2, "title": "Routine", "link": "/examRoutineTeacher" }
+        ]
       },
       {
         "id": 6,
@@ -144,9 +151,12 @@
       },
       {
         "id": 5,
-        "title": "Reports",
+        "title": "Exam",
         "icon": "TbReportSearch",
-        "link": "/reports"
+        "subSidebar": [
+          {"id":1, "title":"Add", "link":"/examPrincipal"},
+          {"id":2, "title": "Publish", "link":"/examPublish"}
+        ]
       },
       {
         "id": 6,

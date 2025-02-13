@@ -42,8 +42,9 @@ class LoginAPIView(APIView):
                     'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
                     'gender': teacher.gender,
                     'subjects': [{'id': subject.id,'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
-                    'classes': [{'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
+                    'classes': [{'id': cls.id, 'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
                     'class_teacher': {
+                        'id': teacher.class_teacher.id if teacher.class_teacher else None,
                         'class_code': teacher.class_teacher.class_code,
                         'class_name': teacher.class_teacher.class_name
                     } if teacher.class_teacher else None,
@@ -51,6 +52,7 @@ class LoginAPIView(APIView):
             elif hasattr(user, 'principal'):
                 principal = user.principal
                 role_data = {
+                    'id': principal.id, 
                     'role': 'principal',
                     'phone': principal.phone,
                     'address': principal.address,
@@ -67,6 +69,7 @@ class LoginAPIView(APIView):
                     subjects = []  # If no class_code exists, return an empty list for subjects
 
                 role_data = {
+                    'id': student.id, 
                     'role': 'student',
                     'phone': student.phone,
                     'address': student.address,
@@ -74,6 +77,7 @@ class LoginAPIView(APIView):
                     'gender': student.gender,
                     'parents': student.parents,
                     'class': {
+                        'id': student_class.id if student_class else None,
                         'class_code': student_class.class_code  if student_class else None,
                         'class_name': student_class.class_name if student_class else None,
                     } if student_class else None,
@@ -82,6 +86,7 @@ class LoginAPIView(APIView):
             elif hasattr(user, 'staff'):
                 staff = user.staff
                 role_data = {
+                    'id': staff.id, 
                     'role': 'staff',
                     'phone': staff.phone,
                     'address': staff.address,
@@ -115,11 +120,12 @@ class LoginAPIView(APIView):
                     'address': teacher.address,
                     'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
                     'gender': teacher.gender,
-                    'subjects': [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
-                    'classes': [{'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
+                    'subjects': [{'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'classes': [{'id': cls.id, 'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
                     'class_teacher': {
-                        'class_code': teacher.class_teacher.class_code,
-                        'class_name': teacher.class_teacher.class_name
+                        'id': teacher.class_teacher.id if teacher.class_teacher else None,
+                        'class_code': teacher.class_teacher.class_code if teacher.class_teacher else None,
+                        'class_name': teacher.class_teacher.class_name if teacher.class_teacher else None,
                     } if teacher.class_teacher else None,
                 })
             elif hasattr(user, 'principal'):
@@ -149,6 +155,7 @@ class LoginAPIView(APIView):
                     'gender': student.gender,
                     'parents': student.parents,
                     'class': {
+                        'id': student_class.id,
                         'class_code': student.class_code.class_code,
                         'class_name': student.class_code.class_name
                     } if student.class_code else None,

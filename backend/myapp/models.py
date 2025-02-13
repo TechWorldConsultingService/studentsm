@@ -4,6 +4,7 @@ from django.utils import timezone
 from accounts.models import CustomUser
 from django.utils.timezone import now
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 
 # For creating Post/reel type content
 class Post(models.Model):
@@ -57,7 +58,11 @@ class Teacher(models.Model):
     def __str__(self):
         # return self.user.username
         return self.user.username
- 
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
+
 class Principal(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
@@ -66,10 +71,12 @@ class Principal(models.Model):
    
     def __str__(self):
         return self.user.username
-    
+
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
 
 class Student(models.Model):
-    # user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='student')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
@@ -77,9 +84,14 @@ class Student(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
     class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
-   
+    roll_no = models.CharField(max_length=10, unique=True, null=True, blank=True)  # Add Roll Number Field
+
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()
+        super().delete(*args, **kwargs)
 
 class Staff(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -91,6 +103,10 @@ class Staff(models.Model):
 
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}, Role: {self.role}"
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
 
 class LeaveApplication(models.Model):
     applicant_type = models.CharField(max_length=10)
@@ -116,39 +132,8 @@ class LessonAttendance(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='lesson_attendance')
     date = models.DateField(default=timezone.now)
     status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
-
     def __str__(self):
         return f"{self.student.user.username} - {self.subject.name} - {self.date}"
-
-class Enrollment(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    date_enrolled = models.DateField()
-
-    def __str__(self):
-        return f'{self.student} in {self.class_assigned}'
-
-class Grade(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    grade = models.CharField(max_length=5)
-
-    def __str__(self):
-        return f'{self.student} - {self.subject} - {self.grade}'
-
-
-class Timetable(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10, choices=[('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'), ('Thursday', 'Thursday'), ('Friday', 'Friday')])
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-
-    def __str__(self):
-        return f'{self.class_assigned} - {self.subject} on {self.day_of_week}'
-
 
 from django.conf import settings
 
@@ -163,7 +148,6 @@ class Event(models.Model):
     def __str__(self):
         return self.title
     
-
 class Assignment(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE,blank=True, null=True, related_name="assignments")
@@ -179,86 +163,44 @@ class Assignment(models.Model):
 
 class AssignmentSubmission(models.Model):
     assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name="submissions")
-    # student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Assuming user model is used for students
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="submissions")  # CustomUser reference
     submission_file = models.FileField(upload_to='assignments/', null=True, blank=True)
+    written_submission = models.TextField(null=True, blank=True)  # field for written submissions
     submitted_on = models.DateTimeField(auto_now_add=True)
-    
+    review_text = models.TextField(null=True, blank=True)
+    is_checked = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
 class Syllabus(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False,default=1)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False, default=1)
-    # teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, blank=False)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus",null=False, default=1)
-    topics = models.TextField()  # A comma-separated list of topics/chapters
-    completed_topics = models.TextField(blank=True, null=True)  # A comma-separated list of completed topics
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus")
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="syllabus")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
 
-    def get_completion_percentage(self):
-        all_topics = [topic.strip() for topic in self.topics.split(",") if topic.strip()]
-        completed = [topic.strip() for topic in self.completed_topics.split(",") if topic.strip()]
-        if not all_topics:
-            return 0
-        return round((len(completed) / len(all_topics)) * 100, 2)
+class Chapter(models.Model):
+    syllabus = models.ForeignKey(Syllabus, on_delete=models.CASCADE, related_name="chapters")
+    name = models.CharField(max_length=255)
+    def __str__(self):
+        return self.name
 
-    def ____str____(self):
-        teacher_name = self.teacher.user.username if self.teacher and self.teacher.user else "No Teacher Assigned"
-        # return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
-        return f"{self.class_assigned} - {self.subject} - {teacher_name}"
-
-'''class Fees(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Total fee amount
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Total amount paid
-    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False)  # Computed field for pending fees
-    due_date = models.DateField()  # The last date for fee payment
-    last_payment_date = models.DateField(null=True, blank=True)  # Date of the last payment
-    status = models.CharField(max_length=20, choices=[('Paid', 'Paid'), ('Pending', 'Pending')], default='Pending')
-    created_at = models.DateTimeField(auto_now_add=True)  # Record creation timestamp
-    updated_at = models.DateTimeField(auto_now=True)  # Record update timestamp
-
-    def save(self, *args, **kwargs):
-        # Automatically calculate the pending amount
-        self.pending_amount = self.total_amount - self.amount_paid
-        self.status = 'Paid' if self.pending_amount <= 0 else 'Pending'
-        super(Fees, self).save(*args, **kwargs)
-
-    def ____str____(self):
-        return f"{self.student.user.username} - Total: {self.total_amount} - Pending: {self.pending_amount}"
-
-class FeePaymentHistory(models.Model):
-    fee_record = models.ForeignKey(Fees, on_delete=models.CASCADE, related_name='payment_history')
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)  # Payment amount
-    payment_date = models.DateField(default=timezone.now)  # Date of payment
-    mode_of_payment = models.CharField(
-        max_length=20, 
-        choices=[('Cash', 'Cash'), ('Card', 'Card'), ('Online', 'Online')], 
-        default='Online'
-    )
-    transaction_id = models.CharField(max_length=255, null=True, blank=True)  # Transaction ID for reference
-    notes = models.TextField(null=True, blank=True)  # Additional notes about the payment
-
-    def ____str____(self):
-        return f"{self.fee_record.student.user.username} - Paid: {self.amount_paid} on {self.payment_date}" '''
+class Topic(models.Model):
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name="topics")
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)  # Mark topic completion
+    def __str__(self):
+        return self.name
     
-'''
-from django.db import models
-from django.contrib.auth.models import User
-
-class StaffLocation(models.Model):
-     staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Replace with your staff  model if needed
-     latitude = models.DecimalField(max_digits=9, decimal_places=6)
-     altitude = models.DecimalField(max_digits=9, decimal_places=6)
-     timestamp = models.DateTimeField(auto_now=True)
-
-     def __str__(self):
-         return f"{self.staff.username} - {self.timestamp}'''
-
-
-
+class Subtopic(models.Model):
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="subtopics")
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)  # Mark subtopic completion
+    def __str__(self):
+        return self.name
 
 class DiscussionPost(models.Model):
     topic = models.CharField(max_length=255)
@@ -268,7 +210,6 @@ class DiscussionPost(models.Model):
 
     def __str__(self):
         return f"Post by {self.created_by.username} in {self.topic}"
-
 
 class DiscussionComment(models.Model):
     post = models.ForeignKey(DiscussionPost, on_delete=models.CASCADE, related_name="comments")
@@ -285,10 +226,9 @@ class FeeCategory(models.Model):
     name = models.CharField(max_length=100)  # e.g., Sports Fee, Exam Fee
     amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount for this fee
     per_months = models.BooleanField(default=True)  # Flag to decide if the fee is multiplied by months
-
+    
     def __str__(self):
         return self.name
-
 
 class FeeStructure(models.Model):
     student_class = models.ForeignKey('Class', on_delete=models.CASCADE)  # Class the fee structure belongs to
@@ -306,8 +246,6 @@ class FeeStructure(models.Model):
         fee_categories_total = sum(fee.amount for fee in self.fee_categories.all())
         
         return monthly_fee + fee_categories_total
-
-
 
 from decimal import Decimal
 from django.utils.timezone import now
@@ -342,38 +280,152 @@ class PaymentTransaction(models.Model):
         return f"Transaction {self.payment_no} for {self.student} ({self.total_amount})"
 
 
-
 class Exam(models.Model):
-    EXAM_TYPE_CHOICES = [
-        ('class_test', 'Class Test'),
-        ('terminal_exam', 'Terminal Exam'),
-    ]
-
     name = models.CharField(max_length=100)  # Example: "Mid-Term Exam 2024"
-    exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
-    date = models.DateField()
+    is_timetable_published = models.BooleanField(default=False)  # Flag for timetable publication
+    is_result_published = models.BooleanField(default=False)  # Flag for result publication
 
     def __str__(self):
-        return f"{self.name} ({self.exam_type})"
+        return self.name
 
+class ExamDetail(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_details")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, null=True, blank=True, related_name='exam_details')  # Automatically filled based on subject
+    full_marks = models.PositiveIntegerField(null=True)
+    pass_marks = models.PositiveIntegerField(null=True)
+    exam_date = models.DateField()
+    exam_time = models.TimeField(null=True)  # New field for exam time
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-class StudentResult(models.Model):
-    REMARKS_CHOICES = [
-        ('Pass', 'Pass'),
-        ('Fail', 'Fail'),
-    ]
-
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="results")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="results")
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="results")
-    internal_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    external_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    remarks = models.CharField(max_length=10, choices=REMARKS_CHOICES)
-    date_added = models.DateTimeField(auto_now_add=True)
+    def save(self, *args, **kwargs):
+        if not self.class_assigned:  # Auto-assign class based on the subject_code
+            try:
+                self.class_assigned = self.subject.classes.first()
+                if not self.class_assigned:
+                    raise ValueError(f"The subject '{self.subject.subject_code}' is not associated with any class.")
+            except Exception as e:
+                raise ValueError(str(e))
+        
+        super().save(*args, **kwargs)  # Save after setting the class_assigned
 
     def __str__(self):
-        return f"{self.student.user.username} - {self.subject.subject_name} ({self.exam.name}) - {self.remarks}"
+        return f"{self.exam.name} - {self.subject.subject_code} ({self.class_assigned.class_name})"
 
     class Meta:
-        unique_together = ('student', 'exam', 'subject')  # Prevent duplicate entries for the same exam and subject.
+        unique_together = ('exam', 'subject', 'class_assigned')  # Prevent duplicate exam details
+
+class StudentResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="results")
+    exam_detail = models.ForeignKey(ExamDetail, on_delete=models.CASCADE, related_name="results")
+    practical_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    theory_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    total_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    gpa = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    grade = models.CharField(max_length=5, null=True, blank=True)  # New Grade Field
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Calculate total_marks
+        self.total_marks = (self.practical_marks or 0) + (self.theory_marks or 0)
+
+        # Ensure total_marks do not exceed full_marks
+        if self.total_marks > self.exam_detail.full_marks:
+            raise ValueError(
+                f"Total marks ({self.total_marks}) cannot be greater than the full marks ({self.exam_detail.full_marks}) of the subject."
+            )
+
+        # Calculate percentage
+        if self.exam_detail.full_marks:
+            self.percentage = (self.total_marks / self.exam_detail.full_marks) * 100
+        else:
+            self.percentage = 0
+
+        # Assign GPA based on percentage
+        if self.percentage >= 90:
+            self.gpa = 4.0
+            self.grade = "A+"
+        elif self.percentage >= 80:
+            self.gpa = 3.5
+            self.grade = "A"
+        elif self.percentage >= 70:
+            self.gpa = 3.0
+            self.grade = "B+"
+        elif self.percentage >= 60:
+            self.gpa = 2.5
+            self.grade = "B"
+        elif self.percentage >= 50:
+            self.gpa = 2.0
+            self.grade = "C+"
+        elif self.percentage >= 40:
+            self.gpa = 1.5
+            self.grade = "C"
+        elif self.percentage >= 35:
+            self.gpa = 1.0
+            self.grade = "D"
+        else:
+            self.gpa = 0.0
+            self.grade = "NG"  # Not Graded
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.exam_detail.subject.subject_name}"
+
+    class Meta:
+        unique_together = ('student', 'exam_detail')  # Prevent duplicate entries for the same exam detail.
+
+class StudentOverallResult(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="exam_results")
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="exam_results")
+    total_marks_obtained = models.FloatField(default=0.0)
+    total_full_marks = models.FloatField(default=0.0)
+    percentage = models.FloatField(default=0.0)
+    gpa = models.FloatField(default=0.0)
+    grade = models.CharField(max_length=3, default="NG")  # NG = Not Graded
+    rank = models.IntegerField(null=True, blank=True)  # This field will store the rank
+    updated_at = models.DateTimeField(auto_now=True)  # Auto update when changes happen
+
+    class Meta:
+        unique_together = ("student", "exam")  # Ensures one result per student per exam
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.exam.name}: {self.grade}"
+
+
+    
+
+class Message(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"From {self.sender} to {self.receiver} at {self.timestamp}"
+    
+
+
+def validate_file_size(value):
+    max_size = 5 * 1024 * 1024  # 5MB limit
+    if value.size > max_size:
+        raise ValidationError("File size cannot exceed 5MB.")
+
+class Notes(models.Model):
+    chapter = models.CharField(max_length=255)  # Chapter name
+    title = models.CharField(max_length=255)  # Note title
+    description = models.TextField(blank=True)  # Optional description
+    file = models.FileField(upload_to='notes/', validators=[validate_file_size], null=True, blank=True)  # File upload
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE, related_name='notes')  # Link to Subject
+    class_code = models.ForeignKey('Class', on_delete=models.CASCADE, related_name='notes')  # Auto-fetch class
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Auto-set teacher
+    created_at = models.DateTimeField(auto_now_add=True)  # Auto timestamp
+
+    class Meta:
+        ordering = ['-created_at']  # Newest first
+
+    def __str__(self):
+        return f"{self.title} - {self.chapter} ({self.created_by.username})"

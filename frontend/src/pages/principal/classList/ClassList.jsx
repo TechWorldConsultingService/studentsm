@@ -50,7 +50,7 @@ const ClassList = () => {
   }, [access, navigate]);
 
   const handleViewDetails = (classInfo) => {
-    setSelectedClass(classInfo);  // Set class info for viewing
+    setSelectedClass(classInfo); 
     setShowModal(false);
     setIsEditMode(false); 
   };
@@ -66,7 +66,7 @@ const ClassList = () => {
 
   const handleShowEditModal = (classInfo) => {
     setIsEditMode(true);
-    setSelectedClass(classInfo);  // Set class info for editing
+    setSelectedClass(classInfo);  
     setShowModal(true);
   };
 
@@ -94,7 +94,7 @@ const ClassList = () => {
       });
 
       setClassList((prev) =>
-        prev.filter((classItem) => classItem.class_code !== classToDelete)
+        prev.filter((classItem) => classItem.id !== classToDelete)
       );
 
       toast.success("Class deleted successfully.");
@@ -132,7 +132,7 @@ const ClassList = () => {
 
           {loading ? (
             <div className="mt-6 text-center text-gray-600">
-              Loading classes...
+              Loading...
             </div>
           ) : (
             <div className="mt-6 overflow-x-auto">
@@ -145,7 +145,7 @@ const ClassList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {classList.map((classItem) => (
+                  {classList.length > 0 ?  classList.map((classItem) => (
                     <tr
                       key={classItem.class_code}
                       className="border-b hover:bg-purple-50"
@@ -166,14 +166,16 @@ const ClassList = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleConfirmDelete(classItem.class_code)} 
+                          onClick={() => handleConfirmDelete(classItem.id)} 
                           className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                         >
                           Delete
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  )) : (
+                    <span className="text-gray-600">No class is added to show.</span>
+                  )}
                 </tbody>
               </table>
             </div>
