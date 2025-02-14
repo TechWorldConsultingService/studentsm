@@ -39,6 +39,10 @@ import StudentRoutine from "./pages/reports/StudentRoutine";
 import ExamPublish from "./pages/reports/ExamPublish";
 import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher";
 import AddRollNumber from "./pages/Teacher/AddRollNumber"
+import LeavesDashboard from "./pages/leave/newLeavesDashboard";
+import ManageLeaves from "./pages/leave/newManageLeaves";
+import MyLeaves from "./pages/leave/newMyLeaves";
+import PrincipalCalendar from "./pages/Calander/PrincipalCalendar"
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -79,6 +83,10 @@ function App() {
     { path: "/exam-details/:examId", element: <AddExamDetailsByPrincipal /> },
     { path: "/examRoutine", element: <StudentRoutine /> },
     {path: "/addRollNumber", element: <AddRollNumber />},
+    {path: "/myLeavePrincipal", element: <LeavesDashboard />},
+    {path: "manage-leaves", element: <ManageLeaves />},
+    {path: "my-leaves", element: <MyLeaves />},
+    { path:"/principal-calendar", element:<PrincipalCalendar />},
 {path: "/attendancePrincipal", element: <AttendancePrincipal />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
