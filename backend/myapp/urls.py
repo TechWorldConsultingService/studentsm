@@ -38,7 +38,7 @@ urlpatterns = [
     path('api/register/teacher/', RegisterTeacherView.as_view(), name='register-teacher'),  # URL for teacher registration API
     path('api/register/principal/', RegisterPrincipalView.as_view(), name='register-principal'),  # URL for principal registration API
     path('api/register/student/', RegisterStudentView.as_view(), name='register-student'),  # URL for student registration API
-    path('api/register/staff/', RegisterStaffView.as_view(), name='register_staff'), # URL for staff registration API
+    path('api/register/accountant/', RegisterAccountantView.as_view(), name='register_accountant'), # URL for accountant registration API
     
     # API endpoints for user lists
     path('api/teachers/', TeacherListView.as_view(), name='teacher-list'),  # Endpoint for listing teachers
@@ -46,24 +46,24 @@ urlpatterns = [
     path('api/students/', StudentListView.as_view(), name='student-list'),  # Endpoint for listing students
     path('api/students/class/<int:class_code>/', StudentListByClassAPIView.as_view(), name='students-by-class'),
 
-    path('api/staffs/', StaffListView.as_view(), name='staff_list'), # Endpoint for listing staffs
+    path('api/accountant/', AccountantListView.as_view(), name='accountant_list'), # Endpoint for listing accountants
 
     # API endpoints for viewing details of a specific record
     path('api/teachers/<int:pk>/', TeacherDetailView.as_view(), name='teacher-detail'),  # Endpoint for viewing a specific teacher
     path('api/principals/<int:pk>/', PrincipalDetailView.as_view(), name='principal-detail'),  # Endpoint for viewing a specific principal
     path('api/students/<int:pk>/', StudentDetailView.as_view(), name='student-detail'),  # Endpoint for viewing a specific student
-    path('api/staff/<int:pk>/', StaffDetailView.as_view(), name='staff_detail'), # Endpoint for viewing a specific staff
+    path('api/accountants/<int:pk>/', AccountantDetailView.as_view(), name='accountant_detail'), # Endpoint for viewing a specific accountant
 
     # API endpoints for deleting a specific record
     path('api/teachers/<int:pk>/delete/', TeacherDeleteView.as_view(), name='teacher-delete'),  # Endpoint for deleting a specific teacher
     path('api/principals/<int:pk>/delete/', PrincipalDeleteView.as_view(), name='principal-delete'),  # Endpoint for deleting a specific principal
     path('api/students/<int:pk>/delete/', StudentDeleteView.as_view(), name='student-delete'),  # Endpoint for deleting a specific student
-    path('api/staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'), # Endpoint for deleting a specific staff
+    path('api/accountant/<int:pk>/delete/', AccountantDeleteView.as_view(), name='accountant_delete'), # Endpoint for deleting a specific accountant
 
     path('api/teacher/<int:pk>/update/', TeacherUpdateAPIView.as_view(), name='teacher-update'),
     path('api/principal/<int:pk>/update/', PrincipalUpdateAPIView.as_view(), name='principal-update'),
     path('api/student/<int:pk>/update/', StudentUpdateAPIView.as_view(), name='student-update'),
-    path('api/staff/<int:pk>/update/', StaffUpdateAPIView.as_view(), name='staff-update'),
+    path('api/accountant/<int:pk>/update/', AccountantUpdateAPIView.as_view(), name='accountant-update'),
 
     # API endpoints for leave applications
     path("api/role/", get_user_role, name="get_user_role"), # to get the role
@@ -116,16 +116,7 @@ urlpatterns = [
     path('api/forum/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
     path('api/forum/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
 
-    # API endpoints for fees management
-    path('api/fees/', FeeCategoryListCreateView.as_view(), name='fee-list-create'),  # Endpoint to list all fee categories and create new fee categories.
-    path('api/fees/<int:pk>/', FeeCategoryDetailView.as_view(), name='fee-detail'),  # Endpoint to view, update, or delete a specific fee category by its ID (`pk`).
-    path('api/fee-structures/', FeeStructureListCreateView.as_view(), name='fee-structure-list-create'),  # Endpoint to list all fee structures and create new fee structures.
-    path('api/fee-structures/<int:pk>/', FeeStructureDetailView.as_view(), name='fee-structure-detail'),  # Endpoint to view, update, or delete a specific fee structure by its ID (`pk`).
-    path('api/transactions/', PaymentTransactionListCreateView.as_view(), name='transaction-list-create'),  # Endpoint to list all payment transactions and create new payment transactions.
-    path('api/transactions/<int:pk>/', PaymentTransactionDetailView.as_view(), name='transaction-detail'),  # Endpoint to view, update, or delete a specific payment transaction by its ID (`pk`).
-    path('api/students/<int:student_id>/fees/', StudentFeeListView.as_view(), name='student-fee-list'),  # Endpoint to retrieve the fee details for a specific student by their `student_id`.
-    path('api/students/<int:student_id>/fees/pending/', StudentPendingFeesView.as_view(), name='student-pending-fees'),  # Endpoint to retrieve the pending fee details for a specific student by their `student_id`.
-    
+ 
      # API endpoints for exams management
     path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),  # Endpoint to list all exams and create new exams.
     path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),  # Endpoint to retrieve, update, or delete a specific exam by its ID (`exam_id`).
@@ -169,6 +160,20 @@ urlpatterns = [
     path('api/attendance/student/<int:class_id>/', StudentsByClassAttendanceAPIView.as_view(), name='students-by-class'),
 
     path('api/students/subject/<int:subject_id>/', SubjectWiseStudentListAPIView.as_view(), name='subject-wise-students'),
+   
+    # API endpoints for fees management 
+    path("api/fee-names/", FeeCategoryNameAPIView.as_view(), name="fee-category-name-list"),
+    path("api/fee-names/<int:category_id>/", FeeCategoryNameDetailAPIView.as_view(), name="fee-category-name-detail"),
+    path("api/fee-categories/<int:class_id>/", FeeCategoryByClassAPIView.as_view(), name="fee-category-list-by-class"),
+    path("api/fee-categories/<int:class_id>/<int:category_id>/", FeeCategoryDetailAPIView.as_view(), name="fee-category-detail"),
+    path('api/transportation-fees/', TransportationFeeListCreateAPIView.as_view(), name='transportation-fee-list-create'),
+    path('api/transportation-fees/<int:pk>/', TransportationFeeDetailAPIView.as_view(), name='transportation-fee-detail'),
+    path("api/bills/<int:student_id>/", StudentBillAPIView.as_view(), name="bill-list"),
+    path("api/bills/<int:student_id>/<int:bill_id>/", StudentBillAPIView.as_view(), name="bill-detail"),
+    path("api/payments/<int:student_id>/", StudentPaymentAPIView.as_view(), name="payment-list"),
+    path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentAPIView.as_view(), name="payment-detail"),
+    path("api/transactions/<int:student_id>/", StudentTransactionsAPIView.as_view(), name="student-transactions"),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -187,7 +187,7 @@ class RegisterStudentView(APIView):
             return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling staff registration
-class RegisterStaffView(APIView):
+class RegisterAccountantView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
         if request.content_type == 'application/json':
@@ -197,7 +197,7 @@ class RegisterStaffView(APIView):
                 # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-            staff_data = request.data
+            accountant_data = request.data
         else:
             # Handle form-data
             user_data = {
@@ -208,28 +208,27 @@ class RegisterStaffView(APIView):
                 'last_name': request.data.get('user.last_name'),
             }
 
-            staff_data = {
+            accountant_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_joining': request.data.get('date_of_joining'),
                 'gender': request.data.get('gender'),
-                'role': request.data.get('role'),
                 'user': user_data,
             }
 
         # Serialize staff data and validate
-        staff_serializer = StaffSerializer(data=staff_data)
+        accountant_serializer = AccountantSerializer(data=accountant_data)
 
-        if staff_serializer.is_valid():
+        if accountant_serializer.is_valid():
             # Save the staff instance and return success response
-            staff = staff_serializer.save()
-            staff.user.is_staff = True
-            staff.user.save()
+            accountant = accountant_serializer.save()
+            accountant.user.is_accountant = True
+            accountant.user.save()
 
-            return Response(staff_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(accountant_serializer.data, status=status.HTTP_201_CREATED)
         else:
             # Return error response if validation fails
-            return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(accountant_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API view to list all teachers
 class TeacherListView(APIView):
@@ -253,13 +252,13 @@ class StudentListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
 # List all staff members
-class StaffListView(APIView):
+class AccountantListView(APIView):
     """
-    Handle GET requests to list all staff members.
+    Handle GET requests to list all accountant members.
     """
     def get(self, request, format=None):
-        staff = Staff.objects.all()  # Retrieve all staff records
-        serializer = StaffSerializer(staff, many=True)  # Serialize the data for multiple staff records
+        accountant = Accountant.objects.all()  # Retrieve all accountant records
+        serializer = AccountantSerializer(accountant, many=True)  # Serialize the data for multiple accountant records
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # API view to see specific teacher
@@ -313,19 +312,19 @@ class StudentDetailView(APIView):
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-# Retrieve specific staff member details
-class StaffDetailView(APIView):
+# Retrieve specific Accountant member details
+class AccountantDetailView(APIView):
     """
-    Handle GET requests to retrieve details of a specific staff member by primary key.
+    Handle GET requests to retrieve details of a specific accountant member by primary key.
     """
     def get(self, request, pk, format=None):
         try:
-            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
-            serializer = StaffSerializer(staff)  # Serialize the staff data
+            accountant = Accountant.objects.get(pk=pk)  # Retrieve Accountant record by primary key
+            serializer = AccountantSerializer(accountant)  # Serialize the Accountant data
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Staff.DoesNotExist:
+        except Accountant.DoesNotExist:
             # Return an error response if staff member is not found
-            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "accountant not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # API view to delete specific teacher
 class TeacherDeleteView(APIView):
@@ -375,18 +374,18 @@ class StudentDeleteView(APIView):
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
 # Delete a specific staff member
-class StaffDeleteView(APIView):
+class AccountantDeleteView(APIView):
     """
-    Handle DELETE requests to delete a specific staff member by primary key.
+    Handle DELETE requests to delete a specific Accountant member by primary key.
     """
     def delete(self, request, pk, format=None):
         try:
-            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
-            staff.delete()  # Delete the staff record
-            return Response({"message": "Staff deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except Staff.DoesNotExist:
-            # Return an error response if staff member is not found
-            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+            accountant = Accountant.objects.get(pk=pk)  # Retrieve accountant record by primary key
+            accountant.delete()  # Delete the accountant record
+            return Response({"message": "Accountant deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Accountant.DoesNotExist:
+            # Return an error response if accountant member is not found
+            return Response({"error": "Accountant not found"}, status=status.HTTP_404_NOT_FOUND)
         
 # API view to update teacher info
 class TeacherUpdateAPIView(APIView):
@@ -464,23 +463,23 @@ class StudentUpdateAPIView(APIView):
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# API view to update staff info
-class StaffUpdateAPIView(APIView):
+# API view to update accountant info
+class AccountantUpdateAPIView(APIView):
     def put(self, request, pk):
         try:
-            # Try to retrieve the staff object by primary key (pk)
-            staff = Staff.objects.get(pk=pk)
-        except Staff.DoesNotExist:
-            # Return an error response if the staff does not exist
-            return Response({"error": "Staff not found."}, status=status.HTTP_404_NOT_FOUND)
+            # Try to retrieve the accountant object by primary key (pk)
+            accountant = Accountant.objects.get(pk=pk)
+        except Accountant.DoesNotExist:
+            # Return an error response if the accountant does not exist
+            return Response({"error": "accountant not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Serialize the incoming data, allowing partial updates
-        serializer = StaffSerializer(staff, data=request.data, partial=True)
+        serializer = AccountantSerializer(accountant, data=request.data, partial=True)
         if serializer.is_valid():
-            # If the data is valid, save the updated staff instance
-            staff = serializer.save()
-            # Return the updated staff's data in the response
-            return Response(StaffSerializer(staff).data)
+            # If the data is valid, save the updated Accountant instance
+            accountant = serializer.save()
+            # Return the updated Accountant's data in the response
+            return Response(AccountantSerializer(accountant).data)
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1393,141 +1392,7 @@ class DiscussionCommentDeleteAPIView(APIView):
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
-class FeeCategoryListCreateView(APIView):
-    def get(self, request):
-        fee_categories = FeeCategory.objects.all()
-        serializer = FeeCategorySerializer(fee_categories, many=True)
-        return Response(serializer.data)
 
-    def post(self, request):
-        serializer = FeeCategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class FeeCategoryDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeCategorySerializer(fee_category)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeCategorySerializer(fee_category, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        fee_category.delete()
-        return Response({'message': 'FeeCategory deleted'}, status=status.HTTP_204_NO_CONTENT)
-
-class FeeStructureListCreateView(APIView):
-    def get(self, request):
-        fee_structures = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories')
-        serializer = FeeStructureSerializer(fee_structures, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = FeeStructureSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class FeeStructureDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories').get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeStructureSerializer(fee_structure)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeStructureSerializer(fee_structure, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        fee_structure.delete()
-        return Response({'message': 'FeeStructure deleted'}, status=status.HTTP_204_NO_CONTENT)
-
-class StudentFeeListView(APIView):
-    def get(self, request, student_id):
-        transactions = PaymentTransaction.objects.filter(student_id=student_id)
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-class StudentPendingFeesView(APIView):
-    def get(self, request, student_id):
-        transactions = PaymentTransaction.objects.filter(student_id=student_id, remaining_dues__gt=0)
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-class PaymentTransactionListCreateView(APIView):
-    def get(self, request):
-        transactions = PaymentTransaction.objects.select_related('student', 'fee_structure')
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = PaymentTransactionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class PaymentTransactionDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.select_related('student', 'fee_structure').get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = PaymentTransactionSerializer(transaction)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = PaymentTransactionSerializer(transaction, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        transaction.delete()
-        return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
-    
 class ExamAPIView(APIView):
     def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
@@ -2500,3 +2365,273 @@ class SubjectWiseStudentListAPIView(APIView):
             },
             "students": serializer.data
         }, status=status.HTTP_200_OK)
+
+
+# Fee Category API
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import FeeCategoryName
+from .serializers import FeeCategoryNameSerializer
+from rest_framework.permissions import IsAuthenticated
+
+class FeeCategoryNameAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        fee_category_names = FeeCategoryName.objects.all()
+        serializer = FeeCategoryNameSerializer(fee_category_names, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = FeeCategoryNameSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class FeeCategoryNameDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            serializer = FeeCategoryNameSerializer(fee_category_name)
+            return Response(serializer.data)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            serializer = FeeCategoryNameSerializer(fee_category_name, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            fee_category_name.delete()
+            return Response({"detail": "FeeCategoryName deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FeeCategoryByClassAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, class_id, *args, **kwargs):
+        fee_categories = FeeCategory.objects.filter(class_assigned__id=class_id)
+        serializer = FeeCategorySerializer(fee_categories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, class_id, *args, **kwargs):
+        # Add class_id to the incoming data
+        data = request.data
+        data['class_assigned'] = class_id  # Ensure the class_id is included in the new category data
+        serializer = FeeCategorySerializer(data=data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class FeeCategoryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            serializer = FeeCategorySerializer(fee_category)
+            return Response(serializer.data)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            serializer = FeeCategorySerializer(fee_category, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            fee_category.delete()
+            return Response({"detail": "FeeCategory deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import TransportationFee
+from .serializers import TransportationFeeSerializer
+
+class TransportationFeeListCreateAPIView(APIView):
+    def get(self, request):
+        transportation_fees = TransportationFee.objects.all()
+        serializer = TransportationFeeSerializer(transportation_fees, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TransportationFeeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TransportationFeeDetailAPIView(APIView):
+    def get(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TransportationFeeSerializer(transportation_fee)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TransportationFeeSerializer(transportation_fee, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        transportation_fee.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StudentBillAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, *args, **kwargs):
+        """Retrieve all bills for a specific student."""
+        bills = StudentBill.objects.filter(student__id=student_id)
+        serializer = StudentBillSerializer(bills, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, student_id, *args, **kwargs):
+        """Create a new student bill."""
+        data = request.data
+        data['student'] = student_id  # Set the student ID to the student being billed
+        serializer = StudentBillSerializer(data=data)
+        
+        if serializer.is_valid():
+            bill = serializer.save()  # Serializer already handles total_amount and balance
+            return Response(StudentBillSerializer(bill).data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class StudentBillDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, bill_id, *args, **kwargs):
+        try:
+            bill = StudentBill.objects.get(id=bill_id, student__id=student_id)
+            serializer = StudentBillSerializer(bill)
+            return Response(serializer.data)
+        except StudentBill.DoesNotExist:
+            return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class StudentPaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, *args, **kwargs):
+        """Retrieve all payments for a specific student."""
+        payments = StudentPayment.objects.filter(student__id=student_id)
+        serializer = StudentPaymentSerializer(payments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, student_id, *args, **kwargs):
+        """Create a new student payment."""
+        data = request.data
+        data['student'] = student_id  # Set the student ID for the payment
+        serializer = StudentPaymentSerializer(data=data)
+        
+        if serializer.is_valid():
+            payment = serializer.save()  # Serializer already updates the balance
+            return Response(StudentPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class StudentPaymentDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, payment_id, *args, **kwargs):
+        try:
+            payment = StudentPayment.objects.get(id=payment_id, student__id=student_id)
+            serializer = StudentPaymentSerializer(payment)
+            return Response(serializer.data)
+        except StudentPayment.DoesNotExist:
+            return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class StudentTransactionsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, *args, **kwargs):
+        # Fetch bills and payments for the student ordered by date and time
+        bills = StudentBill.objects.filter(student_id=student_id).order_by('date')
+        payments = StudentPayment.objects.filter(student_id=student_id).order_by('date')
+
+        # Serialize bills and payments
+        bills_serializer = StudentBillSerializer(bills, many=True)
+        payments_serializer = StudentPaymentSerializer(payments, many=True)
+
+        # Initialize balance
+        balance = Decimal('0.00')
+        transactions = []
+
+        # Combine bills and payments into a single list of transactions
+        all_transactions = list(bills) + list(payments)
+        all_transactions.sort(key=lambda x: x.date)  # Sort by date and time (ascending)
+
+        # Initialize indices for each serializer
+        bill_idx = 0
+        payment_idx = 0
+
+        # Iterate over the sorted transactions to calculate the balance
+        for transaction in all_transactions:
+            if isinstance(transaction, StudentBill):
+                # Add bill total amount to balance
+                balance += transaction.total_amount
+                
+                # Add bill data and balance
+                transaction_data = bills_serializer.data[bill_idx]
+                transaction_data['balance'] = balance
+                transactions.append(transaction_data)
+                bill_idx += 1
+            elif isinstance(transaction, StudentPayment):
+                # Subtract payment amount and discount from balance
+                balance -= (transaction.amount_paid + transaction.discount)
+                
+                # Add payment data and balance
+                payment_data = payments_serializer.data[payment_idx]
+                payment_data['balance'] = balance
+                transactions.append(payment_data)
+                payment_idx += 1
+
+        # Return the combined transactions with balance calculations
+        return Response({'transactions': transactions})

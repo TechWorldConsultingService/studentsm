@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from accounts.models import *
-from .models import Post
+from datetime import datetime
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_principal',
             'is_teacher',
             'is_student',
-            'is_staff',
+            'is_accountant',
             'role'
             )
         # Ensure the password field is write-only (won't be returned in API responses)
@@ -31,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_principal': {'read_only': True},
             'is_teacher': {'read_only': True},
             'is_student': {'read_only': True},
-            'is_staff': {'read_only': True},
+            'is_accountant': {'read_only': True},
         }
 
     def get_role(self, obj):
@@ -43,8 +43,8 @@ class UserSerializer(serializers.ModelSerializer):
             return "Teacher"
         elif obj.is_student:
             return "Student"
-        elif obj.is_staff:
-            return "Staff"
+        elif obj.is_accountant:
+            return "Accountant'"
         return "Unknown"
 
     def create(self, validated_data):
@@ -370,18 +370,18 @@ class GetStudentSerializer(serializers.ModelSerializer):
 
 
        
-class StaffSerializer(serializers.ModelSerializer):
+class AccountantSerializer(serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the staff
 
     class Meta:
-        model = Staff
-        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'role']
+        model = Accountant
+        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender']
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')  # Extract user data
         # Mark the user as a student
-        user_data['is_staff'] = True
+        user_data['is_accountant'] = True
         # Serialize the user data
         user_serializer = UserSerializer(data=user_data)
 
@@ -389,7 +389,7 @@ class StaffSerializer(serializers.ModelSerializer):
             # Save the user and get the created user instance
             user = user_serializer.save()
             # Create and save the Student instance
-            staff = Staff.objects.create(user=user, **validated_data)  # Create staff profile
+            staff = Accountant.objects.create(user=user, **validated_data)  # Create staff profile
             return staff
         else:
             raise serializers.ValidationError(user_serializer.errors)
@@ -399,7 +399,7 @@ class StaffSerializer(serializers.ModelSerializer):
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            user.is_staff = True  # Ensure is_staff is set to True on update
+            user.is_accountant = True  # Ensure is_accountant is set to True on update
             user.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
@@ -570,131 +570,6 @@ class DiscussionCommentSerializer(serializers.ModelSerializer):
     def get_replies(self, obj):
         replies = DiscussionComment.objects.filter(parent=obj)
         return DiscussionCommentSerializer(replies, many=True).data
-
-
-
-class FeeCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FeeCategory
-        fields = ['id', 'name', 'amount', 'per_months']
-
-class FeeStructureSerializer(serializers.ModelSerializer):
-    fee_categories = serializers.PrimaryKeyRelatedField(
-        queryset=FeeCategory.objects.all(),
-        many=True
-    )  # Accepts a list of FeeCategory IDs
-
-    class Meta:
-        model = FeeStructure
-        fields = ['id', 'student_class', 'monthly_fee', 'fee_categories']
-
-from decimal import Decimal
-from django.utils.timezone import now
-
-class PaymentTransactionSerializer(serializers.ModelSerializer):
-    fee_structure = serializers.PrimaryKeyRelatedField(queryset=FeeStructure.objects.all(), required=False)
-    other_fee = serializers.PrimaryKeyRelatedField(queryset=FeeCategory.objects.all(), required=False, allow_null=True)
-
-    class Meta:
-        model = PaymentTransaction
-        fields = [
-            'student',
-            'months',
-            'fee_structure',
-            'other_fee',
-            'total_amount',
-            'paid_amount',
-            'remaining_dues',
-            'payment_no',
-        ]
-        read_only_fields = ['total_amount', 'remaining_dues', 'payment_no']
-
-    def validate(self, attrs):
-        student = attrs.get('student')
-        months = attrs.get('months')
-        current_year = now().year  # Get the current year
-
-        # Fetch all transactions for the student in the current year
-        existing_transactions = PaymentTransaction.objects.filter(
-            student=student,
-            created_at__year=current_year,
-        )
-
-        # Flatten existing months in the current year
-        existing_months = set(
-            month for transaction in existing_transactions for month in transaction.months
-        )
-
-        # Check for overlapping months
-        duplicate_months = set(months).intersection(existing_months)
-        if duplicate_months:
-            raise serializers.ValidationError(
-                f"Payments for the following months in {current_year} already exist: {', '.join(duplicate_months)}"
-            )
-
-        # Ensure fee_structure is provided
-        if not attrs.get('fee_structure') and student.class_code:
-            fee_structure = FeeStructure.objects.filter(student_class=student.class_code).first()
-            if not fee_structure:
-                raise serializers.ValidationError("No fee structure found for the student's class.")
-            attrs['fee_structure'] = fee_structure
-        elif not student.class_code:
-            raise serializers.ValidationError("Student does not have a class assigned.")
-
-        return attrs
-
-
-
-    def create(self, validated_data):
-        student = validated_data['student']
-        fee_structure = validated_data['fee_structure']
-        months = validated_data['months']
-        other_fee = validated_data.get('other_fee')
-        paid_amount = validated_data['paid_amount']
-
-        # Generate a unique payment number
-        current_year = now().year
-        last_transaction = PaymentTransaction.objects.filter(payment_no__startswith=str(current_year)).order_by('-id').first()
-        if last_transaction:
-            last_number = int(last_transaction.payment_no.split('-')[-1])
-            payment_no = f"{current_year}-{last_number + 1:06d}"
-        else:
-            payment_no = f"{current_year}-000001"
-
-        # Calculate total months and total fee
-        total_months = len(months)
-        monthly_fee = fee_structure.monthly_fee or Decimal('0.00')
-
-        total_fee = Decimal('0.00')
-        for fee in fee_structure.fee_categories.all():
-            if fee.per_months:
-                total_fee += fee.amount * total_months
-            else:
-                total_fee += fee.amount
-
-        total_fee += monthly_fee * total_months
-
-        if other_fee:
-            total_fee += other_fee.amount
-
-        # Calculate remaining dues
-        previous_transaction = PaymentTransaction.objects.filter(student=student).order_by('-created_at').first()
-        previous_dues = Decimal(previous_transaction.remaining_dues) if previous_transaction else Decimal('0.00')
-
-        remaining_dues = (previous_dues + total_fee) - paid_amount
-        remaining_dues = max(remaining_dues, Decimal('0.00'))
-
-        # Create the transaction instance
-        return PaymentTransaction.objects.create(
-            student=student,
-            months=months,
-            fee_structure=fee_structure,
-            other_fee=other_fee,
-            total_amount=total_fee,
-            paid_amount=paid_amount,
-            remaining_dues=remaining_dues,
-            payment_no=payment_no,
-        )
 
 
 class ExamSerializer(serializers.ModelSerializer):
@@ -945,3 +820,129 @@ class SimpleAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyAttendance
         fields = ['student', 'date', 'status']
+
+
+from rest_framework import serializers
+from .models import FeeCategoryName, FeeCategory, TransportationFee, StudentBill, StudentPayment
+from .models import Student  # Assuming you have a Student model
+
+class FeeCategoryNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeCategoryName
+        fields = ('id', 'name')
+
+class FeeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeCategory
+        fields = ['class_assigned', 'fee_category_name', 'amount']
+
+class TransportationFeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransportationFee
+        fields = ('id', 'place', 'amount')
+
+class StudentBillSerializer(serializers.ModelSerializer):
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    fee_categories = serializers.PrimaryKeyRelatedField(queryset=FeeCategory.objects.all(), many=True)
+    transportation_fee = serializers.PrimaryKeyRelatedField(queryset=TransportationFee.objects.all(), required=False)
+
+    class Meta:
+        model = StudentBill
+        fields = ('id', 'student', 'month', 'date', 'bill_number', 'fee_categories', 'transportation_fee', 'remarks', 'total_amount')
+
+    def generate_bill_number(self):
+        """Generates a unique bill number in the format YYYYBXXX (e.g., 2025B01, 2025B445)."""
+        year = datetime.now().year
+        prefix = f"{year}B"
+
+        # Get the latest bill for the current year
+        last_bill = StudentBill.objects.filter(bill_number__startswith=prefix).order_by('-bill_number').first()
+
+        if last_bill and last_bill.bill_number:
+            # Extract the numeric part and increment it
+            last_number = int(last_bill.bill_number.replace(prefix, ""))
+            new_number = last_number + 1
+        else:
+            # Start from 1 if no previous bill exists
+            new_number = 1
+
+        # Return the bill number with no leading zeros after 100
+        return f"{prefix}{new_number}"
+
+    
+    def validate(self, data):
+        """Validate that no bill exists for the same student and month and calculate the total amount dynamically before saving."""
+        student = data.get('student')
+        month = data.get('month')
+
+        # Check if a bill already exists for the same student and month
+        existing_bill = StudentBill.objects.filter(student=student, month=month).exists()
+        if existing_bill:
+            # Attach the error to the 'month' field
+            raise serializers.ValidationError(
+                { 'month': [f"A bill for {student.user.username} already exists for the month {month}."] }
+            )
+
+        # Calculate total amount from fee categories and transportation fee
+        fee_categories = data.get('fee_categories', [])
+        transportation_fee = data.get('transportation_fee', None)
+        discount = Decimal(data.get('discount', '0.00'))  # Ensure discount is Decimal
+
+        fee_total = sum(Decimal(fee.amount) for fee in fee_categories)  # Ensure fee.amount is Decimal
+        transport_total = Decimal(transportation_fee.amount) if transportation_fee else Decimal('0.00')
+        total_amount = fee_total + transport_total - discount
+        data['total_amount'] = total_amount
+
+        # Generate bill number
+        data['bill_number'] = self.generate_bill_number()
+
+        return data
+
+
+class StudentPaymentSerializer(serializers.ModelSerializer):
+    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+
+    class Meta:
+        model = StudentPayment
+        fields = ('id', 'student', 'date', 'payment_number', 'discount', 'amount_paid', 'remarks')
+
+    def generate_payment_number(self):
+        """Generates a unique payment number in the format YYYY-P-XXX (e.g., 2025P01, 2025P114)."""
+        year = datetime.now().year
+        prefix = f"{year}P"
+
+        # Get the latest payment for the current year
+        last_payment = StudentPayment.objects.filter(payment_number__startswith=prefix).order_by('-payment_number').first()
+
+        if last_payment and last_payment.payment_number:
+            # Extract the numeric part and increment it
+            last_number = int(last_payment.payment_number.replace(prefix, ""))
+            new_number = last_number + 1
+        else:
+            # Start from 1 if no previous payment exists
+            new_number = 1
+
+        # Return the payment number with no leading zeros after 100
+        return f"{prefix}{new_number}"
+
+
+    def validate(self, data):
+        """Validate and calculate the payment number before saving."""
+        
+        # Ensure discount is in decimal format
+        discount = data.get('discount', Decimal('0.00'))
+        amount_paid = data.get('amount_paid', Decimal('0.00'))
+
+        if amount_paid < 0:
+            raise serializers.ValidationError("Amount paid cannot be negative")
+
+        # Generate a unique payment number
+        data['payment_number'] = self.generate_payment_number()
+
+        # Do NOT subtract discount from amount_paid here.
+        # Keep amount_paid as it is without any discount subtraction here.
+        return data
+
+
