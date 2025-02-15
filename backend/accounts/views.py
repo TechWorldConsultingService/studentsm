@@ -25,7 +25,7 @@ class LoginAPIView(APIView):
             # Authenticate the user
             user = authenticate(request, username=username, password=password)
             if user is None:
-                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'error': 'Invalid credentialss'}, status=status.HTTP_401_UNAUTHORIZED)
 
             # Generate JWT tokens for the authenticated user
             refresh = RefreshToken.for_user(user)
