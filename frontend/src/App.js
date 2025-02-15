@@ -43,6 +43,7 @@ import LeavesDashboard from "./pages/leave/newLeavesDashboard";
 import ManageLeaves from "./pages/leave/newManageLeaves";
 import MyLeaves from "./pages/leave/newMyLeaves";
 import PrincipalCalendar from "./pages/Calander/PrincipalCalendar"
+import AccountantList from "./pages/principal/accountent/AccountentList";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -88,6 +89,7 @@ function App() {
     {path: "my-leaves", element: <MyLeaves />},
     { path:"/principal-calendar", element:<PrincipalCalendar />},
 {path: "/attendancePrincipal", element: <AttendancePrincipal />},
+{path: "/accountantList", element: <AccountantList />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
   ]);
