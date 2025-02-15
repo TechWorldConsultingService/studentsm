@@ -67,7 +67,7 @@
         "id": 2,
         "title": "Dashboard",
         "icon": "MdOutlineSpaceDashboard",
-        "link": "/studentdashboard"
+        "link": "/teacherdashboard"
       },
       {
         "id": 3,
@@ -142,7 +142,7 @@
         "id": 3,
         "title": "Calendar",
         "icon": "IoCalendarOutline",
-        "link": "/calendar"
+        "link": "/principal-calendar"
       },
       {
         "id": 4,
@@ -194,7 +194,12 @@
         "id": 8,
         "title": "Leave",
         "icon": "MdCoPresent",
-        "link": "/viewLeave"
+        "subSidebar": [
+          { "id": 1, "title": "Overview", "link": "/myleavePrincipal" },
+          { "id": 2, "title": "Manage Leave", "link": "/manage-leaves" },
+          { "id": 2, "title": "My Leaves", "link": "/my-leaves" }
+
+        ]
       },
       {
         "id": 9,

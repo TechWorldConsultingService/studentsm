@@ -11,13 +11,10 @@ import toast from "react-hot-toast";
 import { setLoginDetails } from "../redux/reducerSlices/userSlice";
 import { useDispatch } from "react-redux";
 
-
-
-
 // Validation Schema
 const loginSchema = Yup.object().shape({
   username: Yup.string()
-    .min(3, "Username must be at least 3 letter")
+    .min(3, "Username must be at least 3 letters")
     .required("Username is required."),
   password: Yup.string()
     .min(8, "Password must be at least 8 characters long.")
@@ -46,23 +43,13 @@ const Login = () => {
 
   const loginUser = async (values) => {
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/login/",
-        values
-      );
-
-      const data = response.data ; 
+      const response = await axios.post("http://localhost:8000/api/login/", values);
+      const data = response.data;
 
       if (response.status === 200) {
         const successMessage = data.msg || "Login successful";
         toast.success(successMessage);
-        dispatch(
-          setLoginDetails(
-            data
-          )
-        );
-
-
+        dispatch(setLoginDetails(data));
 
         // Redirect based on role
         switch (data.role) {
@@ -92,82 +79,99 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-between w-screen h-screen">
-      <div className="w-1/2 flex justify-center">
+    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-r from-purple-100 to-purple-200">
+      {/* Left section / Image */}
+      <div className="hidden md:flex md:w-1/2 items-center justify-center">
         <img
           src="/sideimage.jpg"
-          alt="School Picture"
-          className="h-full w-[80%]"
+          alt="School"
+          className="w-[80%] h-auto object-cover rounded-md shadow-2xl"
         />
       </div>
 
-      <div className="w-1/2 flex items-center justify-center flex-col">
-        <img src="/logo.jpeg" alt="Logo" className="h-10 w-24" />
-        <span className="font-semibold text-purple-800">Satyam Xaviers</span>
-        <span className="text-3xl text-purple-800 mt-3">Welcome!</span>
-        <span className="text-sm text-purple-800">
-          Please Enter Your Details
-        </span>
-        <form
-          className="w-full flex flex-col items-center justify-center  pt-5"
-          onSubmit={formik.handleSubmit}
-        >
-          <Input
-            size="large"
-            placeholder="Enter Username"
-            type="text"
-            id="username"
-            className="bg-purple-100 w-4/6"
-            prefix={<UserOutlined className="text-purple-800" />}
-            name="username"
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            value={formik.values.username}
-          />
-          {formik.touched.username && formik.errors.username && (
-            <div className="p-1 px-2 text-red-500 text-sm mt-1">
-              {formik.errors.username}
-            </div>
-          )}
+      {/* Right section / Form */}
+      <div className="flex flex-col justify-center items-center w-full md:w-1/2 px-5 py-10">
+        {/* Logo and Branding */}
+        <div className="flex flex-col items-center mb-5">
+          <img src="/logo.jpeg" alt="Logo" className="h-12 w-28 mb-2" />
+          <span className="text-lg font-semibold text-purple-800">Satyam Xaviers</span>
+        </div>
 
-          <Input
-            placeholder="Enter Password"
-            className="bg-purple-100 w-4/6 mt-5"
-            name="password"
-            id="password"
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            value={formik.values.password}
-            prefix={<RiLockPasswordLine className="text-purple-800" />}
-            type={isVisible ? "text" : "password"}
-            suffix={
-              <Button
+        {/* Card Wrapper */}
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md py-8 px-6 md:px-10 flex flex-col items-center">
+          <h2 className="text-2xl font-bold text-purple-800">Welcome!</h2>
+          <p className="text-sm text-gray-600 mb-6">Please enter your details to sign in</p>
+          
+          <form className="w-full" onSubmit={formik.handleSubmit}>
+            {/* Username */}
+            <div className="mb-5">
+              <Input
+                size="large"
+                placeholder="Enter Username"
                 type="text"
-                onClick={toggleVisibility}
-                className="flex items-center"
-                icon={
-                  isVisible ? (
-                    <FaRegEyeSlash className="text-purple-800" />
-                  ) : (
-                    <FaRegEye className="text-purple-800" />
-                  )
+                id="username"
+                prefix={<UserOutlined className="text-purple-800" />}
+                name="username"
+                className={`rounded-md ${
+                  formik.touched.username && formik.errors.username
+                    ? "border-red-500"
+                    : "border-none"
+                }`}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.username}
+              />
+              {formik.touched.username && formik.errors.username && (
+                <div className="text-red-500 text-sm mt-1">{formik.errors.username}</div>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="mb-5">
+              <Input
+                size="large"
+                placeholder="Enter Password"
+                id="password"
+                name="password"
+                prefix={<RiLockPasswordLine className="text-purple-800" />}
+                type={isVisible ? "text" : "password"}
+                className={`rounded-md ${
+                  formik.touched.password && formik.errors.password
+                    ? "border-red-500"
+                    : "border-none"
+                }`}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.password}
+                suffix={
+                  <Button
+                    type="text"
+                    onClick={toggleVisibility}
+                    className="flex items-center"
+                    icon={
+                      isVisible ? (
+                        <FaRegEyeSlash className="text-purple-800" />
+                      ) : (
+                        <FaRegEye className="text-purple-800" />
+                      )
+                    }
+                  />
                 }
               />
-            }
-          />
-          {formik.touched.password && formik.errors.password && (
-            <div className="p-1 px-2 text-red-500 text-sm mt-1 ">
-              {formik.errors.password}
+              {formik.touched.password && formik.errors.password && (
+                <div className="text-red-500 text-sm mt-1">{formik.errors.password}</div>
+              )}
             </div>
-          )}
 
-          <Button
-            htmlType="submit"
-            className="bg-purple-600 text-white mt-8 px-7 py-4 hover:font-semibold"
-          >
-            Log In
-          </Button>
-        </form>
+            {/* Submit Button */}
+            <Button
+              htmlType="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md py-2 text-lg font-medium transition-all"
+            >
+              Log In
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
