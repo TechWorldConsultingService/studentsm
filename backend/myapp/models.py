@@ -93,16 +93,15 @@ class Student(models.Model):
         self.user.delete()
         super().delete(*args, **kwargs)
 
-class Staff(models.Model):
+class Accountant(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
-    role = models.CharField(max_length=255)
 
     def __str__(self):
-        return f"User ID: {self.user.id}, Username: {self.user.username}, Role: {self.role}"
+        return f"User ID: {self.user.id}, Username: {self.user.username}"
     
     def delete(self, *args, **kwargs):
         self.user.delete()  # Delete the associated user
@@ -214,63 +213,6 @@ class DiscussionComment(models.Model):
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.post.content[:20]}"
 
-
-class FeeCategory(models.Model):
-    name = models.CharField(max_length=100)  # e.g., Sports Fee, Exam Fee
-    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount for this fee
-    per_months = models.BooleanField(default=True)  # Flag to decide if the fee is multiplied by months
-    
-    def __str__(self):
-        return self.name
-
-class FeeStructure(models.Model):
-    student_class = models.ForeignKey('Class', on_delete=models.CASCADE)  # Class the fee structure belongs to
-    monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Renamed base_amount to monthly_fee
-    fee_categories = models.ManyToManyField(FeeCategory)  # Many fee categories for each fee structure
-
-    def __str__(self):
-        return f"Fee Structure for {self.student_class.class_name}"
-
-    def total_fee(self):
-        # Ensure monthly_fee is not None and convert to Decimal
-        monthly_fee = self.monthly_fee if self.monthly_fee is not None else Decimal('0.00')
-
-        # Calculate total fee for all categories
-        fee_categories_total = sum(fee.amount for fee in self.fee_categories.all())
-        
-        return monthly_fee + fee_categories_total
-
-from decimal import Decimal
-from django.utils.timezone import now
-
-class PaymentTransaction(models.Model):
-    MONTH_CHOICES = [
-        ('Baisakh', 'Baisakh'),
-        ('Jestha', 'Jestha'),
-        ('Ashar', 'Ashar'),
-        ('Shrawan', 'Shrawan'),
-        ('Bhadra', 'Bhadra'),
-        ('Ashwin', 'Ashwin'),
-        ('Kartik', 'Kartik'),
-        ('Mangsir', 'Mangsir'),
-        ('Poush', 'Poush'),
-        ('Magh', 'Magh'),
-        ('Falgun', 'Falgun'),
-        ('Chaitra', 'Chaitra'),
-    ]
-
-    student = models.ForeignKey('Student', on_delete=models.CASCADE)
-    months = models.JSONField(default=list)  # Allow multiple months selection
-    fee_structure = models.ForeignKey(FeeStructure, on_delete=models.CASCADE, null=True)
-    other_fee = models.ForeignKey(FeeCategory, on_delete=models.CASCADE, null=True, blank=True)  # Additional fee
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0)
-    paid_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    remaining_dues = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    payment_no = models.CharField(max_length=20, unique=True, editable=False, default=None)
-
-    def __str__(self):
-        return f"Transaction {self.payment_no} for {self.student} ({self.total_amount})"
 
 
 class Exam(models.Model):
@@ -388,11 +330,6 @@ class StudentOverallResult(models.Model):
         return f"{self.student.user.username} - {self.exam.name}: {self.grade}"
 
 
-    
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
 
 def validate_file_size(value):
     max_size = 5 * 1024 * 1024  # 5MB limit
@@ -430,3 +367,51 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender} -> {self.receiver}: {self.message}"
+    
+
+class FeeCategoryName(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+class FeeCategory(models.Model):
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories")
+    fee_category_name = models.ForeignKey(FeeCategoryName, on_delete=models.CASCADE, related_name="fee_categories")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.fee_category_name.name} - {self.class_assigned.class_name} (${self.amount})"
+
+class TransportationFee(models.Model):
+    place = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.place} - ${self.amount}"
+    
+class StudentBill(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="bills")
+    month = models.CharField(max_length=20)  # e.g., "January"
+    date = models.DateTimeField(auto_now_add=True)
+    bill_number = models.CharField(max_length=10, unique=True, blank=True)
+    fee_categories = models.ManyToManyField(FeeCategory, related_name="feecategory_bills")
+    transportation_fee = models.ForeignKey(TransportationFee, on_delete=models.CASCADE, related_name="student_bills", null=True, blank=True)
+    remarks = models.TextField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"Bill #{self.bill_number} - {self.student.user.username} ({self.month})"
+
+
+class StudentPayment(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
+    date = models.DateTimeField(auto_now_add=True)
+    payment_number = models.CharField(max_length=10, unique=True, blank=True)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    remarks = models.TextField(blank=True, null=True)
+
+
+    def __str__(self):
+        return f"Payment {self.payment_number} - {self.student.user.username} - {self.amount_paid}"

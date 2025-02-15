@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # Fields to be included in the serialized representation
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_staff')
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_accountant')
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -28,7 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     # Password field (write-only to avoid being returned in responses)
     password = serializers.CharField(write_only=True)
     # Role field with predefined choices
-    role = serializers.ChoiceField(choices=[('master', 'Master'), ('principal', 'Principal'), ('teacher', 'Teacher'), ('student', 'Student'), ('staff', 'Staff')])
+    role = serializers.ChoiceField(choices=[('master', 'Master'), ('principal', 'Principal'), ('teacher', 'Teacher'), ('student', 'Student'), ('accountant', 'Accountant')])
 
     class Meta:
         model = CustomUser
@@ -53,8 +53,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             user.is_teacher = True
         elif role == 'student':
             user.is_student = True
-        elif role == 'staff':
-            user.is_staff = True
+        elif role == 'accountant':
+            user.is_accountant = True
         
         # Set the user's password
         user.set_password(validated_data['password'])

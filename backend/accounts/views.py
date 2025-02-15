@@ -83,15 +83,15 @@ class LoginAPIView(APIView):
                     } if student_class else None,
                     'subjects': subjects  # Add subjects related to the student's class
                 }
-            elif hasattr(user, 'staff'):
-                staff = user.staff
+            elif hasattr(user, 'accountant'):
+                accountant = user.accountant
                 role_data = {
-                    'id': staff.id, 
-                    'role': 'staff',
-                    'phone': staff.phone,
-                    'address': staff.address,
-                    'gender': staff.gender,
-                    # 'position': staff.position if hasattr(staff, 'position') else None,
+                    'id': accountant.id, 
+                    'role': 'accountant',
+                    'phone': accountant.phone,
+                    'address': accountant.address,
+                    'gender': accountant.gender,
+                    'date_of_joining': accountant.date_of_joining.strftime('%Y-%m-%d'),
                 }
             
             else:
@@ -160,6 +160,15 @@ class LoginAPIView(APIView):
                         'class_name': student.class_code.class_name
                     } if student.class_code else None,
                     'subjects': subjects  # Add subjects related to the student's class
+                })
+            elif hasattr(user, 'accountant'):
+                accountant = user.accountant
+                response_data.update({
+                    'role': 'accountant',
+                    'phone': accountant.phone,
+                    'address': accountant.address,
+                    'gender': accountant.gender,
+                    'date_of_joining': accountant.date_of_joining.strftime('%Y-%m-%d')
                 })
             else:
                 # Handle case where user has no specific role
