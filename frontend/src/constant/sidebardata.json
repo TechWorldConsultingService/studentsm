@@ -187,7 +187,9 @@
         "icon": "IoMdPersonAdd",
         "subSidebar": [
           { "id": 1, "title": "Teacher", "link": "/teacherList" },
-          { "id": 2, "title": "Student", "link": "/studentList" }
+          { "id": 2, "title": "Student", "link": "/studentList" },
+          { "id": 3, "title": "Accountent", "link": "/accountantList" }
+
         ]
       },
       {
