@@ -91,14 +91,16 @@ const Login = () => {
 
       {/* Right section / Form */}
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 px-5 py-10">
+
+      <div className="bg-white rounded-xl shadow-xl pt-8 pb-4 w-[70%] ">
         {/* Logo and Branding */}
-        <div className="flex flex-col items-center mb-5">
+        <div className="flex flex-col items-center mb-2">
           <img src="/logo.jpeg" alt="Logo" className="h-12 w-28 mb-2" />
           <span className="text-lg font-semibold text-purple-800">Satyam Xaviers</span>
         </div>
 
         {/* Card Wrapper */}
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-md py-8 px-6 md:px-10 flex flex-col items-center">
+        <div className="  w-full max-w-md py-8 px-6 md:px-10 flex flex-col items-center">
           <h2 className="text-2xl font-bold text-purple-800">Welcome!</h2>
           <p className="text-sm text-gray-600 mb-6">Please enter your details to sign in</p>
           
@@ -171,6 +173,7 @@ const Login = () => {
               Log In
             </Button>
           </form>
+        </div>
         </div>
       </div>
     </div>
