@@ -338,7 +338,7 @@ const addTeacherSchema = Yup.object().shape({
                     key={item.subjectList_code}
                     value={item.subject_code}
                   >
-                    {item.subject_name}
+                    {item.subject_name} ({item.subject_code})
                   </Select.Option>
                 ))}
             </Select>

@@ -84,7 +84,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
     try {
       await axios.post(
-        "http://localhost:8000/api/register/accountent/",
+        "http://localhost:8000/api/register/accountant/",
         values,
         {
           headers: {

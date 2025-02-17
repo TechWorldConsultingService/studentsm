@@ -116,7 +116,7 @@ const EditAccountentModal = ({
       }
 
       await axios.put(
-        `http://localhost:8000/api/accountent/${accountentInfo.id}/update/`,
+        `http://localhost:8000/api/accountant/${accountentInfo.id}/update/`,
         payload,
         {
           headers: {
