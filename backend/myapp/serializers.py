@@ -120,6 +120,11 @@ class ClassSerializer(serializers.ModelSerializer):
                 instance.subjects.add(subject)
 
         return instance
+    
+class ClassDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Class  # Your Class model
+        fields = ['id', 'class_code', 'class_name']
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
@@ -832,6 +837,14 @@ class FeeCategoryNameSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 class FeeCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeeCategory
+        fields = ['class_assigned', 'fee_category_name', 'amount']
+
+class GetFeeCategorySerializer(serializers.ModelSerializer):
+    class_assigned = ClassDetailSerializer()  # Nest Class details
+    fee_category_name = FeeCategoryNameSerializer()  # Nest Fee Category details
+
     class Meta:
         model = FeeCategory
         fields = ['class_assigned', 'fee_category_name', 'amount']

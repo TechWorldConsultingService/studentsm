@@ -2426,7 +2426,7 @@ class FeeCategoryByClassAPIView(APIView):
 
     def get(self, request, class_id, *args, **kwargs):
         fee_categories = FeeCategory.objects.filter(class_assigned__id=class_id)
-        serializer = FeeCategorySerializer(fee_categories, many=True)
+        serializer = GetFeeCategorySerializer(fee_categories, many=True)
         return Response(serializer.data)
 
     def post(self, request, class_id, *args, **kwargs):
@@ -2446,7 +2446,7 @@ class FeeCategoryDetailAPIView(APIView):
     def get(self, request, class_id, category_id, *args, **kwargs):
         try:
             fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
-            serializer = FeeCategorySerializer(fee_category)
+            serializer = GetFeeCategorySerializer(fee_category)
             return Response(serializer.data)
         except FeeCategory.DoesNotExist:
             return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
