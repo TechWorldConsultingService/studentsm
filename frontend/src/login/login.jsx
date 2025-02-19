@@ -53,6 +53,9 @@ const Login = () => {
 
         // Redirect based on role
         switch (data.role) {
+          case "accountant":
+            navigate("/accountantdashboard")
+            break;
           case "student":
             navigate("/studentdashboard");
             break;

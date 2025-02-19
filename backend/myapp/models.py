@@ -370,15 +370,14 @@ class Message(models.Model):
     
 
 class FeeCategoryName(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
 
     def __str__(self):
         return self.name
 
 class FeeCategory(models.Model):
-    # class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories")
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories", default=1)
-    fee_category_name = models.ForeignKey(FeeCategoryName, on_delete=models.CASCADE, related_name="fee_categories",default=1)
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, null=True, related_name="fee_categories")
+    fee_category_name = models.ForeignKey(FeeCategoryName, on_delete=models.CASCADE, related_name="fee_categories")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
@@ -396,23 +395,69 @@ class StudentBill(models.Model):
     month = models.CharField(max_length=20)  # e.g., "January"
     date = models.DateTimeField(auto_now_add=True)
     bill_number = models.CharField(max_length=10, unique=True, blank=True)
-    fee_categories = models.ManyToManyField(FeeCategory, related_name="feecategory_bills")
+    fee_categories = models.ManyToManyField(FeeCategory, through="StudentBillFeeCategory", related_name="feecategory_bills")
     transportation_fee = models.ForeignKey(TransportationFee, on_delete=models.CASCADE, related_name="student_bills", null=True, blank=True)
     remarks = models.TextField(blank=True, null=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
+    def save(self, *args, **kwargs):
+        # Ensure date is set to the current date if not already set
+        if not self.date:
+            self.date = timezone.now()
+
+        if not self.bill_number:  # Generate bill number only if not set
+            year = str(self.date.year)
+            # Find the next bill number for this student, regardless of the month
+            existing_bills_count = StudentBill.objects.filter(student=self.student).count()
+            bill_number = f"{year}B{str(existing_bills_count + 1).zfill(2)}"  # Format: 2025B01, 2025B02, etc.
+            self.bill_number = bill_number
+        
+        super().save(*args, **kwargs)
+
+    def calculate_totals(self):
+        subtotal = 0
+        for fee_entry in self.studentbillfeecategory_set.all():
+            fee_amount = fee_entry.fee_category.amount if not fee_entry.scholarship else 0
+            subtotal += fee_amount
+        if self.transportation_fee:
+            subtotal += self.transportation_fee.amount
+        total = subtotal - self.discount
+        self.subtotal = subtotal
+        self.total_amount = max(total, 0)
+        self.save()
+
+class StudentBillFeeCategory(models.Model):
+    student_bill = models.ForeignKey(StudentBill, on_delete=models.CASCADE)
+    fee_category = models.ForeignKey(FeeCategory, on_delete=models.CASCADE)
+    scholarship = models.BooleanField(default=False)  # Stored permanently
+
     def __str__(self):
-        return f"Bill #{self.bill_number} - {self.student.user.username} ({self.month})"
+        status = "with Scholarship" if self.scholarship else "Full Fee"
+        return f"{self.fee_category.fee_category_name.name} - {status}"
 
 
 class StudentPayment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
     date = models.DateTimeField(auto_now_add=True)
     payment_number = models.CharField(max_length=10, unique=True, blank=True)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     remarks = models.TextField(blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        # Ensure date is set to the current date if not already set
+        if not self.date:
+            self.date = timezone.now()
+
+        if not self.payment_number:  # Generate payment number only if not set
+            year = str(self.date.year)
+            # Find the next payment number for this student by counting existing payments
+            existing_payments_count = StudentPayment.objects.filter(student=self.student).count()
+            payment_number = f"{year}P{str(existing_payments_count + 1).zfill(2)}"  # Format: 2025P01, 2025P02, etc.
+            self.payment_number = payment_number  # Unique for each student
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Payment {self.payment_number} - {self.student.user.username} - {self.amount_paid}"

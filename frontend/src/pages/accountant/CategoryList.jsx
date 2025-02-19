@@ -1,44 +1,46 @@
-import React, { useState, useEffect } from "react";
-import MainLayout from "../../../layout/MainLayout";
+import React, { useState, useEffect } from 'react';
+import MainLayout from '../../layout/MainLayout';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import AddAccountentModal from "./AddAccountentModal";
-import EditAccountentModal from "./EditAccountentModal";
+import AddCategoryModal from './AddCategoryModal';
+import EditCategoryModal from './EditCategoryModal';
 
-const AccountentList = () => {
+const CategoryList = () => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
-  const [accountentList, setAccountentList] = useState([]);
+  // State
+  const [categoryList, setCategoryList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedAccountent, setSelectedAccountent] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [accountentToDelete, setAccountentToDelete] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
-  // Fetch accountants
-  const fetchAccountents = async () => {
+  // Fetch categories
+  const fetchCategories = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     setLoading(true);
+
     try {
-      const { data } = await axios.get("http://localhost:8000/api/accountant/", {
+      const { data } = await axios.get("http://localhost:8000/api/fee-names/", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
         },
       });
-      setAccountentList(data);
+      setCategoryList(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching accountants.");
+        toast.error('Error fetching categories:', error.message || error);
       }
     } finally {
       setLoading(false);
@@ -46,62 +48,58 @@ const AccountentList = () => {
   };
 
   useEffect(() => {
-    fetchAccountents();
-    // eslint-disable-next-line
+    fetchCategories();
   }, [access, navigate]);
 
-  const handleViewDetails = (accountentInfo) => {
-    setSelectedAccountent(accountentInfo);
+  // View details - for demonstration, you can adapt as you like
+  const handleViewDetails = (category) => {
+    setSelectedCategory(category);
     setShowModal(false);
     setIsEditMode(false);
   };
 
   const handleCloseDetails = () => {
-    setSelectedAccountent(null);
+    setSelectedCategory(null);
   };
 
+  // Show Add & Edit
   const handleShowAddModal = () => {
     setIsEditMode(false);
+    setSelectedCategory(null);
     setShowModal(true);
   };
 
-  const handleShowEditModal = (accountentInfo) => {
+  const handleShowEditModal = (category) => {
     setIsEditMode(true);
-    setSelectedAccountent(accountentInfo);
+    setSelectedCategory(category);
     setShowModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
+  // Close modal
+  const handleCloseModal = () => setShowModal(false);
 
-  const handleConfirmDelete = (accountentId) => {
-    setAccountentToDelete(accountentId);
+  // Delete
+  const handleConfirmDelete = (categoryId) => {
+    setCategoryToDelete(categoryId);
     setShowDeleteModal(true);
   };
 
-  const handleDeleteAccountent = async () => {
+  const handleDeleteCategory = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     try {
-      await axios.delete(
-        `http://localhost:8000/api/accountant/${accountentToDelete}/delete/`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`,
-          },
-        }
-      );
-      setAccountentList((prev) =>
-        prev.filter((acct) => acct.id !== accountentToDelete)
-      );
-      toast.success("Accountant deleted successfully.");
+      await axios.delete(`http://localhost:8000/api/fee-names/${categoryToDelete}/`, {
+        headers: {
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setCategoryList((prev) => prev.filter((cat) => cat.id !== categoryToDelete));
+      toast.success('Category deleted successfully');
       setShowDeleteModal(false);
     } catch (error) {
-      toast.error("Error deleting accountant.");
+      toast.error('Error deleting category');
     }
   };
 
@@ -113,24 +111,20 @@ const AccountentList = () => {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <h1 className="text-3xl font-extrabold text-purple-800">Accountants</h1>
+          <h1 className="text-3xl font-extrabold text-purple-800">Categories (Fee Names)</h1>
 
           <div className="mt-6">
             <button
               onClick={handleShowAddModal}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              Add Accountant
+              Add Category
             </button>
           </div>
 
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-purple-700">
-              Available Accountants
-            </h2>
-            <p className="mt-4 text-gray-600">
-              List of accountants with their details.
-            </p>
+            <h2 className="text-xl font-semibold text-purple-700">Available Categories</h2>
+            <p className="mt-4 text-gray-600">List of fee categories with their details.</p>
           </div>
 
           {loading ? (
@@ -140,37 +134,32 @@ const AccountentList = () => {
               <table className="min-w-full table-auto">
                 <thead>
                   <tr className="bg-purple-700 text-white">
-                    <th className="px-4 py-2 text-left">Accountant Name</th>
-                    <th className="px-4 py-2 text-left">Email</th>
+                    <th className="px-4 py-2 text-left">ID</th>
+                    <th className="px-4 py-2 text-left">Category Name</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {accountentList.length > 0 ? (
-                    accountentList.map((acct) => (
-                      <tr
-                        key={acct.id}
-                        className="border-b hover:bg-purple-50"
-                      >
-                        <td className="px-4 py-2">
-                          {acct.user?.first_name} {acct.user?.last_name}
-                        </td>
-                        <td className="px-4 py-2">{acct.user?.email}</td>
+                  {categoryList.length > 0 ? (
+                    categoryList.map((category) => (
+                      <tr key={category.id} className="border-b hover:bg-purple-50">
+                        <td className="px-4 py-2">{category.id}</td>
+                        <td className="px-4 py-2">{category.name}</td>
                         <td className="px-4 py-2">
                           <button
-                            onClick={() => handleViewDetails(acct)}
+                            onClick={() => handleViewDetails(category)}
                             className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
                           >
                             View Details
                           </button>
                           <button
-                            onClick={() => handleShowEditModal(acct)}
+                            onClick={() => handleShowEditModal(category)}
                             className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
                           >
                             Edit
                           </button>
                           <button
-                            onClick={() => handleConfirmDelete(acct.id)}
+                            onClick={() => handleConfirmDelete(category.id)}
                             className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                           >
                             Delete
@@ -180,8 +169,8 @@ const AccountentList = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" className="px-4 py-2 text-gray-600">
-                        No accountants found.
+                      <td colSpan="3" className="text-center text-gray-600 py-4">
+                        No categories available.
                       </td>
                     </tr>
                   )}
@@ -191,38 +180,14 @@ const AccountentList = () => {
           )}
         </div>
 
-        {/* Details Modal */}
-        {selectedAccountent && !isEditMode && (
+        {/* Category Details Modal (simple example) */}
+        {selectedCategory && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">
-                Accountant Details
-              </h2>
+              <h2 className="text-2xl font-bold text-purple-800">Category Details</h2>
               <div className="mt-4">
-                <p className="text-gray-700">
-                  <strong>Username:</strong> {selectedAccountent.user?.username}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Name:</strong>{" "}
-                  {selectedAccountent.user?.first_name}{" "}
-                  {selectedAccountent.user?.last_name}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Email:</strong> {selectedAccountent.user?.email}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Phone:</strong> {selectedAccountent.phone}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Address:</strong> {selectedAccountent.address}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Gender:</strong> {selectedAccountent.gender}
-                </p>
-                <p className="text-gray-700">
-                  <strong>Date of Joining:</strong>{" "}
-                  {selectedAccountent.date_of_joining}
-                </p>
+                <p className="text-gray-700"><strong>ID:</strong> {selectedCategory.id}</p>
+                <p className="text-gray-700"><strong>Name:</strong> {selectedCategory.name}</p>
               </div>
               <div className="mt-6 text-center">
                 <button
@@ -241,14 +206,11 @@ const AccountentList = () => {
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">
-                Confirm Deletion
+                Are you sure you want to delete this category?
               </h2>
-              <p className="mt-4 text-gray-700">
-                Are you sure you want to delete this accountant?
-              </p>
-              <div className="mt-6 text-center">
+              <div className="mt-4 text-center">
                 <button
-                  onClick={handleDeleteAccountent}
+                  onClick={handleDeleteCategory}
                   className="bg-red-700 text-white px-6 py-2 rounded-lg hover:bg-red-800 mr-4"
                 >
                   Yes, Delete
@@ -265,22 +227,23 @@ const AccountentList = () => {
         )}
 
         {/* Add or Edit Modal */}
-        {showModal &&
-          (isEditMode ? (
-            <EditAccountentModal
-              accountentInfo={selectedAccountent}
+        {showModal && (
+          isEditMode ? (
+            <EditCategoryModal
+              category={selectedCategory}
               handleCloseModal={handleCloseModal}
-              fetchAccountents={fetchAccountents}
+              fetchCategories={fetchCategories}
             />
           ) : (
-            <AddAccountentModal
+            <AddCategoryModal
               handleCloseModal={handleCloseModal}
-              fetchAccountents={fetchAccountents}
+              fetchCategories={fetchCategories}
             />
-          ))}
+          )
+        )}
       </div>
     </MainLayout>
   );
 };
 
-export default AccountentList;
+export default CategoryList;

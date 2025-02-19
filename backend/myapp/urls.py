@@ -158,7 +158,6 @@ urlpatterns = [
     path('api/attendance/', DailyAttendanceAPIView.as_view(), name='daily-attendance'),
     path('api/attendance/<int:classid>/<str:date>/', AttendanceByClassAPIView.as_view(), name='attendance-by-class'),
     path('api/attendance/student/<int:class_id>/', StudentsByClassAttendanceAPIView.as_view(), name='students-by-class'),
-
     path('api/students/subject/<int:subject_id>/', SubjectWiseStudentListAPIView.as_view(), name='subject-wise-students'),
    
     # API endpoints for fees management 
@@ -169,7 +168,7 @@ urlpatterns = [
     path('api/transportation-fees/', TransportationFeeListCreateAPIView.as_view(), name='transportation-fee-list-create'),
     path('api/transportation-fees/<int:pk>/', TransportationFeeDetailAPIView.as_view(), name='transportation-fee-detail'),
     path("api/bills/<int:student_id>/", StudentBillAPIView.as_view(), name="bill-list"),
-    path("api/bills/<int:student_id>/<int:bill_id>/", StudentBillAPIView.as_view(), name="bill-detail"),
+    path("api/bills/<int:student_id>/<int:bill_id>/", StudentBillDetailAPIView.as_view(), name="bill-detail"),
     path("api/payments/<int:student_id>/", StudentPaymentAPIView.as_view(), name="payment-list"),
     path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentAPIView.as_view(), name="payment-detail"),
     path("api/transactions/<int:student_id>/", StudentTransactionsAPIView.as_view(), name="student-transactions"),
