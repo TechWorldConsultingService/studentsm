@@ -19,7 +19,7 @@ from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import *
 from rest_framework import status
-
+from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework.decorators import action
 
@@ -2433,8 +2433,13 @@ class FeeCategoryByClassAPIView(APIView):
         # Add class_id to the incoming data
         data = request.data
         data['class_assigned'] = class_id  # Ensure the class_id is included in the new category data
-        serializer = FeeCategorySerializer(data=data)
+
+        # Validation: Check if the FeeCategory already exists for this class and category name
+        fee_category_name = data.get('fee_category_name')
+        if FeeCategory.objects.filter(class_assigned__id=class_id, fee_category_name__id=fee_category_name).exists():
+            return Response({"detail": "Fee category for this class already created."}, status=status.HTTP_400_BAD_REQUEST)
         
+        serializer = FeeCategorySerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -2484,6 +2489,11 @@ class TransportationFeeListCreateAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        # Validation: Check if the transportation fee with the same name already exists
+        place = request.data.get('place')
+        if TransportationFee.objects.filter(place=place).exists():
+            return Response({"detail": "Transportation Fee with that name already created."}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = TransportationFeeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -2523,38 +2533,52 @@ class TransportationFeeDetailAPIView(APIView):
 
 
 class StudentBillAPIView(APIView):
-    permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all bills for a specific student."""
         bills = StudentBill.objects.filter(student__id=student_id)
-        serializer = StudentBillSerializer(bills, many=True)
+        serializer = GetStudentBillSerializer(bills, many=True)
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        """Create a new student bill."""
-        data = request.data
-        data['student'] = student_id  # Set the student ID to the student being billed
-        serializer = StudentBillSerializer(data=data)
+        # Fetch the student from the provided student_id
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if a bill already exists for the student for the given month
+        month = request.data.get("month")
+        if StudentBill.objects.filter(student=student, month=month).exists():
+            return Response({"error": "Bill already generated for this month."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prepare the data for the serializer
+        request.data["student"] = student.id
+        serializer = StudentBillSerializer(data=request.data)
         
         if serializer.is_valid():
-            bill = serializer.save()  # Serializer already handles total_amount and balance
-            return Response(StudentBillSerializer(bill).data, status=status.HTTP_201_CREATED)
-        
+            student_bill = serializer.save()  # Save the student bill
+
+            # Return success message with the bill number
+            return Response({
+                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}'
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 
 class StudentBillDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id, bill_id, *args, **kwargs):
-        try:
-            bill = StudentBill.objects.get(id=bill_id, student__id=student_id)
-            serializer = StudentBillSerializer(bill)
-            return Response(serializer.data)
-        except StudentBill.DoesNotExist:
-            return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
+        bill = StudentBill.objects.filter(id=bill_id, student_id=student_id).first()
+        if not bill:
+            return Response({"error": "Bill not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = GetStudentBillSerializer(bill)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    
 class StudentPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
