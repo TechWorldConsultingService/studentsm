@@ -284,6 +284,13 @@ class StudentBillAdmin(admin.ModelAdmin):
     list_display = ('id', 'student', 'bill_number', 'month', 'total_amount', 'date')
     search_fields = ('student__user__username', 'bill_number', 'month')
 
+@admin.register(StudentBillFeeCategory)
+class StudentBillFeeCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student_bill', 'fee_category', 'scholarship')
+    list_filter = ('scholarship',)
+    search_fields = ('student_bill__bill_number', 'fee_category__fee_category_name__name')
+
+
 @admin.register(StudentPayment)
 class StudentPaymentAdmin(admin.ModelAdmin):
     list_display = ('id', 'student', 'payment_number', 'amount_paid', 'date')

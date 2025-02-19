@@ -803,7 +803,7 @@ class StudentListAttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = ['id', 'full_name', 'roll_no', 'class_details']
+        fields = ['id', 'full_name', 'roll_no', 'parents', 'class_details']  # Added the missing comma here
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
@@ -816,6 +816,7 @@ class StudentListAttendanceSerializer(serializers.ModelSerializer):
                 "class_code": obj.class_code.class_code,
             }
         return None
+
     
 class SimpleAttendanceSerializer(serializers.ModelSerializer):
     student = StudentListAttendanceSerializer()
@@ -826,10 +827,6 @@ class SimpleAttendanceSerializer(serializers.ModelSerializer):
         model = DailyAttendance
         fields = ['student', 'date', 'status']
 
-
-from rest_framework import serializers
-from .models import FeeCategoryName, FeeCategory, TransportationFee, StudentBill, StudentPayment
-from .models import Student  # Assuming you have a Student model
 
 class FeeCategoryNameSerializer(serializers.ModelSerializer):
     class Meta:
@@ -847,115 +844,120 @@ class GetFeeCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FeeCategory
-        fields = ['class_assigned', 'fee_category_name', 'amount']
+        fields = ['id', 'class_assigned', 'fee_category_name', 'amount']
 
 class TransportationFeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransportationFee
         fields = ('id', 'place', 'amount')
 
+class StudentBillFeeCategorySerializer(serializers.ModelSerializer):
+    fee_category_name = serializers.CharField(source='fee_category.fee_category_name.name', read_only=True)
+    amount = serializers.DecimalField(source='fee_category.amount', max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = StudentBillFeeCategory
+        fields = ['id', 'fee_category', 'fee_category_name', 'amount', 'scholarship']
+
+
 class StudentBillSerializer(serializers.ModelSerializer):
+    fee_categories = serializers.ListField(
+        child=serializers.DictField(), write_only=True  # Make it writable
+    )
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
-    fee_categories = serializers.PrimaryKeyRelatedField(queryset=FeeCategory.objects.all(), many=True)
     transportation_fee = serializers.PrimaryKeyRelatedField(queryset=TransportationFee.objects.all(), required=False)
+    remarks = serializers.CharField(required=False)
+    discount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     class Meta:
         model = StudentBill
-        fields = ('id', 'student', 'month', 'date', 'bill_number', 'fee_categories', 'transportation_fee', 'remarks', 'total_amount')
+        fields = ['student', 'month', 'fee_categories', 'transportation_fee', 'remarks', 'discount']
 
-    def generate_bill_number(self):
-        """Generates a unique bill number in the format YYYYBXXX (e.g., 2025B01, 2025B445)."""
-        year = datetime.now().year
-        prefix = f"{year}B"
+    def create(self, validated_data):
+        # Extract fee categories safely
+        fee_categories_data = validated_data.pop('fee_categories', [])  # ✅ Prevent KeyError
 
-        # Get the latest bill for the current year
-        last_bill = StudentBill.objects.filter(bill_number__startswith=prefix).order_by('-bill_number').first()
+        # Create the StudentBill object
+        student_bill = StudentBill.objects.create(**validated_data)
 
-        if last_bill and last_bill.bill_number:
-            # Extract the numeric part and increment it
-            last_number = int(last_bill.bill_number.replace(prefix, ""))
-            new_number = last_number + 1
-        else:
-            # Start from 1 if no previous bill exists
-            new_number = 1
-
-        # Return the bill number with no leading zeros after 100
-        return f"{prefix}{new_number}"
-
-    
-    def validate(self, data):
-        """Validate that no bill exists for the same student and month and calculate the total amount dynamically before saving."""
-        student = data.get('student')
-        month = data.get('month')
-
-        # Check if a bill already exists for the same student and month
-        existing_bill = StudentBill.objects.filter(student=student, month=month).exists()
-        if existing_bill:
-            # Attach the error to the 'month' field
-            raise serializers.ValidationError(
-                { 'month': [f"A bill for {student.user.username} already exists for the month {month}."] }
+        # Create related StudentBillFeeCategory entries
+        for fee_category_data in fee_categories_data:
+            StudentBillFeeCategory.objects.create(
+                student_bill=student_bill,
+                fee_category_id=fee_category_data['fee_category'],  # Ensure this matches the expected structure
+                scholarship=fee_category_data.get('scholarship', False)
             )
 
-        # Calculate total amount from fee categories and transportation fee
-        fee_categories = data.get('fee_categories', [])
-        transportation_fee = data.get('transportation_fee', None)
-        discount = Decimal(data.get('discount', '0.00'))  # Ensure discount is Decimal
+        # Recalculate the totals (subtotal, total amount)
+        student_bill.calculate_totals()
 
-        fee_total = sum(Decimal(fee.amount) for fee in fee_categories)  # Ensure fee.amount is Decimal
-        transport_total = Decimal(transportation_fee.amount) if transportation_fee else Decimal('0.00')
-        total_amount = fee_total + transport_total - discount
-        data['total_amount'] = total_amount
+        return student_bill
 
-        # Generate bill number
-        data['bill_number'] = self.generate_bill_number()
 
-        return data
+class GetStudentBillSerializer(serializers.ModelSerializer):
+    student = serializers.SerializerMethodField()
+    fee_categories = serializers.SerializerMethodField()
+    transportation_fee = serializers.SerializerMethodField()
 
+    class Meta:
+        model = StudentBill
+        fields = [
+            'student', 'month', 'fee_categories', 'transportation_fee', 
+            'remarks', 'subtotal', 'discount', 'total_amount',
+        ]
+
+    def get_student(self, obj):
+        # Assuming the Student model has 'user' with 'username' and 'roll_no'
+        return {
+            'id':obj.student.id,
+            'name': obj.student.user.username,
+            'roll_no': obj.student.roll_no,
+            'phone': obj.student.phone,
+            'address': obj.student.address,
+            'date_of_birth': obj.student.date_of_birth,
+            'gender': obj.student.gender,
+            'parents': obj.student.parents
+        }
+
+    def get_fee_categories(self, obj):
+        fee_categories = obj.studentbillfeecategory_set.all()
+        return [
+            {
+                'id': fc.fee_category.id,
+                'fee_category': fc.fee_category.fee_category_name.name,  # Corrected
+                'amount': str(fc.fee_category.amount),  # Ensure accessing amount correctly
+                'scholarship': fc.scholarship
+            }
+            for fc in fee_categories
+        ]
+
+    
+    def get_transportation_fee(self, obj):
+        if obj.transportation_fee:
+            return {
+                'id':obj.transportation_fee.id,
+                'name': obj.transportation_fee.place,  # Assuming 'place' is the name
+                'amount': str(obj.transportation_fee.amount)
+            }
+        return None
+
+
+from decimal import Decimal
+from rest_framework import serializers
+from .models import Student, StudentPayment
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
-    discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
 
     class Meta:
         model = StudentPayment
-        fields = ('id', 'student', 'date', 'payment_number', 'discount', 'amount_paid', 'remarks')
-
-    def generate_payment_number(self):
-        """Generates a unique payment number in the format YYYY-P-XXX (e.g., 2025P01, 2025P114)."""
-        year = datetime.now().year
-        prefix = f"{year}P"
-
-        # Get the latest payment for the current year
-        last_payment = StudentPayment.objects.filter(payment_number__startswith=prefix).order_by('-payment_number').first()
-
-        if last_payment and last_payment.payment_number:
-            # Extract the numeric part and increment it
-            last_number = int(last_payment.payment_number.replace(prefix, ""))
-            new_number = last_number + 1
-        else:
-            # Start from 1 if no previous payment exists
-            new_number = 1
-
-        # Return the payment number with no leading zeros after 100
-        return f"{prefix}{new_number}"
-
+        fields = ('id', 'student', 'date', 'payment_number', 'amount_paid', 'remarks')
 
     def validate(self, data):
         """Validate and calculate the payment number before saving."""
-        
-        # Ensure discount is in decimal format
-        discount = data.get('discount', Decimal('0.00'))
         amount_paid = data.get('amount_paid', Decimal('0.00'))
-
         if amount_paid < 0:
             raise serializers.ValidationError("Amount paid cannot be negative")
 
-        # Generate a unique payment number
-        data['payment_number'] = self.generate_payment_number()
-
-        # Do NOT subtract discount from amount_paid here.
-        # Keep amount_paid as it is without any discount subtraction here.
-        return data
-
-
+        return data  # ✅ Return validated data
