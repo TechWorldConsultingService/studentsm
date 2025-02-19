@@ -376,8 +376,9 @@ class FeeCategoryName(models.Model):
         return self.name
 
 class FeeCategory(models.Model):
-    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories")
-    fee_category_name = models.ForeignKey(FeeCategoryName, on_delete=models.CASCADE, related_name="fee_categories")
+    # class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories")
+    class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="fee_categories", default=1)
+    fee_category_name = models.ForeignKey(FeeCategoryName, on_delete=models.CASCADE, related_name="fee_categories",default=1)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):

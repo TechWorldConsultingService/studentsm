@@ -134,23 +134,24 @@ class TeacherSerializer(serializers.ModelSerializer):
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
     # classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
     # classes = ClassSerializer(many=True)  # Nested serializer for classes
-    classes = serializers.ListField(
-        child = serializers.DictField(), # Accept a list of dictionaries
-        write_only=True  # Only for input, won't include in the response
-    )
+    # classes = serializers.ListField(
+    #     child = serializers.DictField(), # Accept a list of dictionaries
+    #     write_only=True  # Only for input, won't include in the response
+    # )
     class_details = ClassSerializer(source='classes', many=True, read_only=True)
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = Teacher
-        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details', 'classes','class_details','class_teacher']
+        # fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details', 'classes','class_details','class_teacher']
+        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details','class_details','class_teacher']
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def create(self, validated_data):
         # Extract user data from the validated data
         user_data = validated_data.pop('user')
         subjects_data = validated_data.pop('subjects', [])
-        classes_data = validated_data.pop('classes', [])
+        # classes_data = validated_data.pop('classes', [])
         class_teacher = validated_data.pop('class_teacher', None)
 
         # Create the user associated with the teacher
@@ -165,6 +166,8 @@ class TeacherSerializer(serializers.ModelSerializer):
             
             # Create or get Subject instances
             subject_instances = []
+            class_instances = set()  # Using set to avoid duplicate classes
+
             for subject_data in subjects_data:
                 subject, _ = Subject.objects.get_or_create(
                     subject_code=subject_data['subject_code'],
@@ -172,20 +175,28 @@ class TeacherSerializer(serializers.ModelSerializer):
                 )
                 subject_instances.append(subject)
 
+                # Get all classes linked to this subject
+                # related_classes = subject.classes.all()
+                related_classes = Class.objects.filter(subjects=subject)
+                class_instances.update(related_classes)
+
+            # Assign classes automatically based on subjects
+            teacher.classes.set(class_instances)
+
             # Assign subjects to the teacher
             teacher.subjects.set(subject_instances)
 
-            # Create or get Class instances
-            class_instances = []
-            for class_data in classes_data:
-                class_instance, _ = Class.objects.get_or_create(
-                    class_code=class_data['class_code'],
-                    defaults={'class_name': class_data['class_name']}
-                )
-                class_instances.append(class_instance)
+            # # Create or get Class instances
+            # class_instances = []
+            # for class_data in classes_data:
+            #     class_instance, _ = Class.objects.get_or_create(
+            #         class_code=class_data['class_code'],
+            #         defaults={'class_name': class_data['class_name']}
+            #     )
+            #     class_instances.append(class_instance)
 
             # Assign classes to the teacher
-            teacher.classes.set(class_instances)
+            # teacher.classes.set(class_instances)
 
             # Assign class_teacher if provided
             if class_teacher:
