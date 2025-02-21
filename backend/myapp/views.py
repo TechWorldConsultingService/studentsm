@@ -2593,12 +2593,15 @@ class StudentPaymentAPIView(APIView):
         data = request.data
         data['student'] = student_id  # Set the student ID for the payment
         serializer = StudentPaymentSerializer(data=data)
-        
+
         if serializer.is_valid():
             payment = serializer.save()  # Serializer already updates the balance
-            return Response(StudentPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
-        
+            return Response({
+                'message': f'Payment done successfully with Payment Number: {payment.payment_number}'
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class StudentPaymentDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2612,30 +2615,6 @@ class StudentPaymentDetailAPIView(APIView):
 
         serializer = GetStudentPaymentSerializer(payment)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-        
-
-@receiver(post_save, sender=StudentPayment)
-def create_transaction_for_payment(sender, instance, created, **kwargs):
-    if created:  # Only trigger when a new payment is made
-        student = instance.student
-        last_transaction = (
-            StudentTransaction.objects.filter(student=student)
-            .order_by('-transaction_date')
-            .first()
-        )
-
-        # Get last balance or set to zero if no previous transaction exists
-        last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
-
-        # Create a new transaction for the payment
-        StudentTransaction.objects.create(
-            student=student,
-            transaction_type='payment',
-            payment=instance,
-            balance=last_balance - Decimal(str(instance.amount_paid)),  # Subtract payment from balance
-            transaction_date=instance.date  # Payment date
-        )
 
 
 from rest_framework.response import Response
