@@ -170,9 +170,9 @@ urlpatterns = [
     path("api/bills/<int:student_id>/", StudentBillAPIView.as_view(), name="bill-list"),
     path("api/bills/<int:student_id>/<int:bill_id>/", StudentBillDetailAPIView.as_view(), name="bill-detail"),
     path("api/payments/<int:student_id>/", StudentPaymentAPIView.as_view(), name="payment-list"),
-    path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentAPIView.as_view(), name="payment-detail"),
+    path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentDetailAPIView.as_view(), name="payment-detail"),
     path("api/transactions/<int:student_id>/", StudentTransactionsAPIView.as_view(), name="student-transactions"),
-
+    
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

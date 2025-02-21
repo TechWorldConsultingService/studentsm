@@ -860,38 +860,57 @@ class StudentBillFeeCategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'fee_category', 'fee_category_name', 'amount', 'scholarship']
 
 
+from decimal import Decimal
+from rest_framework import serializers
+from .models import Student, StudentBill, StudentTransaction, StudentBillFeeCategory
+
 class StudentBillSerializer(serializers.ModelSerializer):
-    fee_categories = serializers.ListField(
-        child=serializers.DictField(), write_only=True  # Make it writable
-    )
-    student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
-    transportation_fee = serializers.PrimaryKeyRelatedField(queryset=TransportationFee.objects.all(), required=False)
-    remarks = serializers.CharField(required=False)
-    discount = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    fee_categories = serializers.ListField(write_only=True)  # Accept a list of fee categories
 
     class Meta:
         model = StudentBill
-        fields = ['student', 'month', 'fee_categories', 'transportation_fee', 'remarks', 'discount']
+        fields = ['id', 'student', 'month', 'date', 'bill_number', 'fee_categories', 'transportation_fee', 'remarks', 'subtotal', 'discount', 'total_amount']
 
     def create(self, validated_data):
-        # Extract fee categories safely
-        fee_categories_data = validated_data.pop('fee_categories', [])  # ✅ Prevent KeyError
+        fee_categories_data = validated_data.pop('fee_categories', [])  # Extract fee categories
 
-        # Create the StudentBill object
-        student_bill = StudentBill.objects.create(**validated_data)
+        # Create the bill first
+        bill = StudentBill.objects.create(**validated_data)
 
-        # Create related StudentBillFeeCategory entries
-        for fee_category_data in fee_categories_data:
+        # Add fee categories with scholarship status
+        for fee_data in fee_categories_data:
             StudentBillFeeCategory.objects.create(
-                student_bill=student_bill,
-                fee_category_id=fee_category_data['fee_category'],  # Ensure this matches the expected structure
-                scholarship=fee_category_data.get('scholarship', False)
+                student_bill=bill,
+                fee_category_id=fee_data['fee_category'],  # Ensure this is an ID
+                scholarship=fee_data.get('scholarship', False)  # Default to False if not provided
             )
 
-        # Recalculate the totals (subtotal, total amount)
-        student_bill.calculate_totals()
+        # Calculate and save totals
+        bill.calculate_totals()
 
-        return student_bill
+        # Fetch the last transaction for the student based on transaction_date
+        last_transaction = (
+            StudentTransaction.objects.filter(student=bill.student)
+            .order_by('-transaction_date')
+            .first()
+        )
+
+        # Default to 0 balance if no previous transaction exists
+        last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+
+        # Add bill amount to the last balance
+        new_balance = last_balance + Decimal(str(bill.total_amount))
+
+        # Create the corresponding StudentTransaction instance for the bill
+        StudentTransaction.objects.create(
+            student=bill.student,
+            transaction_type='bill',
+            bill=bill,
+            balance=new_balance,
+            transaction_date=bill.date  # Set the transaction date to the bill's date
+        )
+
+        return bill
 
 
 class GetStudentBillSerializer(serializers.ModelSerializer):
@@ -942,9 +961,6 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
         return None
 
 
-from decimal import Decimal
-from rest_framework import serializers
-from .models import Student, StudentPayment
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
@@ -961,3 +977,85 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Amount paid cannot be negative")
 
         return data  # ✅ Return validated data
+
+    def create(self, validated_data):
+        # Create the payment
+        payment = StudentPayment.objects.create(**validated_data)
+
+        # Fetch the last transaction based on the most recent transaction date
+        last_transaction = (
+            StudentTransaction.objects.filter(student=payment.student)
+            .order_by('-transaction_date')
+            .first()
+        )
+
+        # Default to 0 balance if no previous transaction exists
+        last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+
+        # Determine the new balance based on the last transaction type
+        if last_transaction:
+            if last_transaction.transaction_type == 'bill':
+                new_balance = last_balance - Decimal(str(payment.amount_paid))  # Subtract from bill balance
+            elif last_transaction.transaction_type == 'payment':
+                new_balance = last_balance - Decimal(str(payment.amount_paid))  # Subtract from payment balance
+        else:
+            new_balance = Decimal(str(payment.amount_paid))  # First transaction case
+
+        # Ensure no duplicate transaction creation
+        existing_transaction = StudentTransaction.objects.filter(payment=payment).exists()
+        if not existing_transaction:
+            StudentTransaction.objects.create(
+                student=payment.student,
+                transaction_type='payment',
+                payment=payment,
+                balance=new_balance,
+                transaction_date=payment.date  # Use the payment's date as the transaction date
+            )
+
+        return payment
+
+
+class GetStudentPaymentSerializer(serializers.ModelSerializer):
+    student = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentPayment
+        fields = [
+            'student', 'date', 'payment_number', 'amount_paid', 'remarks'
+        ]
+
+    def get_student(self, obj):
+        return {
+            'id': obj.student.id,
+            'name': obj.student.user.username,
+            'roll_no': obj.student.roll_no,
+            'phone': obj.student.phone,
+            'address': obj.student.address,
+            'date_of_birth': obj.student.date_of_birth,
+            'gender': obj.student.gender,
+            'parents': obj.student.parents
+        }
+
+
+class StudentTransactionSerializer(serializers.ModelSerializer):
+    bill = serializers.SerializerMethodField()
+    bill_number = serializers.SerializerMethodField()
+    payment = serializers.SerializerMethodField()
+    payment_number = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentTransaction
+        fields = ["transaction_type", "bill", "bill_number", "payment", "payment_number", "balance", "transaction_date"]
+
+
+    def get_bill(self, obj):
+        return obj.bill.id if obj.bill else None
+
+    def get_bill_number(self, obj):
+        return obj.bill.bill_number if obj.bill else None
+
+    def get_payment(self, obj):
+        return obj.payment.id if obj.payment else None
+
+    def get_payment_number(self, obj):
+        return obj.payment.payment_number if obj.payment else None
