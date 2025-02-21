@@ -413,20 +413,32 @@ class StudentBill(models.Model):
             existing_bills_count = StudentBill.objects.filter(student=self.student).count()
             bill_number = f"{year}B{str(existing_bills_count + 1).zfill(2)}"  # Format: 2025B01, 2025B02, etc.
             self.bill_number = bill_number
-        
+
         super().save(*args, **kwargs)
 
     def calculate_totals(self):
         subtotal = 0
+
+        # Calculate subtotal from fee categories
         for fee_entry in self.studentbillfeecategory_set.all():
             fee_amount = fee_entry.fee_category.amount if not fee_entry.scholarship else 0
             subtotal += fee_amount
+
+        # Add transportation fee if exists
         if self.transportation_fee:
             subtotal += self.transportation_fee.amount
+
+        # Apply discount and calculate total amount
         total = subtotal - self.discount
         self.subtotal = subtotal
-        self.total_amount = max(total, 0)
+        self.total_amount = max(total, 0)  # Ensure total is not negative
+
+        # Debugging: Print the calculated values
+        print(f"Subtotal: {subtotal}, Discount: {self.discount}, Total Amount: {self.total_amount}")
+
+        # Save the updated totals
         self.save()
+
 
 class StudentBillFeeCategory(models.Model):
     student_bill = models.ForeignKey(StudentBill, on_delete=models.CASCADE)
@@ -461,3 +473,15 @@ class StudentPayment(models.Model):
 
     def __str__(self):
         return f"Payment {self.payment_number} - {self.student.user.username} - {self.amount_paid}"
+
+
+class StudentTransaction(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="transactions")
+    transaction_type = models.CharField(max_length=10, choices=[('bill', 'Bill'), ('payment', 'Payment')])
+    bill = models.ForeignKey(StudentBill, on_delete=models.CASCADE, null=True, blank=True, related_name="transactions")
+    payment = models.ForeignKey(StudentPayment, on_delete=models.CASCADE, null=True, blank=True, related_name="transactions")
+    balance = models.DecimalField(max_digits=10, decimal_places=2)  # Auto-managed
+    transaction_date = models.DateTimeField(null=True, blank=True)  # Use bill/payment date
+
+    def __str__(self):
+        return f"{self.transaction_type.capitalize()} - Balance: {self.balance}"

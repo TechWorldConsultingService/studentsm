@@ -2603,59 +2603,79 @@ class StudentPaymentAPIView(APIView):
 class StudentPaymentDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, student_id, payment_id, *args, **kwargs):
+    def get(self, request, payment_id, *args, **kwargs):
+        """Retrieve payment details with fee structure and student info."""
         try:
-            payment = StudentPayment.objects.get(id=payment_id, student__id=student_id)
-            serializer = StudentPaymentSerializer(payment)
-            return Response(serializer.data)
+            payment = StudentPayment.objects.get(id=payment_id)
         except StudentPayment.DoesNotExist:
-            return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = GetStudentPaymentSerializer(payment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        
+
+@receiver(post_save, sender=StudentPayment)
+def create_transaction_for_payment(sender, instance, created, **kwargs):
+    if created:  # Only trigger when a new payment is made
+        student = instance.student
+        last_transaction = (
+            StudentTransaction.objects.filter(student=student)
+            .order_by('-transaction_date')
+            .first()
+        )
+
+        # Get last balance or set to zero if no previous transaction exists
+        last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+
+        # Create a new transaction for the payment
+        StudentTransaction.objects.create(
+            student=student,
+            transaction_type='payment',
+            payment=instance,
+            balance=last_balance - Decimal(str(instance.amount_paid)),  # Subtract payment from balance
+            transaction_date=instance.date  # Payment date
+        )
+
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import StudentTransaction, Student
+from .serializers import StudentTransactionSerializer
 
 class StudentTransactionsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def get(self, request, student_id, *args, **kwargs):
-        # Fetch bills and payments for the student ordered by date and time
-        bills = StudentBill.objects.filter(student_id=student_id).order_by('date')
-        payments = StudentPayment.objects.filter(student_id=student_id).order_by('date')
+    def get(self, request, student_id):
+        # Get all transactions for the student
+        transactions = StudentTransaction.objects.filter(student_id=student_id)
+        if not transactions.exists():
+            return Response({"message": "No transactions found"}, status=404)
 
-        # Serialize bills and payments
-        bills_serializer = StudentBillSerializer(bills, many=True)
-        payments_serializer = StudentPaymentSerializer(payments, many=True)
+        # Serialize transactions
+        transaction_serializer = StudentTransactionSerializer(transactions, many=True)
+        transaction_data = transaction_serializer.data
 
-        # Initialize balance
-        balance = Decimal('0.00')
-        transactions = []
+        # Extract student details from the first transaction manually
+        first_transaction = transactions.first()
+        student_data = {
+            "id": first_transaction.student.id,
+            "name": first_transaction.student.user.username,
+            "parents": first_transaction.student.parents,
+            "roll_no": first_transaction.student.roll_no,
+            "phone": first_transaction.student.phone,
+            "address": first_transaction.student.address,
+            "date_of_birth": first_transaction.student.date_of_birth,
+            "gender": first_transaction.student.gender,
+            "class_name": first_transaction.student.class_code.class_name if first_transaction.student.class_code else None
+        }
 
-        # Combine bills and payments into a single list of transactions
-        all_transactions = list(bills) + list(payments)
-        all_transactions.sort(key=lambda x: x.date)  # Sort by date and time (ascending)
+        # Remove student data from each transaction
+        for transaction in transaction_data:
+            transaction.pop("student", None)
 
-        # Initialize indices for each serializer
-        bill_idx = 0
-        payment_idx = 0
+        # Return response with student details only once
+        return Response({
+            "student": student_data,  # Extracted manually
+            "transactions": transaction_data  # Transactions without duplicate student data
+        })
 
-        # Iterate over the sorted transactions to calculate the balance
-        for transaction in all_transactions:
-            if isinstance(transaction, StudentBill):
-                # Add bill total amount to balance
-                balance += transaction.total_amount
-                
-                # Add bill data and balance
-                transaction_data = bills_serializer.data[bill_idx]
-                transaction_data['balance'] = balance
-                transactions.append(transaction_data)
-                bill_idx += 1
-            elif isinstance(transaction, StudentPayment):
-                # Subtract payment amount and discount from balance
-                balance -= (transaction.amount_paid + transaction.discount)
-                
-                # Add payment data and balance
-                payment_data = payments_serializer.data[payment_idx]
-                payment_data['balance'] = balance
-                transactions.append(payment_data)
-                payment_idx += 1
-
-        # Return the combined transactions with balance calculations
-        return Response({'transactions': transactions})

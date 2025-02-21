@@ -297,3 +297,17 @@ class StudentPaymentAdmin(admin.ModelAdmin):
     search_fields = ('student__user__username', 'payment_number')
     list_filter = ('date', 'student')
 
+
+@admin.register(StudentTransaction)
+class StudentTransactionAdmin(admin.ModelAdmin):
+    list_display = ('student', 'transaction_type', 'bill_number', 'payment_number', 'balance')
+    search_fields = ('student__user__username', 'bill__bill_number', 'payment__payment_number')
+    list_filter = ('transaction_type', 'student')
+
+    def bill_number(self, obj):
+        return obj.bill.bill_number if obj.transaction_type == 'bill' else None
+    bill_number.short_description = 'Bill Number'
+
+    def payment_number(self, obj):
+        return obj.payment.payment_number if obj.transaction_type == 'payment' else None
+    payment_number.short_description = 'Payment Number'
