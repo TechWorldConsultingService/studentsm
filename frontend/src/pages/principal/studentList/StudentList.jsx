@@ -54,7 +54,7 @@ const StudentList = () => {
     }
     setLoading(true);
     try {
-      const { data } = await axios.get(`http://localhost:8000/api/students-by-class/?class_id=${selectedClassId}`, {
+      const { data } = await axios.get(`http://localhost:8000/api/myStudents?class_id=${selectedClassId}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
