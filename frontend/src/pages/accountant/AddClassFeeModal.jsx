@@ -6,12 +6,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
-/**
- * AddClassFeeModal:
- * - We need to fetch all fee categories (fee-names) from /api/fee-names/
- * - Then user picks which category, and enters an amount.
- * - We POST to /api/fee-categories/{classId}/
- */
 
 // Validation schema
 const addClassFeeSchema = Yup.object().shape({
@@ -21,13 +15,12 @@ const addClassFeeSchema = Yup.object().shape({
     .required("Amount is required."),
 });
 
-const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
+const AddClassFeeModal = ({ selectedClass, handleCloseModal, fetchClassFees }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
 
-  // Fetch the list of fee categories
   const fetchCategories = async () => {
     if (!access) return;
     try {
@@ -44,7 +37,6 @@ const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
 
   useEffect(() => {
     fetchCategories();
-    // eslint-disable-next-line
   }, [access]);
 
   const formik = useFormik({
@@ -65,7 +57,7 @@ const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
     }
     try {
       await axios.post(
-        `http://localhost:8000/api/fee-categories/${classId}/`,
+        `http://localhost:8000/api/fee-categories/${selectedClass?.id}/`,
         {
           fee_category_name: values.fee_category_name,
           amount: values.amount,
@@ -79,8 +71,7 @@ const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
       );
       toast.success("Fee added successfully.");
       handleCloseModal();
-      // re-fetch the updated fees for this class
-      fetchClassFees(classId);
+      fetchClassFees(selectedClass?.id);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
@@ -94,6 +85,7 @@ const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800">Add Fee</h2>
+        <p>Class: {selectedClass.class_name} ({selectedClass.class_code})</p>
         <form onSubmit={formik.handleSubmit} className="mt-4">
           {/* Fee Category (Dropdown) */}
           <div className="mb-4">
@@ -105,7 +97,7 @@ const AddClassFeeModal = ({ classId, handleCloseModal, fetchClassFees }) => {
               onBlur={formik.handleBlur}
               value={formik.values.fee_category_name}
             >
-              <option value="">-- Select Category --</option>
+              <option value="">Select Category</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}

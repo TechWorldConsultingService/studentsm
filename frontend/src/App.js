@@ -46,11 +46,12 @@ import PrincipalCalendar from "./pages/Calander/PrincipalCalendar"
 import AccountantList from "./pages/principal/accountent/AccountentList";
 import AccountantDashboard from "./pages/AccountantDahboard"
 import Invoicing from "./pages/accountant/Invoicing"
-import FeePaymant from "./pages/accountant/FeePaymant"
-import Ledger from "./pages/accountant/Ladger"
 import CategoryList from "./pages/accountant/CategoryList"
 import AddFeeAmount from "./pages/accountant/ClassFeesList"
 import AddTransportationFee from "./pages/accountant/TransportationFeeList"
+import LedgerPage from "./pages/accountant/LedgerPage"
+import FeePayment from "./pages/accountant/FeePaymant";
+import PaymentPage from "./pages/accountant/PaymentPage"
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -98,12 +99,13 @@ function App() {
 {path: "/attendancePrincipal", element: <AttendancePrincipal />},
 {path: "/accountantList", element: <AccountantList />},
 {path: "/accountantdashboard", element: <AccountantDashboard />},
-{path: "/feePaymant", element: <FeePaymant />},
+{path: "/feePayment", element: <FeePayment />},
+{path: "/payment/:studentId", element: <PaymentPage />},
 {path: "/invoicing", element: <Invoicing />},
-{path: "/ledger", element: <Ledger />},
 {path:"/addCategory",element: <CategoryList />},
 {path: "/addFeeAmount",element: <AddFeeAmount />},
 {path: "/addTransportationFee" ,element: <AddTransportationFee />},
+{path: "/invoicing/:studentId", element: <LedgerPage />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
   ]);
