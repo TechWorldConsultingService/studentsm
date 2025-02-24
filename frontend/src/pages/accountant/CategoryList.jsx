@@ -11,7 +11,6 @@ const CategoryList = () => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
-  // State
   const [categoryList, setCategoryList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -20,7 +19,6 @@ const CategoryList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
 
-  // Fetch categories
   const fetchCategories = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -51,16 +49,6 @@ const CategoryList = () => {
     fetchCategories();
   }, [access, navigate]);
 
-  // View details - for demonstration, you can adapt as you like
-  const handleViewDetails = (category) => {
-    setSelectedCategory(category);
-    setShowModal(false);
-    setIsEditMode(false);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedCategory(null);
-  };
 
   // Show Add & Edit
   const handleShowAddModal = () => {
@@ -113,7 +101,7 @@ const CategoryList = () => {
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
           <h1 className="text-3xl font-extrabold text-purple-800">Categories (Fee Names)</h1>
 
-          <div className="mt-6">
+          <div className="mt-6 flex justify-end">
             <button
               onClick={handleShowAddModal}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
@@ -134,24 +122,18 @@ const CategoryList = () => {
               <table className="min-w-full table-auto">
                 <thead>
                   <tr className="bg-purple-700 text-white">
-                    <th className="px-4 py-2 text-left">ID</th>
+                    <th className="px-4 py-2 text-left">S.N.</th>
                     <th className="px-4 py-2 text-left">Category Name</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {categoryList.length > 0 ? (
-                    categoryList.map((category) => (
+                    categoryList.map((category,index) => (
                       <tr key={category.id} className="border-b hover:bg-purple-50">
-                        <td className="px-4 py-2">{category.id}</td>
+                        <td className="px-4 py-2">{index+1}</td>
                         <td className="px-4 py-2">{category.name}</td>
                         <td className="px-4 py-2">
-                          <button
-                            onClick={() => handleViewDetails(category)}
-                            className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
-                          >
-                            View Details
-                          </button>
                           <button
                             onClick={() => handleShowEditModal(category)}
                             className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
@@ -180,27 +162,7 @@ const CategoryList = () => {
           )}
         </div>
 
-        {/* Category Details Modal (simple example) */}
-        {selectedCategory && !isEditMode && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">Category Details</h2>
-              <div className="mt-4">
-                <p className="text-gray-700"><strong>ID:</strong> {selectedCategory.id}</p>
-                <p className="text-gray-700"><strong>Name:</strong> {selectedCategory.name}</p>
-              </div>
-              <div className="mt-6 text-center">
-                <button
-                  onClick={handleCloseDetails}
-                  className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">

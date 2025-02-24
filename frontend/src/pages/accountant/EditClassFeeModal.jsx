@@ -6,12 +6,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
-/**
- * EditClassFeeModal:
- * - We may allow changing category or just the amount, depending on your needs.
- * - This example allows changing both if your API supports it.
- * - We use PATCH or PUT to /api/fee-categories/{classId}/{categoryId}/
- */
 
 const editClassFeeSchema = Yup.object().shape({
   fee_category_name: Yup.string().required("Fee Category is required."),
@@ -20,11 +14,10 @@ const editClassFeeSchema = Yup.object().shape({
     .required("Amount is required."),
 });
 
-const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) => {
+const EditClassFeeModal = ({ selectedClass, fee, handleCloseModal, fetchClassFees }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
-  // We also need to fetch all categories for the dropdown
   const [categories, setCategories] = useState([]);
 
   const fetchCategories = async () => {
@@ -43,13 +36,11 @@ const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) =
 
   useEffect(() => {
     fetchCategories();
-    // eslint-disable-next-line
   }, [access]);
 
   const formik = useFormik({
     initialValues: {
-      // fee_category_name is the ID of the category
-      fee_category_name: fee?.fee_category_name || "",
+      fee_category_name: fee?.fee_category_name?.id || "",
       amount: fee?.amount || "",
     },
     validationSchema: editClassFeeSchema,
@@ -58,18 +49,18 @@ const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) =
     },
   });
 
+  console.log(fee)
+
   const editClassFee = async (values) => {
     if (!access) {
       toast.error("Not authenticated.");
       return;
     }
     try {
-      // Because we need to pass the old categoryId in the URL,
-      // we assume fee.fee_category_name was the original category ID.
-      const oldCategoryId = fee.fee_category_name;
+      const feeCategoryId = fee.fee_category_name.id;
 
-      await axios.patch(
-        `http://localhost:8000/api/fee-categories/${classId}/${oldCategoryId}/`,
+      await axios.put(
+        `http://localhost:8000/api/fee-categories/${selectedClass?.id}/${feeCategoryId}/`,
         {
           fee_category_name: values.fee_category_name,
           amount: values.amount,
@@ -83,7 +74,7 @@ const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) =
       );
       toast.success("Fee updated successfully.");
       handleCloseModal();
-      fetchClassFees(classId);
+      fetchClassFees(selectedClass.id);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
@@ -97,6 +88,7 @@ const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) =
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800">Edit Fee</h2>
+        <p>Class: {selectedClass.class_name}({selectedClass.class_code})</p>
         <form onSubmit={formik.handleSubmit} className="mt-4">
           {/* Fee Category (Dropdown) */}
           <div className="mb-4">
@@ -108,7 +100,7 @@ const EditClassFeeModal = ({ classId, fee, handleCloseModal, fetchClassFees }) =
               onBlur={formik.handleBlur}
               value={formik.values.fee_category_name}
             >
-              <option value="">-- Select Category --</option>
+              <option value="">Select Category</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}

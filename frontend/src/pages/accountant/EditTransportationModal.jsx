@@ -39,7 +39,7 @@ const EditTransportationModal = ({
       return;
     }
     try {
-      await axios.patch(
+      await axios.put(
         `http://localhost:8000/api/transportation-fees/${transportation.id}/`,
         values,
         {
