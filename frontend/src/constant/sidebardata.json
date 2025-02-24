@@ -233,16 +233,19 @@
     },
     {
       "id": 4,
-      "title": "Invoicing",
+      "title": "Billing",
       "icon": "MdOutlineSpaceDashboard",
-      "link": "/invoicing"
+      "subSidebar": [
+        { "id": 1, "title": "Invoice", "link": "/invoicing" },
+        { "id": 1, "title": "Ladger", "link": "/studentLadger" }
+      ]
     },
     {
       "id": 5,
       "title": "Fee Collection",
       "icon": "MdOutlineSpaceDashboard",
       "subSidebar": [
-        { "id": 1, "title": "Ladger", "link": "/studentLadger" },
+        { "id": 1, "title": "Ledger", "link": "/studentLadger" },
         { "id": 2, "title": "Payment", "link": "/feePayment" }
       ]
     },

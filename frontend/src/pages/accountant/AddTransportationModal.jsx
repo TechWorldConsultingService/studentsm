@@ -6,7 +6,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
-// Validation Schema for Add
 const addTransportationSchema = Yup.object().shape({
   place: Yup.string().required("Place is required."),
   amount: Yup.number()

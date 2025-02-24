@@ -6,7 +6,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
-// Validation Schema
 const addCategorySchema = Yup.object().shape({
   name: Yup.string().required("Category name is Required."),
 });
@@ -25,7 +24,6 @@ const AddCategoryModal = ({ handleCloseModal, fetchCategories }) => {
     },
   });
 
-  // API call to Add Category
   const addCategory = async (values) => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");

@@ -78,24 +78,6 @@ const addTeacherSchema = Yup.object().shape({
         })
       )
       .min(1, "At least one subject is required."),
-    classes: Yup.array()
-      .of(
-        Yup.object().shape({
-          class_code: Yup.string()
-            .required("Class code is required.")
-            .oneOf(
-              classList.map((item) => item.class_code),
-              "Invalid class selected."
-            ),
-          class_name: Yup.string()
-            .required("Class name is required.")
-            .oneOf(
-              classList.map((item) => item.class_name),
-              "Invalid class name"
-            ),
-        })
-      )
-      .min(1, "At least one class is required."),
     class_teacher: Yup.string()
       .nullable()
       .notRequired("Please select one class as Class Teacher if applicable."),
@@ -115,7 +97,6 @@ const addTeacherSchema = Yup.object().shape({
       date_of_joining: "",
       gender: "",
       subjects: [],
-      classes: [],
       class_teacher: "",
     },
     validationSchema: addTeacherSchema,
@@ -351,11 +332,11 @@ const addTeacherSchema = Yup.object().shape({
 
 
 
-          {/* Classes */}
+          {/* Classes Teacher*/}
           <div className="mb-4">
             <Select
               mode="multiple"
-              name="classes"
+              name="class_teacher"
               placeholder="Select all classes"
               className="w-full"
               onChange={(selectedValues) => {
@@ -385,23 +366,6 @@ const addTeacherSchema = Yup.object().shape({
             )}
           </div>
 
-          {/* clsss teacher  */}
-          <div className="mb-4">
-            <input
-              type="text"
-              className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Class Teacher"
-              name="class_teacher"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.class_teacher}
-            />
-            {formik.touched.class_teacher && formik.errors.class_teacher && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.class_teacher}
-              </div>
-            )}
-          </div>
           <div className="flex justify-center space-x-4">
             <button
               type="submit"
