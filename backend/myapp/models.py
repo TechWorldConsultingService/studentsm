@@ -213,8 +213,6 @@ class DiscussionComment(models.Model):
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.post.content[:20]}"
 
-
-
 class Exam(models.Model):
     name = models.CharField(max_length=100)  # Example: "Mid-Term Exam 2024"
     is_timetable_published = models.BooleanField(default=False)  # Flag for timetable publication
@@ -358,7 +356,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_messages")
@@ -368,7 +365,6 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.sender} -> {self.receiver}: {self.message}"
     
-
 class FeeCategoryName(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
@@ -389,10 +385,10 @@ class TransportationFee(models.Model):
 
     def __str__(self):
         return f"{self.place} - ${self.amount}"
-    
+
 class StudentBill(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="bills")
-    month = models.CharField(max_length=20)  # e.g., "January"
+    month = models.CharField(max_length=20)  # e.g., "January" 
     date = models.DateTimeField(auto_now_add=True)
     bill_number = models.CharField(max_length=10, unique=True, blank=True)
     fee_categories = models.ManyToManyField(FeeCategory, through="StudentBillFeeCategory", related_name="feecategory_bills")
@@ -439,7 +435,6 @@ class StudentBill(models.Model):
         # Save the updated totals
         self.save()
 
-
 class StudentBillFeeCategory(models.Model):
     student_bill = models.ForeignKey(StudentBill, on_delete=models.CASCADE)
     fee_category = models.ForeignKey(FeeCategory, on_delete=models.CASCADE)
@@ -448,7 +443,6 @@ class StudentBillFeeCategory(models.Model):
     def __str__(self):
         status = "with Scholarship" if self.scholarship else "Full Fee"
         return f"{self.fee_category.fee_category_name.name} - {status}"
-
 
 class StudentPayment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="payments")
@@ -461,19 +455,16 @@ class StudentPayment(models.Model):
         # Ensure date is set to the current date if not already set
         if not self.date:
             self.date = timezone.now()
-
         if not self.payment_number:  # Generate payment number only if not set
             year = str(self.date.year)
             # Find the next payment number for this student by counting existing payments
             existing_payments_count = StudentPayment.objects.filter(student=self.student).count()
             payment_number = f"{year}P{str(existing_payments_count + 1).zfill(2)}"  # Format: 2025P01, 2025P02, etc.
-            self.payment_number = payment_number  # Unique for each student
-        
+            self.payment_number = payment_number  # Unique for each student        
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Payment {self.payment_number} - {self.student.user.username} - {self.amount_paid}"
-
 
 class StudentTransaction(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="transactions")

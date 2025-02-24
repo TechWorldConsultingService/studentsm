@@ -570,7 +570,7 @@ class LeaveApplicationListView(APIView):
                 {"error": "No student profile associated with the current user."},
                 status=404,
             )
-
+        
         # Get all leave applications for the current user
         applications = LeaveApplication.objects.filter(applicant=student.user)
         # Serialize the leave applications
@@ -1022,6 +1022,7 @@ class FilterSubjectsView(APIView):
         # Now filter the subjects for the teacher and the assigned class
         subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
         return JsonResponse({"subjects": list(subjects.values())}, safe=False)
+
 
 class StudentAssignmentsView(APIView):
     """
