@@ -172,7 +172,12 @@ urlpatterns = [
     path("api/payments/<int:student_id>/", StudentPaymentAPIView.as_view(), name="payment-list"),
     path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentDetailAPIView.as_view(), name="payment-detail"),
     path("api/transactions/<int:student_id>/", StudentTransactionsAPIView.as_view(), name="student-transactions"),
-    
+
+    path('api/dashboard/', DashboardAPIView.as_view(), name='dashboard-api'),
+    path('api/attendance-summary/<str:date>/', AttendanceSummaryAPIView.as_view(), name='attendance-summary'),
+    path('api/syllabus-summary/<int:teacher_id>/', SyllabusSummaryAPIView.as_view(), name='assignment-syllabus'),
+    path('api/fee-summary/', FeeDashboardAPIView.as_view(), name='fee-summary'),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
