@@ -52,11 +52,13 @@ import AddTransportationFee from "./pages/accountant/TransportationFeeList"
 import LedgerPage from "./pages/accountant/LedgerPage"
 import FeePayment from "./pages/accountant/FeePaymant";
 import PaymentPage from "./pages/accountant/PaymentPage"
+import ArrayInput from "./pages/example";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
 
   const router = createBrowserRouter([
+    { path: "/examplePage", element:<ArrayInput/>},
     { path: "/", element: <Login /> },
     { path: "/homepage", element: <HomePage /> },
     { path: "/studentdashboard", element: <StudentHomePage /> },

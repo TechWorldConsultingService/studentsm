@@ -184,6 +184,7 @@ CORS_ALLOW_METHODS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Temporarily allow all origins for testing
-REST_FRAMEWORK = {
+
+"""REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES':('rest_framework.renderers.JSONRenderer',)
-}
+}"""
