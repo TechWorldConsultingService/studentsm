@@ -8,13 +8,12 @@ import toast from "react-hot-toast";
 import AddClassFeeModal from "./AddClassFeeModal";
 import EditClassFeeModal from "./EditClassFeeModal";
 
-
 const ClassFeesList = () => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [classes, setClasses] = useState([]);
-  const [selectedClassId, setSelectedClassId] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null);
   const [classFees, setClassFees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -23,7 +22,6 @@ const ClassFeesList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [feeToDelete, setFeeToDelete] = useState(null);
 
-  // 1. Fetch all classes
   const fetchClasses = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -37,9 +35,6 @@ const ClassFeesList = () => {
         },
       });
       setClasses(data);
-      if (data.length > 0) {
-        setSelectedClassId(data[0].id);
-      }
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
@@ -49,7 +44,6 @@ const ClassFeesList = () => {
     }
   };
 
-  // 2. Fetch fees for the selected class
   const fetchClassFees = async (classId) => {
     if (!access) return;
     if (!classId) return;
@@ -61,7 +55,7 @@ const ClassFeesList = () => {
         {
           headers: {
             Authorization: `Bearer ${access}`,
-          }
+          },
         }
       );
       setClassFees(data);
@@ -77,12 +71,11 @@ const ClassFeesList = () => {
   }, [access]);
 
   useEffect(() => {
-    if (selectedClassId) {
-      fetchClassFees(selectedClassId);
+    if (selectedClass) {
+      fetchClassFees(selectedClass.id);
     }
-  }, [selectedClassId]);
+  }, [selectedClass]);
 
-  // Handlers
   const handleShowAddModal = () => {
     setIsEditMode(false);
     setSelectedFee(null);
@@ -106,13 +99,13 @@ const ClassFeesList = () => {
   };
 
   const handleDeleteFee = async () => {
-    if (!access || !selectedClassId || !feeToDelete) {
+    if (!access || !selectedClass || !feeToDelete) {
       toast.error("Missing authentication or selection.");
       return;
     }
     try {
       await axios.delete(
-        `http://localhost:8000/api/fee-categories/${selectedClassId}/${feeToDelete}/`,
+        `http://localhost:8000/api/fee-categories/${selectedClass?.id}/${feeToDelete}/`,
         {
           headers: {
             Authorization: `Bearer ${access}`,
@@ -120,7 +113,7 @@ const ClassFeesList = () => {
         }
       );
       toast.success("Fee deleted successfully");
-      setClassFees((prev) => prev.filter((item) => item.fee_category_name !== feeToDelete));
+      fetchClassFees()
     } catch (error) {
       toast.error("Error deleting fee");
     } finally {
@@ -136,29 +129,22 @@ const ClassFeesList = () => {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <h1 className="text-3xl font-extrabold text-purple-800">Class Fees</h1>
-
-           {/* Add Fee Button */}
-           <div className="mt-6">
-            <button
-              onClick={handleShowAddModal}
-              disabled={!selectedClassId}
-              className={`${
-                selectedClassId ? "bg-purple-700 hover:bg-purple-800" : "bg-gray-400"
-              } text-white px-6 py-2 rounded-lg`}
-            >
-              Add Fee
-            </button>
-          </div>
-
+          <h1 className="text-3xl font-extrabold text-purple-800">
+            Categories (Fee Amount)
+          </h1>
 
           {/* Choose a Class */}
           <div className="mt-4">
             <label className="block text-gray-700 mb-2">Select Class:</label>
             <select
               className="border border-gray-300 p-2 rounded w-full md:w-1/2"
-              value={selectedClassId || ""}
-              onChange={(e) => setSelectedClassId(e.target.value)}
+              value={selectedClass?.id}
+              onChange={(e) => {
+                const selectedObj = classes.find(
+                  (cls) => cls.id === Number(e.target.value)
+                );
+                setSelectedClass(selectedObj || null);
+              }}
             >
               <option value="">Select Class</option>
               {classes.length > 0 ? (
@@ -173,13 +159,25 @@ const ClassFeesList = () => {
             </select>
           </div>
 
-         
+          {/* Add Fee Button */}
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleShowAddModal}
+              disabled={!selectedClass}
+              className={`${
+                selectedClass
+                  ? "bg-purple-700 hover:bg-purple-800"
+                  : "bg-gray-400"
+              } text-white px-6 py-2 rounded-lg`}
+            >
+              Add Fee Amount
+            </button>
+          </div>
+
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-purple-700">Fees for Selected Class</h2>
-            <p className="mt-4 text-gray-600">
-              Showing fees for class ID:{" "}
-              <span className="font-bold">{selectedClassId || "None"}</span>
-            </p>
+            <h2 className="text-xl font-semibold text-purple-700">
+              Fees for Class :  {selectedClass?.class_name}({selectedClass?.class_code}) 
+            </h2>
           </div>
 
           {loading ? (
@@ -189,19 +187,28 @@ const ClassFeesList = () => {
               <table className="min-w-full table-auto">
                 <thead>
                   <tr className="bg-purple-700 text-white">
-                    <th className="px-4 py-2 text-left">Category ID</th>
+                    <th className="px-4 py-2 text-left">S.N.</th>
+                    <th className="px-4 py-2 text-left">Class</th>
+                    <th className="px-4 py-2 text-left">Name</th>
                     <th className="px-4 py-2 text-left">Amount</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {classFees && classFees.length > 0 ? (
-                    classFees.map((item) => (
+                    classFees.map((item, index) => (
                       <tr
                         key={item.fee_category_name}
                         className="border-b hover:bg-purple-50"
                       >
-                        <td className="px-4 py-2">{item.fee_category_name}</td>
+                        <td className="px-4 py-2">{index + 1}</td>
+                        <td className="px-4 py-2">
+                          {item?.class_assigned?.class_name}(
+                          {item?.class_assigned?.class_code})
+                        </td>
+                        <td className="px-4 py-2">
+                          {item?.fee_category_name?.name}
+                        </td>
                         <td className="px-4 py-2">{item.amount}</td>
                         <td className="px-4 py-2">
                           <button
@@ -211,7 +218,9 @@ const ClassFeesList = () => {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleConfirmDelete(item.fee_category_name)}
+                            onClick={() =>
+                              handleConfirmDelete(item?.fee_category_name?.id)
+                            }
                             className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
                           >
                             Delete
@@ -262,14 +271,14 @@ const ClassFeesList = () => {
 
         {showModal && !isEditMode && (
           <AddClassFeeModal
-            classId={selectedClassId}
+            selectedClass = {selectedClass}
             handleCloseModal={handleCloseModal}
             fetchClassFees={fetchClassFees}
           />
         )}
         {showModal && isEditMode && (
           <EditClassFeeModal
-            classId={selectedClassId}
+          selectedClass={selectedClass}
             fee={selectedFee}
             handleCloseModal={handleCloseModal}
             fetchClassFees={fetchClassFees}

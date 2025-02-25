@@ -25,14 +25,13 @@ const EditCategoryModal = ({ category, handleCloseModal, fetchCategories }) => {
     },
   });
 
-  // API call to Edit Category
   const editCategory = async (values) => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     try {
-      await axios.patch(`http://localhost:8000/api/fee-names/${category.id}/`, values, {
+      await axios.put(`http://localhost:8000/api/fee-names/${category.id}/`, values, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
