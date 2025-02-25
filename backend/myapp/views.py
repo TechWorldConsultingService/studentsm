@@ -2335,8 +2335,6 @@ class AttendanceByClassAPIView(APIView):
     
 
 class StudentsByClassAttendanceAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # Restrict access to authenticated users
-
     def get(self, request, class_id):
         students = Student.objects.filter(class_code_id=class_id)
         serializer = StudentListAttendanceSerializer(students, many=True)

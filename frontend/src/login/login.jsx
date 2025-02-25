@@ -76,7 +76,12 @@ const Login = () => {
       if (error.response && error.response.data && error.response.data.msg) {
         toast.error(error.response.data.msg);
       } else {
-        toast.error("Network error or server is down");
+        console.log(error, "error")
+        console.log(error.response?.data?.detail, "ok")
+        toast.error(
+          "Error login",
+          error.response?.data?.detail || "network error or server down "
+        );
       }
     }
   };
