@@ -144,17 +144,13 @@ class RegisterPrincipalView(APIView):
 # View for handling student registration
 class RegisterStudentView(APIView):
     def post(self, request, format=None):
-        # Determine if the request data is in JSON format or form-data
         if request.content_type == 'application/json':
-            # Handle JSON data
             user_data = request.data.get('user')
             if not user_data:
-                # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
             
             student_data = request.data
         else:
-            # Handle form-data
             user_data = {
                 'username': request.data.get('user.username'),
                 'password': request.data.get('user.password'),
@@ -170,22 +166,21 @@ class RegisterStudentView(APIView):
                 'parents': request.data.get('parents'),
                 'gender': request.data.get('gender'),
                 'class_code': request.data.get('class_code'),
+                'class_code_section': request.data.get('class_code_section', None),  # Section is optional
                 'user': user_data,
             }
-        
-        # Serialize student data and validate
+
         student_serializer = StudentSerializer(data=student_data)
-        
+
         if student_serializer.is_valid():
-            # Save the student instance and return success response
             student = student_serializer.save()
             student.user.is_student = True
             student.user.save()
             
             return Response(student_serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Return error response if validation fails
             return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # View for handling staff registration
 class RegisterAccountantView(APIView):
@@ -2837,3 +2832,28 @@ class FeeDashboardAPIView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
+class ClassListView(APIView):
+    def get(self, request):
+        class_list = []
+
+        # Get all classes
+        all_classes = Class.objects.all()
+
+        for school_class in all_classes:
+            sections = school_class.sections.all()
+            if sections.exists():
+                for section in sections:
+                    class_list.append({
+                        "class_id": school_class.id,  # Class ID
+                        "section_id": section.id,  # Section ID
+                        "name": f"{school_class.class_name} {section.section_name}"
+                    })
+            else:
+                class_list.append({
+                    "class_id": school_class.id,  # Only Class ID
+                    "section_id": None,  # No section
+                    "name": school_class.class_name
+                })
+
+        return Response(class_list)
