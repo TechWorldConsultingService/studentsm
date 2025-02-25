@@ -190,3 +190,5 @@ CORS_ALLOW_METHODS = [
     'DELETE',
     'OPTIONS', # Include OPTIONS for preflight
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True  # Temporarily allow all origins for testing

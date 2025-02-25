@@ -45,6 +45,13 @@ class Class(models.Model):
     def __str__(self):
         return self.class_name
     
+class Section(models.Model):
+    school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
+    section_name = models.CharField(max_length=10)  # e.g., "A", "B", "C"
+
+    def __str__(self):
+        return f"{self.school_class.class_name} - {self.section_name}"
+    
 class Teacher(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
@@ -53,7 +60,9 @@ class Teacher(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     subjects = models.ManyToManyField(Subject, related_name='teachers')
     classes = models.ManyToManyField(Class, related_name='teachers')
+    classes_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="teachersection")
     class_teacher = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True)
+    class_teacher_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="classteachersection")
 
     def __str__(self):
         # return self.user.username
@@ -84,6 +93,7 @@ class Student(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     parents = models.CharField(max_length=15)
     class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
+    class_code_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="studentsection")
     roll_no = models.CharField(max_length=10, null=True, blank=True)  # Add Roll Number Field
 
     def __str__(self):
