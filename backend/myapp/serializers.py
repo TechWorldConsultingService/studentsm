@@ -118,15 +118,15 @@ class ClassSerializer(serializers.ModelSerializer):
         return class_instance
 
     def update(self, instance, validated_data):
-        subjects_data = validated_data.pop('subjects', [])
-        sections_data = validated_data.pop('sections', [])
+        subjects_data = validated_data.pop('subjects', None)
+        sections_data = validated_data.pop('sections', None)
 
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
 
-        # Update subjects
-        if subjects_data:
+        # Update subjects if provided
+        if subjects_data is not None:
             instance.subjects.clear()
             for subject_data in subjects_data:
                 subject, _ = Subject.objects.get_or_create(
@@ -135,13 +135,14 @@ class ClassSerializer(serializers.ModelSerializer):
                 )
                 instance.subjects.add(subject)
 
-        # Update sections
-        if sections_data:
+        # Update sections if provided
+        if sections_data is not None:
             instance.sections.all().delete()  # Remove existing sections
             for section_name in sections_data:
                 Section.objects.create(school_class=instance, section_name=section_name)
 
         return instance
+
 
     
 class ClassDetailSerializer(serializers.ModelSerializer):

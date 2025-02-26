@@ -33,17 +33,26 @@ class Policies(models.Model):
 class Subject(models.Model):
     subject_code = models.CharField(max_length=50, unique=True)
     subject_name = models.CharField(max_length=100)
+    is_credit = models.BooleanField(default=True, null=True, blank=True)  # True = Credit, False = Non-Credit
+    credit_hours = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)  # Credit hours
+    is_optional = models.BooleanField(default=False, null=True, blank=True)  # ✅ New field: True = Optional, False = Compulsory
 
     def __str__(self):
         return self.subject_name
     
+
+    
 class Class(models.Model):
     class_code = models.CharField(max_length=50, unique=True)
     class_name = models.CharField(max_length=100)
-    subjects = models.ManyToManyField(Subject, related_name='classes')
+    subjects = models.ManyToManyField(Subject, related_name="classes")
+    optional_subjects = models.ManyToManyField(Subject, related_name="optional_classes", null=True, blank=True)  # ✅ Select optional subjects
 
     def __str__(self):
         return self.class_name
+    
+
+
     
 class Section(models.Model):
     school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
@@ -409,16 +418,23 @@ class StudentBill(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def save(self, *args, **kwargs):
-        # Ensure date is set to the current date if not already set
         if not self.date:
-            self.date = timezone.now()
+            self.date = now()
 
-        if not self.bill_number:  # Generate bill number only if not set
+        if not self.bill_number:
             year = str(self.date.year)
-            # Find the next bill number for this student, regardless of the month
-            existing_bills_count = StudentBill.objects.filter(student=self.student).count()
-            bill_number = f"{year}B{str(existing_bills_count + 1).zfill(2)}"  # Format: 2025B01, 2025B02, etc.
-            self.bill_number = bill_number
+            attempt = 1  # Track retry attempts
+            
+            while True:
+                existing_bills_count = StudentBill.objects.count()
+                bill_number = f"{year}B{str(existing_bills_count + attempt).zfill(2)}"
+
+                # Ensure uniqueness
+                if not StudentBill.objects.filter(bill_number=bill_number).exists():
+                    self.bill_number = bill_number
+                    break
+                
+                attempt += 1  # Increment and retry if duplicate
 
         super().save(*args, **kwargs)
 
