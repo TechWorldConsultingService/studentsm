@@ -1,11 +1,8 @@
-
-
 from pathlib import Path
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -16,8 +13,7 @@ SECRET_KEY = 'django-insecure-4w$7vob@#2d&zrp2_d9sh3q4sx!uc#7c6cnc$8hx4qbs#!0hgv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "192.168.1.100","192.168.100.9", "127.0.0.1","192.168.1.12"]
-
+ALLOWED_HOSTS = ["localhost", "192.168.1.100","192.168.100.9", "127.0.0.1","192.168.1.12","192.168.1.8"]
 
 # Application definition
 
@@ -150,6 +146,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://192.168.100.9:8000'
 ]
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all for testing
 
 CORS_ALLOW_HEADERS = [
     "content-type",

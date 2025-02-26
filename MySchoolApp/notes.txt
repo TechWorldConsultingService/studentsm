@@ -1,0 +1,8 @@
+run this is terminal to check running port: ipconfig
+
+see ipv4 address and update in following place:
+1) const API_URL = "http://192.168.1.8:8000/api";   in api.js
+2) ALLOWED_HOSTS = ["localhost", "192.168.1.8"]     in setting.py
+3) restart django using : python manage.py runserver 0.0.0.0:8000
+
+run react native using : npx expo start -c
