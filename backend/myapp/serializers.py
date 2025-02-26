@@ -63,6 +63,10 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class SectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ["section_name"]
 
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
@@ -72,54 +76,74 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class ClassSerializer(serializers.ModelSerializer):
-    # subjects = SubjectSerializer(many=True)
-    subjects = serializers.ListField(child = serializers.DictField(), # Accept a list of dictionaries
-        write_only=True  # Only for input, won't include in the response
+    subjects = serializers.ListField(
+        child=serializers.DictField(),  # Accepts a list of dictionaries for subjects
+        write_only=True
     )
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
 
+    sections = serializers.ListField(
+        child=serializers.CharField(),  # Accepts a list of section names (e.g., ["A", "B"])
+        write_only=True
+    )
+    section_details = serializers.SerializerMethodField()  # Returns detailed section info
+
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name', 'subjects','subject_details']  # Define fields to include in the serialized output
-    
-    def create(self, validated_data):   
-        # Extract the nested subjects data
+        fields = ['id', 'class_code', 'class_name', 'subjects', 'subject_details', 'sections', 'section_details']
+
+    def get_section_details(self, obj):
+        """ Retrieve section details for a class """
+        return [{"id": sec.id, "section_name": sec.section_name} for sec in obj.sections.all()]
+
+    def create(self, validated_data):
         subjects_data = validated_data.pop('subjects', [])
-  
+        sections_data = validated_data.pop('sections', [])
+
         # Create the class instance
         class_instance = Class.objects.create(**validated_data)
 
-        # Create or get Subject instances and add them to the class
+        # Handle subjects
         for subject_data in subjects_data:
-            # Find or create the subject
-            # subject, created = Subject.objects.get_or_create(**subject_data)
             subject, _ = Subject.objects.get_or_create(
                 subject_code=subject_data['subject_code'],
                 defaults={'subject_name': subject_data['subject_name']}
             )
             class_instance.subjects.add(subject)
+
+        # Handle sections
+        for section_name in sections_data:
+            Section.objects.create(school_class=class_instance, section_name=section_name)
+
         return class_instance
 
     def update(self, instance, validated_data):
-        subjects_data = validated_data.pop('subjects', [])
+        subjects_data = validated_data.pop('subjects', None)
+        sections_data = validated_data.pop('sections', None)
+
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
-    
-        if subjects_data:
-            # Clear existing subjects if updating
+
+        # Update subjects if provided
+        if subjects_data is not None:
             instance.subjects.clear()
-            # Add new subjects to the class
             for subject_data in subjects_data:
-                # Find or create the subject
                 subject, _ = Subject.objects.get_or_create(
                     subject_code=subject_data['subject_code'],
                     defaults={'subject_name': subject_data['subject_name']}
                 )
-                # Associate subject with the class
                 instance.subjects.add(subject)
 
+        # Update sections if provided
+        if sections_data is not None:
+            instance.sections.all().delete()  # Remove existing sections
+            for section_name in sections_data:
+                Section.objects.create(school_class=instance, section_name=section_name)
+
         return instance
+
+
     
 class ClassDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -326,22 +350,23 @@ class PrincipalSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
-    #class_details = ClassSerializer(source='class_code', read_only=True)
+    class_code_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'roll_no']
-        #fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'class_code_section', 'roll_no']
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
         class_instance = validated_data.pop('class_code')
+        section_instance = validated_data.pop('class_code_section', None)  # Optional section
+
         user_data['is_student'] = True
 
         user_serializer = UserSerializer(data=user_data)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            student = Student.objects.create(user=user, class_code=class_instance, **validated_data)
+            student = Student.objects.create(user=user, class_code=class_instance, class_code_section=section_instance, **validated_data)
             return student
         else:
             raise serializers.ValidationError(user_serializer.errors)
@@ -349,6 +374,7 @@ class StudentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
         class_instance = validated_data.pop('class_code', None)
+        section_instance = validated_data.pop('class_code_section', None)
 
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
@@ -364,7 +390,11 @@ class StudentSerializer(serializers.ModelSerializer):
 
         if class_instance:
             instance.class_code = class_instance
+        if section_instance:
+            instance.class_code_section = section_instance
+
         return instance
+
 
 
 class GetStudentSerializer(serializers.ModelSerializer):

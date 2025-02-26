@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
-import { Select } from 'antd';
+import { Select } from "antd";
 
 export const addClassSchema = Yup.object().shape({
   class_code: Yup.number()
@@ -13,28 +13,35 @@ export const addClassSchema = Yup.object().shape({
     .typeError("Class Code must be a number."),
   class_name: Yup.string().required("Class Name is Required."),
   subjects: Yup.array()
-    .min(3, "At least three subject must be selected.")
+    .min(3, "At least three subjects must be selected.")
     .of(
       Yup.object().shape({
-        subject_name: Yup.string().required(),
-        subject_code: Yup.string().required(),
+        subject_name: Yup.string().required("Subject name is required."),
+        subject_code: Yup.string().required("Subject code is required."),
       })
     ),
+  sections: Yup.array()
+    .of(Yup.string().required("Section name is required."))
+    .optional(),
 });
 
 const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [subjectList, setSubjectList] = useState([]);
+  const [sectionInput, setSectionInput] = useState("");
+  const [sections, setSections] = useState([]); // State to store sections
 
   const formik = useFormik({
     initialValues: {
       class_code: "",
       class_name: "",
-      subjects: [], 
+      subjects: [],
+      sections: [],
     },
     validationSchema: addClassSchema,
     onSubmit: async (values) => {
+      values.sections = sections; // Assign sections array before submitting
       await addClass(values);
     },
   });
@@ -98,6 +105,19 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
     formik.setFieldValue("subjects", selectedSubjects);
   };
 
+  // Handle adding sections dynamically
+  const handleAddSection = () => {
+    if (sectionInput.trim() !== "" && !sections.includes(sectionInput)) {
+      setSections([...sections, sectionInput]);
+      setSectionInput("");
+    }
+  };
+
+  // Handle removing a section
+  const handleRemoveSection = (section) => {
+    setSections(sections.filter((s) => s !== section));
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
@@ -141,14 +161,14 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
             <Select
               mode="multiple"
               name="subjects"
-              placeholder="Select all subject"
+              placeholder="Select all subjects"
               className="w-full"
               onChange={handleSubjectChange}
               onBlur={formik.handleBlur}
               value={formik.values.subjects.map(
                 (subject) => subject.subject_name
               )}
-            >             
+            >
               {subjectList.length > 0 &&
                 subjectList.map((item) => (
                   <Select.Option key={item.id} value={item.subject_name}>
@@ -161,6 +181,39 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
                 {formik.errors.subjects}
               </div>
             )}
+          </div>
+
+          {/* Sections Input */}
+          <div className="mb-4">
+            <input
+              type="text"
+              className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Add Section"
+              value={sectionInput}
+              onChange={(e) => setSectionInput(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={handleAddSection}
+              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+            >
+              Add Section
+            </button>
+
+            <ul className="mt-2">
+              {sections.map((section, index) => (
+                <li key={index} className="flex justify-between bg-gray-100 p-2 rounded mt-1">
+                  {section}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSection(section)}
+                    className="text-red-500"
+                  >
+                    ❌
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="mt-6 text-center">

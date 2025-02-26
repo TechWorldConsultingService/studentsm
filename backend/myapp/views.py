@@ -19,8 +19,9 @@ from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import *
 from rest_framework import status
-from django.core.exceptions import ObjectDoesNotExist
-
+from django.db.models import Count
+from collections import defaultdict
+from django.db.models import Count, Q
 from rest_framework.decorators import action
 
 
@@ -143,17 +144,13 @@ class RegisterPrincipalView(APIView):
 # View for handling student registration
 class RegisterStudentView(APIView):
     def post(self, request, format=None):
-        # Determine if the request data is in JSON format or form-data
         if request.content_type == 'application/json':
-            # Handle JSON data
             user_data = request.data.get('user')
             if not user_data:
-                # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
             
             student_data = request.data
         else:
-            # Handle form-data
             user_data = {
                 'username': request.data.get('user.username'),
                 'password': request.data.get('user.password'),
@@ -169,22 +166,21 @@ class RegisterStudentView(APIView):
                 'parents': request.data.get('parents'),
                 'gender': request.data.get('gender'),
                 'class_code': request.data.get('class_code'),
+                'class_code_section': request.data.get('class_code_section', None),  # Section is optional
                 'user': user_data,
             }
-        
-        # Serialize student data and validate
+
         student_serializer = StudentSerializer(data=student_data)
-        
+
         if student_serializer.is_valid():
-            # Save the student instance and return success response
             student = student_serializer.save()
             student.user.is_student = True
             student.user.save()
             
             return Response(student_serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Return error response if validation fails
             return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # View for handling staff registration
 class RegisterAccountantView(APIView):
@@ -2339,8 +2335,6 @@ class AttendanceByClassAPIView(APIView):
     
 
 class StudentsByClassAttendanceAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # Restrict access to authenticated users
-
     def get(self, request, class_id):
         students = Student.objects.filter(class_code_id=class_id)
         serializer = StudentListAttendanceSerializer(students, many=True)
@@ -2659,3 +2653,205 @@ class StudentTransactionsAPIView(APIView):
             "transactions": transaction_data  # Transactions without duplicate student data
         })
 
+
+class DashboardAPIView(APIView):
+    def get(self, request):
+        # Count total numbers
+        total_students = Student.objects.count()
+        total_teachers = Teacher.objects.count()
+        total_classes = Class.objects.count()
+
+        # Gender distribution
+        student_gender_distribution = Student.objects.values('gender').annotate(count=Count('gender'))
+        teacher_gender_distribution = Teacher.objects.values('gender').annotate(count=Count('gender'))
+
+        # Convert to dictionary format
+        student_gender_data = {item["gender"]: item["count"] for item in student_gender_distribution}
+        teacher_gender_data = {item["gender"]: item["count"] for item in teacher_gender_distribution}
+
+        # Students per class
+        students_per_class = {
+            cls.class_name: cls.students.count() for cls in Class.objects.prefetch_related('students')
+        }
+
+        # Prepare response data (without using a serializer)
+        data = {
+            "total_students": total_students,
+            "total_teachers": total_teachers,
+            "total_classes": total_classes,
+            "student_gender_distribution": student_gender_data,
+            "teacher_gender_distribution": teacher_gender_data,
+            "students_per_class": students_per_class,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class AttendanceSummaryAPIView(APIView):
+
+    def get(self, request, date=None):
+        """
+        Get overall attendance statistics for a specific date.
+        """
+        if not date:
+            date = timezone.now().date()  # Default to today's date
+        else:
+            try:
+                date = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get all students
+        total_students = Student.objects.count()
+
+        # Get attendance records for the given date
+        attendance_records = DailyAttendance.objects.filter(date=date)
+
+        # Count present and absent students
+        present_count = attendance_records.filter(status=True).count()
+        absent_count = attendance_records.filter(status=False).count()
+
+        # Get class-wise statistics
+        class_wise_stats = defaultdict(lambda: {"total": 0, "present": 0, "absent": 0})
+
+        for student in Student.objects.all():
+            class_name = student.class_code.class_name  # Assuming class_code is related to Class model
+            class_wise_stats[class_name]["total"] += 1
+
+        for record in attendance_records:
+            class_name = record.student.class_code.class_name
+            if record.status:
+                class_wise_stats[class_name]["present"] += 1
+            else:
+                class_wise_stats[class_name]["absent"] += 1
+
+        return Response({
+            "date": date,
+            "total_students": total_students,
+            "total_present": present_count,
+            "total_absent": absent_count,
+            "class_wise_attendance": class_wise_stats
+        }, status=status.HTTP_200_OK)
+    
+
+class SyllabusSummaryAPIView(APIView):
+    def get(self, request, teacher_id):
+        syllabuses = Syllabus.objects.filter(teacher_id=teacher_id).prefetch_related('chapters__topics__subtopics')
+
+        syllabus_data = []
+
+        for syllabus in syllabuses:
+            # Count total subtopics (since progress is tracked at the subtopic level)
+            total_subtopics = syllabus.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+            completed_subtopics = syllabus.chapters.aggregate(
+                completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+            )["completed"] or 0
+
+            # Calculate completion percentage
+            completion_percentage = (completed_subtopics / total_subtopics * 100) if total_subtopics else 0
+
+            syllabus_data.append({
+                "subject": syllabus.subject.name,
+                "total_topics": syllabus.chapters.aggregate(total=Count("topics"))["total"] or 0,  # Total topics count
+                "total_subtopics": total_subtopics,  # Total subtopics count
+                "completed_subtopics": completed_subtopics,  # Completed subtopics count
+                "completion_percentage": round(completion_percentage, 2),
+            })
+
+        return Response({"syllabus_progress": syllabus_data}, status=200)
+
+
+from django.db.models import Sum
+
+
+class FeeDashboardAPIView(APIView):
+    def get(self, request):
+        # Get current month & year
+        current_month = now().strftime("%B")  # e.g., "February"
+        current_year = now().year
+
+        # 🔹 Total amount billed (All time)
+        total_billed_all_time = StudentBill.objects.aggregate(total=Sum('total_amount'))["total"] or 0
+
+        # 🔹 Total amount billed (Current Month)
+        total_billed_monthly = StudentBill.objects.filter(date__month=datetime.now().month).aggregate(total=Sum('total_amount'))["total"] or 0
+
+        # 🔹 Total payments made (All time)
+        total_paid_all_time = StudentPayment.objects.aggregate(total=Sum('amount_paid'))["total"] or 0
+
+        # 🔹 Total payments made (Current Month)
+        total_paid_monthly = StudentPayment.objects.filter(date__month=datetime.now().month).aggregate(total=Sum('amount_paid'))["total"] or 0
+
+        # 🔹 Number of payments (All time)
+        total_payments_all_time = StudentPayment.objects.count()
+
+        # 🔹 Number of payments (Current Month)
+        total_payments_monthly = StudentPayment.objects.filter(date__month=datetime.now().month).count()
+
+        # 🔹 Students with cleared dues (Balance = 0)
+        cleared_students = StudentTransaction.objects.filter(balance=0).values("student").distinct().count()
+
+        # 🔹 Students with outstanding balance (Balance > 0) and have transactions/bills
+        students_with_dues = StudentTransaction.objects.filter(balance__gt=0).filter(student__in=StudentBill.objects.values('student')).values("student").distinct().count()  # Ensure there is a bill generated for the student
+        
+
+        # 🔹 Total Scholarship/Discount Amount
+        discount_amount = StudentBill.objects.aggregate(total=Sum("discount"))["total"] or 0
+
+        # 🔹 Total Fee Amount where Scholarship is applied
+        scholarship_fee_amount = StudentBillFeeCategory.objects.filter(scholarship=True).aggregate(total=Sum("fee_category__amount"))["total"] or 0
+
+        # Response Data
+        data = {
+            "bills": {
+                "total_bill_amount_alltime": total_billed_all_time,
+                "bill_amount_monthly": [
+                    {
+                        "month": current_month,
+                        "amount": total_billed_monthly
+                    }
+                ],
+                "total_payment_amount_alltime": total_paid_all_time,
+                "number_of_payments_done": total_payments_all_time,
+                "payment_amount_monthly": [
+                    {
+                        "month": current_month,
+                        "amount": total_paid_monthly,
+                        "no_of_payment": total_payments_monthly
+                    }
+                ],
+                "dues": {
+                    "students_cleared": cleared_students,
+                    "students_with_dues": students_with_dues
+                },
+                "total_discount_amount": discount_amount,
+                "total_scholarship_fee_amount": scholarship_fee_amount
+            }
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+class ClassListView(APIView):
+    def get(self, request):
+        class_list = []
+
+        # Get all classes
+        all_classes = Class.objects.all()
+
+        for school_class in all_classes:
+            sections = school_class.sections.all()
+            if sections.exists():
+                for section in sections:
+                    class_list.append({
+                        "class_id": school_class.id,  # Class ID
+                        "section_id": section.id,  # Section ID
+                        "name": f"{school_class.class_name} {section.section_name}"
+                    })
+            else:
+                class_list.append({
+                    "class_id": school_class.id,  # Only Class ID
+                    "section_id": None,  # No section
+                    "name": school_class.class_name
+                })
+
+        return Response(class_list)
