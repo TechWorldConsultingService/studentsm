@@ -1088,12 +1088,17 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
     bill_number = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     payment_number = serializers.SerializerMethodField()
-    total_amount = serializers.SerializerMethodField()  # Add total_amount field
-    paid_amount = serializers.SerializerMethodField()   # Add paid_amount field
+    total_amount = serializers.SerializerMethodField()
+    paid_amount = serializers.SerializerMethodField()
+    month = serializers.SerializerMethodField()  # New field for month
+    remarks = serializers.SerializerMethodField()  # New field for remarks
 
     class Meta:
         model = StudentTransaction
-        fields = ["transaction_type", "bill", "bill_number", "payment", "payment_number", "balance", "transaction_date", "total_amount", "paid_amount"]
+        fields = [
+            "transaction_type", "bill", "bill_number", "payment", "payment_number", 
+            "balance", "transaction_date", "total_amount", "paid_amount", "month", "remarks"
+        ]
 
     def get_bill(self, obj):
         return obj.bill.id if obj.bill else None
@@ -1108,13 +1113,21 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
         return obj.payment.payment_number if obj.payment else None
 
     def get_total_amount(self, obj):
-        # Return the total_amount if it's a bill, else None
-        if obj.transaction_type == 'bill' and obj.bill:
-            return obj.bill.total_amount
-        return None
+        """ Return total amount if it's a bill; otherwise, return None. """
+        return obj.bill.total_amount if obj.transaction_type == "bill" and obj.bill else None
 
     def get_paid_amount(self, obj):
-        # Return the paid_amount if it's a payment, else None
-        if obj.transaction_type == 'payment' and obj.payment:
-            return obj.payment.amount_paid
+        """ Return paid amount if it's a payment; otherwise, return None. """
+        return obj.payment.amount_paid if obj.transaction_type == "payment" and obj.payment else None
+
+    def get_month(self, obj):
+        """ Return the month from the bill; set to None if it's a payment. """
+        return obj.bill.month if obj.transaction_type == "bill" and obj.bill else None
+
+    def get_remarks(self, obj):
+        """ Return remarks from either bill or payment based on transaction type. """
+        if obj.transaction_type == "bill" and obj.bill:
+            return obj.bill.remarks
+        elif obj.transaction_type == "payment" and obj.payment:
+            return obj.payment.remarks
         return None
