@@ -64,15 +64,17 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 class SectionSerializer(serializers.ModelSerializer):
+    school_class_name = serializers.CharField(source="school_class.class_name", read_only=True)
+
     class Meta:
         model = Section
-        fields = ["section_name"]
+        fields = ['id', 'school_class', 'school_class_name', 'section_name']
 
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'subject_code', 'subject_name']
+        fields = ['id', 'subject_code', 'subject_name', 'is_credit', 'credit_hours', 'is_optional']
 
 
 class ClassSerializer(serializers.ModelSerializer):
@@ -80,25 +82,21 @@ class ClassSerializer(serializers.ModelSerializer):
         child=serializers.DictField(),  # Accepts a list of dictionaries for subjects
         write_only=True
     )
-    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
-
-    sections = serializers.ListField(
-        child=serializers.CharField(),  # Accepts a list of section names (e.g., ["A", "B"])
-        write_only=True
+    optional_subjects = serializers.ListField(
+        child=serializers.DictField(),  # Accepts a list of dictionaries for optional subjects
+        write_only=True, required=False  # Optional field
     )
-    section_details = serializers.SerializerMethodField()  # Returns detailed section info
+
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+    optional_subject_details = SubjectSerializer(source='optional_subjects', many=True, read_only=True)
 
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name', 'subjects', 'subject_details', 'sections', 'section_details']
-
-    def get_section_details(self, obj):
-        """ Retrieve section details for a class """
-        return [{"id": sec.id, "section_name": sec.section_name} for sec in obj.sections.all()]
+        fields = ['id', 'class_code', 'class_name', 'subjects', 'optional_subjects', 'subject_details', 'optional_subject_details']
 
     def create(self, validated_data):
         subjects_data = validated_data.pop('subjects', [])
-        sections_data = validated_data.pop('sections', [])
+        optional_subjects_data = validated_data.pop('optional_subjects', [])
 
         # Create the class instance
         class_instance = Class.objects.create(**validated_data)
@@ -111,15 +109,19 @@ class ClassSerializer(serializers.ModelSerializer):
             )
             class_instance.subjects.add(subject)
 
-        # Handle sections
-        for section_name in sections_data:
-            Section.objects.create(school_class=class_instance, section_name=section_name)
+        # Handle optional subjects
+        for optional_subject_data in optional_subjects_data:
+            optional_subject, _ = Subject.objects.get_or_create(
+                subject_code=optional_subject_data['subject_code'],
+                defaults={'subject_name': optional_subject_data['subject_name']}
+            )
+            class_instance.optional_subjects.add(optional_subject)
 
         return class_instance
 
     def update(self, instance, validated_data):
         subjects_data = validated_data.pop('subjects', None)
-        sections_data = validated_data.pop('sections', None)
+        optional_subjects_data = validated_data.pop('optional_subjects', None)
 
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
@@ -135,11 +137,15 @@ class ClassSerializer(serializers.ModelSerializer):
                 )
                 instance.subjects.add(subject)
 
-        # Update sections if provided
-        if sections_data is not None:
-            instance.sections.all().delete()  # Remove existing sections
-            for section_name in sections_data:
-                Section.objects.create(school_class=instance, section_name=section_name)
+        # Update optional subjects if provided
+        if optional_subjects_data is not None:
+            instance.optional_subjects.clear()
+            for optional_subject_data in optional_subjects_data:
+                optional_subject, _ = Subject.objects.get_or_create(
+                    subject_code=optional_subject_data['subject_code'],
+                    defaults={'subject_name': optional_subject_data['subject_name']}
+                )
+                instance.optional_subjects.add(optional_subject)
 
         return instance
 
@@ -1077,17 +1083,17 @@ class GetStudentPaymentSerializer(serializers.ModelSerializer):
             'parents': obj.student.parents
         }
 
-
 class StudentTransactionSerializer(serializers.ModelSerializer):
     bill = serializers.SerializerMethodField()
     bill_number = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     payment_number = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()  # Add total_amount field
+    paid_amount = serializers.SerializerMethodField()   # Add paid_amount field
 
     class Meta:
         model = StudentTransaction
-        fields = ["transaction_type", "bill", "bill_number", "payment", "payment_number", "balance", "transaction_date"]
-
+        fields = ["transaction_type", "bill", "bill_number", "payment", "payment_number", "balance", "transaction_date", "total_amount", "paid_amount"]
 
     def get_bill(self, obj):
         return obj.bill.id if obj.bill else None
@@ -1100,3 +1106,15 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
 
     def get_payment_number(self, obj):
         return obj.payment.payment_number if obj.payment else None
+
+    def get_total_amount(self, obj):
+        # Return the total_amount if it's a bill, else None
+        if obj.transaction_type == 'bill' and obj.bill:
+            return obj.bill.total_amount
+        return None
+
+    def get_paid_amount(self, obj):
+        # Return the paid_amount if it's a payment, else None
+        if obj.transaction_type == 'payment' and obj.payment:
+            return obj.payment.amount_paid
+        return None
