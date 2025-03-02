@@ -46,13 +46,11 @@ class Class(models.Model):
     class_code = models.CharField(max_length=50, unique=True)
     class_name = models.CharField(max_length=100)
     subjects = models.ManyToManyField(Subject, related_name="classes")
-    optional_subjects = models.ManyToManyField(Subject, related_name="optional_classes", null=True, blank=True)  # ✅ Select optional subjects
+    optional_subjects = models.ManyToManyField(Subject, related_name="optional_classes", blank=True)  # ✅ Select optional subjects
 
     def __str__(self):
         return self.class_name
     
-
-
     
 class Section(models.Model):
     school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
