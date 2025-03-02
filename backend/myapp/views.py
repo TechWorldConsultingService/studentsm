@@ -2565,34 +2565,42 @@ class StudentBillAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        # Fetch the student from the provided student_id
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Check if a bill already exists for the student for the given month
+
         month = request.data.get("month")
         if StudentBill.objects.filter(student=student, month=month).exists():
             return Response({"error": "Bill already generated for this month."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Prepare the data for the serializer
+        # Calculate pre_balance (last transaction balance)
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
+        # Prepare request data
         request.data["student"] = student.id
         serializer = StudentBillSerializer(data=request.data)
-        
+
         if serializer.is_valid():
-            student_bill = serializer.save()  # Save the student bill
+            student_bill = serializer.save()
 
-            # Serialize the saved bill data
-            bill_data = GetStudentBillSerializer(student_bill).data  
+            # Calculate post_balance (pre_balance + bill amount)
+            post_balance = pre_balance + student_bill.total_amount
 
-            # Return success message along with the bill details
+            bill_data = GetStudentBillSerializer(student_bill).data
+            bill_data.update({
+                "pre_balance": pre_balance,
+                "post_balance": post_balance
+            })
+
             return Response({
                 'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
                 'bill_details': bill_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -2621,24 +2629,39 @@ class StudentPaymentAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        """Create a new student payment."""
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Calculate pre_balance (last transaction balance)
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
         data = request.data
-        data['student'] = student_id  # Set the student ID for the payment
+        data['student'] = student_id
+
         serializer = StudentPaymentSerializer(data=data)
 
         if serializer.is_valid():
-            payment = serializer.save()  # Save the payment
+            payment = serializer.save()
 
-            # Serialize the saved payment data
-            payment_data = GetStudentPaymentSerializer(payment).data  
+            # Calculate post_balance (pre_balance - payment amount)
+            post_balance = pre_balance - payment.amount_paid
 
-            # Return success message along with payment details
+            payment_data = GetStudentPaymentSerializer(payment).data
+            payment_data.update({
+                "pre_balance": pre_balance,
+                "post_balance": post_balance
+            })
+
             return Response({
                 'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
                 'payment_details': payment_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class StudentPaymentDetailAPIView(APIView):
