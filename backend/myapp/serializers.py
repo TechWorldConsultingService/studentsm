@@ -64,15 +64,17 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 class SectionSerializer(serializers.ModelSerializer):
+    school_class_name = serializers.CharField(source="school_class.class_name", read_only=True)
+
     class Meta:
         model = Section
-        fields = ["section_name"]
+        fields = ['id', 'school_class', 'school_class_name', 'section_name']
 
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ['id', 'subject_code', 'subject_name']
+        fields = ['id', 'subject_code', 'subject_name', 'is_credit', 'credit_hours', 'is_optional']
 
 
 class ClassSerializer(serializers.ModelSerializer):
@@ -80,25 +82,21 @@ class ClassSerializer(serializers.ModelSerializer):
         child=serializers.DictField(),  # Accepts a list of dictionaries for subjects
         write_only=True
     )
-    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
-
-    sections = serializers.ListField(
-        child=serializers.CharField(),  # Accepts a list of section names (e.g., ["A", "B"])
-        write_only=True
+    optional_subjects = serializers.ListField(
+        child=serializers.DictField(),  # Accepts a list of dictionaries for optional subjects
+        write_only=True, required=False  # Optional field
     )
-    section_details = serializers.SerializerMethodField()  # Returns detailed section info
+
+    subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
+    optional_subject_details = SubjectSerializer(source='optional_subjects', many=True, read_only=True)
 
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name', 'subjects', 'subject_details', 'sections', 'section_details']
-
-    def get_section_details(self, obj):
-        """ Retrieve section details for a class """
-        return [{"id": sec.id, "section_name": sec.section_name} for sec in obj.sections.all()]
+        fields = ['id', 'class_code', 'class_name', 'subjects', 'optional_subjects', 'subject_details', 'optional_subject_details']
 
     def create(self, validated_data):
         subjects_data = validated_data.pop('subjects', [])
-        sections_data = validated_data.pop('sections', [])
+        optional_subjects_data = validated_data.pop('optional_subjects', [])
 
         # Create the class instance
         class_instance = Class.objects.create(**validated_data)
@@ -111,15 +109,19 @@ class ClassSerializer(serializers.ModelSerializer):
             )
             class_instance.subjects.add(subject)
 
-        # Handle sections
-        for section_name in sections_data:
-            Section.objects.create(school_class=class_instance, section_name=section_name)
+        # Handle optional subjects
+        for optional_subject_data in optional_subjects_data:
+            optional_subject, _ = Subject.objects.get_or_create(
+                subject_code=optional_subject_data['subject_code'],
+                defaults={'subject_name': optional_subject_data['subject_name']}
+            )
+            class_instance.optional_subjects.add(optional_subject)
 
         return class_instance
 
     def update(self, instance, validated_data):
         subjects_data = validated_data.pop('subjects', None)
-        sections_data = validated_data.pop('sections', None)
+        optional_subjects_data = validated_data.pop('optional_subjects', None)
 
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
@@ -135,11 +137,15 @@ class ClassSerializer(serializers.ModelSerializer):
                 )
                 instance.subjects.add(subject)
 
-        # Update sections if provided
-        if sections_data is not None:
-            instance.sections.all().delete()  # Remove existing sections
-            for section_name in sections_data:
-                Section.objects.create(school_class=instance, section_name=section_name)
+        # Update optional subjects if provided
+        if optional_subjects_data is not None:
+            instance.optional_subjects.clear()
+            for optional_subject_data in optional_subjects_data:
+                optional_subject, _ = Subject.objects.get_or_create(
+                    subject_code=optional_subject_data['subject_code'],
+                    defaults={'subject_name': optional_subject_data['subject_name']}
+                )
+                instance.optional_subjects.add(optional_subject)
 
         return instance
 
@@ -911,6 +917,14 @@ class StudentBillSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentBill
         fields = ['id', 'student', 'month', 'date', 'bill_number', 'fee_categories', 'transportation_fee', 'remarks', 'subtotal', 'discount', 'total_amount']
+        extra_fields = ['pre_balance', 'post_balance']
+
+    def get_pre_balance(self, obj):
+        last_transaction = obj.student.transactions.order_by('-transaction_date').first()
+        return last_transaction.balance if last_transaction else 0
+
+    def get_post_balance(self, obj):
+        return self.get_pre_balance(obj) + obj.total_amount  # Adding the bill amount
 
     def create(self, validated_data):
         fee_categories_data = validated_data.pop('fee_categories', [])  # Extract fee categories
@@ -958,18 +972,20 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     fee_categories = serializers.SerializerMethodField()
     transportation_fee = serializers.SerializerMethodField()
+    pre_balance = serializers.SerializerMethodField()
+    post_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentBill
         fields = [
-            'student', 'month', 'fee_categories', 'transportation_fee', 
+            'student', 'month', 'fee_categories', 'transportation_fee',
             'remarks', 'subtotal', 'discount', 'total_amount',
+            'pre_balance', 'post_balance'  # Added pre and post balance
         ]
 
     def get_student(self, obj):
-        # Assuming the Student model has 'user' with 'username' and 'roll_no'
         return {
-            'id':obj.student.id,
+            'id': obj.student.id,
             'name': obj.student.user.username,
             'roll_no': obj.student.roll_no,
             'phone': obj.student.phone,
@@ -984,22 +1000,31 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
         return [
             {
                 'id': fc.fee_category.id,
-                'fee_category': fc.fee_category.fee_category_name.name,  # Corrected
-                'amount': str(fc.fee_category.amount),  # Ensure accessing amount correctly
+                'fee_category': fc.fee_category.fee_category_name.name,
+                'amount': str(fc.fee_category.amount),
                 'scholarship': fc.scholarship
             }
             for fc in fee_categories
         ]
 
-    
     def get_transportation_fee(self, obj):
         if obj.transportation_fee:
             return {
-                'id':obj.transportation_fee.id,
-                'name': obj.transportation_fee.place,  # Assuming 'place' is the name
+                'id': obj.transportation_fee.id,
+                'name': obj.transportation_fee.place,
                 'amount': str(obj.transportation_fee.amount)
             }
         return None
+
+    def get_pre_balance(self, obj):
+        last_transaction = StudentTransaction.objects.filter(
+            student=obj.student, transaction_date__lt=obj.date
+        ).order_by('-transaction_date').first()
+
+        return last_transaction.balance if last_transaction else 0
+
+    def get_post_balance(self, obj):
+        return self.get_pre_balance(obj) + obj.total_amount  # Adding the bill amount
 
 
 
@@ -1010,6 +1035,14 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentPayment
         fields = ('id', 'student', 'date', 'payment_number', 'amount_paid', 'remarks')
+        extra_fields = ['pre_balance', 'post_balance']
+
+    def get_pre_balance(self, obj):
+        last_transaction = obj.student.transactions.order_by('-transaction_date').first()
+        return last_transaction.balance if last_transaction else 0
+
+    def get_post_balance(self, obj):
+        return self.get_pre_balance(obj) - obj.amount_paid  # Subtracting the payment amount
 
     def validate(self, data):
         """Validate and calculate the payment number before saving."""
@@ -1034,13 +1067,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
 
         # Determine the new balance based on the last transaction type
-        if last_transaction:
-            if last_transaction.transaction_type == 'bill':
-                new_balance = last_balance - Decimal(str(payment.amount_paid))  # Subtract from bill balance
-            elif last_transaction.transaction_type == 'payment':
-                new_balance = last_balance - Decimal(str(payment.amount_paid))  # Subtract from payment balance
-        else:
-            new_balance = Decimal(str(payment.amount_paid))  # First transaction case
+        new_balance = last_balance - Decimal(str(payment.amount_paid))
 
         # Ensure no duplicate transaction creation
         existing_transaction = StudentTransaction.objects.filter(payment=payment).exists()
@@ -1058,11 +1085,14 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
 
 class GetStudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
+    pre_balance = serializers.SerializerMethodField()
+    post_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPayment
         fields = [
-            'student', 'date', 'payment_number', 'amount_paid', 'remarks'
+            'student', 'date', 'payment_number', 'amount_paid', 'remarks',
+            'pre_balance', 'post_balance'  # Added pre and post balance
         ]
 
     def get_student(self, obj):
@@ -1077,17 +1107,32 @@ class GetStudentPaymentSerializer(serializers.ModelSerializer):
             'parents': obj.student.parents
         }
 
+    def get_pre_balance(self, obj):
+        last_transaction = StudentTransaction.objects.filter(
+            student=obj.student, transaction_date__lt=obj.date
+        ).order_by('-transaction_date').first()
+
+        return last_transaction.balance if last_transaction else 0
+
+    def get_post_balance(self, obj):
+        return self.get_pre_balance(obj) - obj.amount_paid  # Subtracting the payment amount
 
 class StudentTransactionSerializer(serializers.ModelSerializer):
     bill = serializers.SerializerMethodField()
     bill_number = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     payment_number = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+    paid_amount = serializers.SerializerMethodField()
+    month = serializers.SerializerMethodField()  # New field for month
+    remarks = serializers.SerializerMethodField()  # New field for remarks
 
     class Meta:
         model = StudentTransaction
-        fields = ["transaction_type", "bill", "bill_number", "payment", "payment_number", "balance", "transaction_date"]
-
+        fields = [
+            "transaction_type", "bill", "bill_number", "payment", "payment_number", 
+            "balance", "transaction_date", "total_amount", "paid_amount", "month", "remarks"
+        ]
 
     def get_bill(self, obj):
         return obj.bill.id if obj.bill else None
@@ -1100,3 +1145,23 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
 
     def get_payment_number(self, obj):
         return obj.payment.payment_number if obj.payment else None
+
+    def get_total_amount(self, obj):
+        """ Return total amount if it's a bill; otherwise, return None. """
+        return obj.bill.total_amount if obj.transaction_type == "bill" and obj.bill else None
+
+    def get_paid_amount(self, obj):
+        """ Return paid amount if it's a payment; otherwise, return None. """
+        return obj.payment.amount_paid if obj.transaction_type == "payment" and obj.payment else None
+
+    def get_month(self, obj):
+        """ Return the month from the bill; set to None if it's a payment. """
+        return obj.bill.month if obj.transaction_type == "bill" and obj.bill else None
+
+    def get_remarks(self, obj):
+        """ Return remarks from either bill or payment based on transaction type. """
+        if obj.transaction_type == "bill" and obj.bill:
+            return obj.bill.remarks
+        elif obj.transaction_type == "payment" and obj.payment:
+            return obj.payment.remarks
+        return None

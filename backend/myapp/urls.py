@@ -79,8 +79,9 @@ urlpatterns = [
 
     # API endpoints for classes
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
-    # path('api/classes/<str:class_code>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
+    path('api/classes/<int:class_id>/sections/', SectionListCreateAPIView.as_view(), name='section-list-create'),
+    path('api/classes/sections/<int:pk>/', SectionDetailAPIView.as_view(), name='section-detail'),
     path('api/sections/', ClassListView.as_view(), name='class-list'),
 
     path('api/events/', EventListView.as_view(), name='event-list'),
@@ -169,9 +170,9 @@ urlpatterns = [
     path('api/transportation-fees/', TransportationFeeListCreateAPIView.as_view(), name='transportation-fee-list-create'),
     path('api/transportation-fees/<int:pk>/', TransportationFeeDetailAPIView.as_view(), name='transportation-fee-detail'),
     path("api/bills/<int:student_id>/", StudentBillAPIView.as_view(), name="bill-list"),
-    path("api/bills/<int:student_id>/<int:bill_id>/", StudentBillDetailAPIView.as_view(), name="bill-detail"),
+    path("api/bills/detail/<str:bill_number>/", StudentBillDetailAPIView.as_view(), name="bill-detail"),
     path("api/payments/<int:student_id>/", StudentPaymentAPIView.as_view(), name="payment-list"),
-    path("api/payments/<int:student_id>/<int:payment_id>/", StudentPaymentDetailAPIView.as_view(), name="payment-detail"),
+    path("api/payments/detail/<str:payment_number>/", StudentPaymentDetailAPIView.as_view(), name="payment-detail"),
     path("api/transactions/<int:student_id>/", StudentTransactionsAPIView.as_view(), name="student-transactions"),
 
     path('api/dashboard/', DashboardAPIView.as_view(), name='dashboard-api'),

@@ -51,7 +51,6 @@ class Class(models.Model):
     def __str__(self):
         return self.class_name
     
-    
 class Section(models.Model):
     school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
     section_name = models.CharField(max_length=10)  # e.g., "A", "B", "C"

@@ -756,53 +756,46 @@ class LeaveApplicationStatusUpdateView(APIView):
 
 # API view to list all subjects or create a new subject
 class SubjectListCreateView(APIView):
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve a list of all subjects.
-        """
-        subjects = Subject.objects.all()  # Retrieve all Subject instances
-        serializer = SubjectSerializer(subjects, many=True)  # Serialize Subject data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    def get(self, request):
+        """Retrieve a list of all subjects."""
+        subjects = Subject.objects.all()
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, format=None):
-        """
-        Handle POST requests to create a new Subject instance.
-        """
-        serializer = SubjectSerializer(data=request.data)  # Deserialize Subject data
+    def post(self, request):
+        """Create a new subject."""
+        serializer = SubjectSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API view to retrieve, update, or delete a specific subject
 class SubjectDetailView(APIView):
-    def get(self, request, pk, format=None):
-        """
-        Handle GET requests to retrieve the details of a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        serializer = SubjectSerializer(subject)  # Serialize the Subject instance
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    def get_object(self, pk):
+        """Retrieve subject instance or return 404."""
+        return get_object_or_404(Subject, pk=pk)
 
-    def put(self, request, pk, format=None):
-        """
-        Handle PUT requests to update a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        serializer = SubjectSerializer(subject, data=request.data)  # Deserialize and validate data for updating
+    def get(self, request, pk):
+        """Retrieve a specific subject by primary key."""
+        subject = self.get_object(pk)
+        serializer = SubjectSerializer(subject)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """Update a specific subject (full update)."""
+        subject = self.get_object(pk)
+        serializer = SubjectSerializer(subject, data=request.data, partial=True)  # ✅ Partial update
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, format=None):
-        """
-        Handle DELETE requests to remove a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        subject.delete()  # Delete the Subject instance
-        return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
-
+    def delete(self, request, pk):
+        """Delete a specific subject."""
+        subject = self.get_object(pk)
+        subject.delete()
+        return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):
@@ -838,9 +831,6 @@ class ClassDetailView(APIView):
 
     # def put(self, request, pk, format=None):
     def put(self, request, pk, format=None):
-        """
-        Handle PUT requests to update a specific Class by primary key.
-        """
         class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
@@ -850,14 +840,53 @@ class ClassDetailView(APIView):
 
     # def delete(self, request, pk, format=None):
     def delete(self, request, pk, format=None):
-        """
-        Handle DELETE requests to remove a specific Class by primary key.
-        """
         class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
+class SectionListCreateAPIView(APIView):
+    def get(self, request, class_id, format=None):
+        """
+        Retrieve all sections for a specific class.
+        """
+        sections = Section.objects.filter(class_id=class_id)
+        serializer = SectionSerializer(sections, many=True)
+        return Response({"status": "success", "sections": serializer.data}, status=status.HTTP_200_OK)
 
+    def post(self, request, class_id, format=None):
+        """
+        Create a section and automatically assign it to the class from the URL.
+        """
+        class_instance = get_object_or_404(Class, id=class_id)
+
+        serializer = SectionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(class_field=class_instance)
+            return Response({"message": "Section created successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SectionDetailAPIView(APIView):
+    """
+    Handles retrieving, updating, and deleting a section.
+    """
+    def get(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        serializer = SectionSerializer(section)
+        return Response({"status": "success", "section": serializer.data}, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        serializer = SectionSerializer(section, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Section updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        section.delete()
+        return Response({"message": "Section deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 class EventListView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
@@ -2536,42 +2565,58 @@ class StudentBillAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        # Fetch the student from the provided student_id
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Check if a bill already exists for the student for the given month
+
         month = request.data.get("month")
         if StudentBill.objects.filter(student=student, month=month).exists():
             return Response({"error": "Bill already generated for this month."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Prepare the data for the serializer
+        # Calculate pre_balance (last transaction balance)
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
+        # Prepare request data
         request.data["student"] = student.id
         serializer = StudentBillSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            student_bill = serializer.save()  # Save the student bill
 
-            # Return success message with the bill number
+        if serializer.is_valid():
+            student_bill = serializer.save()
+
+            # Calculate post_balance (pre_balance + bill amount)
+            post_balance = pre_balance + student_bill.total_amount
+
+            bill_data = GetStudentBillSerializer(student_bill).data
+            bill_data.update({
+                "pre_balance": pre_balance,
+                "post_balance": post_balance
+            })
+
             return Response({
-                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}'
+                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
+                'bill_details': bill_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
 class StudentBillDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    def get(self, request, bill_number=None):
+        try:
+            # Fetch the StudentBill object
+            bill = StudentBill.objects.get(bill_number=bill_number)
 
-    def get(self, request, student_id, bill_id, *args, **kwargs):
-        bill = StudentBill.objects.filter(id=bill_id, student_id=student_id).first()
-        if not bill:
-            return Response({"error": "Bill not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Serialize the bill data
+            serializer = GetStudentBillSerializer(bill)
 
-        serializer = GetStudentBillSerializer(bill)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except StudentBill.DoesNotExist:
+            return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
     
 class StudentPaymentAPIView(APIView):
@@ -2584,32 +2629,54 @@ class StudentPaymentAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        """Create a new student payment."""
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Calculate pre_balance (last transaction balance)
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
         data = request.data
-        data['student'] = student_id  # Set the student ID for the payment
+        data['student'] = student_id
+
         serializer = StudentPaymentSerializer(data=data)
 
         if serializer.is_valid():
-            payment = serializer.save()  # Serializer already updates the balance
+            payment = serializer.save()
+
+            # Calculate post_balance (pre_balance - payment amount)
+            post_balance = pre_balance - payment.amount_paid
+
+            payment_data = GetStudentPaymentSerializer(payment).data
+            payment_data.update({
+                "pre_balance": pre_balance,
+                "post_balance": post_balance
+            })
+
             return Response({
-                'message': f'Payment done successfully with Payment Number: {payment.payment_number}'
+                'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
+                'payment_details': payment_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class StudentPaymentDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, payment_id, *args, **kwargs):
-        """Retrieve payment details with fee structure and student info."""
+    def get(self, request, payment_number=None):
         try:
-            payment = StudentPayment.objects.get(id=payment_id)
-        except StudentPayment.DoesNotExist:
-            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Fetch the StudentPayment object
+            payment = StudentPayment.objects.get(payment_number=payment_number)
 
-        serializer = GetStudentPaymentSerializer(payment)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            # Serialize the payment data
+            serializer = GetStudentPaymentSerializer(payment)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except StudentPayment.DoesNotExist:
+            return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 from rest_framework.response import Response
