@@ -2583,12 +2583,17 @@ class StudentBillAPIView(APIView):
         if serializer.is_valid():
             student_bill = serializer.save()  # Save the student bill
 
-            # Return success message with the bill number
+            # Serialize the saved bill data
+            bill_data = GetStudentBillSerializer(student_bill).data  
+
+            # Return success message along with the bill details
             return Response({
-                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}'
+                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
+                'bill_details': bill_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class StudentBillDetailAPIView(APIView):
@@ -2622,9 +2627,15 @@ class StudentPaymentAPIView(APIView):
         serializer = StudentPaymentSerializer(data=data)
 
         if serializer.is_valid():
-            payment = serializer.save()  # Serializer already updates the balance
+            payment = serializer.save()  # Save the payment
+
+            # Serialize the saved payment data
+            payment_data = GetStudentPaymentSerializer(payment).data  
+
+            # Return success message along with payment details
             return Response({
-                'message': f'Payment done successfully with Payment Number: {payment.payment_number}'
+                'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
+                'payment_details': payment_data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
