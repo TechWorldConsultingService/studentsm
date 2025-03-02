@@ -233,26 +233,20 @@
     },
     {
       "id": 4,
-      "title": "Billing",
-      "icon": "MdOutlineSpaceDashboard",
-      "subSidebar": [
-        { "id": 1, "title": "Invoice", "link": "/invoicing" },
-        { "id": 1, "title": "Ladger", "link": "/studentLadger" }
-      ]
+      "title": "Invoice",
+      "icon": "FaFileInvoiceDollar",
+      "link": "/invoicing"
     },
     {
       "id": 5,
-      "title": "Fee Collection",
-      "icon": "MdOutlineSpaceDashboard",
-      "subSidebar": [
-        { "id": 1, "title": "Ledger", "link": "/studentLadger" },
-        { "id": 2, "title": "Payment", "link": "/feePayment" }
-      ]
+      "title": "Fee Payment",
+      "icon": "MdPayments",
+      "link": "/feePayment"
     },
     {
       "id": 6,
       "title": "Fee Management",
-      "icon": "MdOutlineSpaceDashboard",
+      "icon": "MdOutlineManageHistory",
       "subSidebar": [
         { "id": 1, "title": "Category", "link": "/addCategory" },
         { "id": 2, "title": "Fee Amount", "link": "/addFeeAmount" },

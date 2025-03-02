@@ -62,14 +62,9 @@ const AddRollNumber = () => {
 
   return (
     <MainLayout>
-      {/* 
-        1. Page wrapper with gradient background.
-        2. Center the container on the page.
-      */}
       <div className="min-h-screen bg-gradient-to-r from-purple-100 via-purple-50 to-purple-100 flex items-center justify-center p-4">
         {/* Main card container */}
         <div className="bg-white w-full max-w-5xl p-8 rounded-2xl shadow-xl">
-          {/* Page Title */}
           <h1 className="text-3xl font-bold text-purple-700 text-center">
             Assign Roll Numbers
           </h1>
