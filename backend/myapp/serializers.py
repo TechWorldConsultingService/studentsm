@@ -978,7 +978,7 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentBill
         fields = [
-            'student', 'month', 'fee_categories', 'transportation_fee',
+            'student', 'month','bill_number', 'fee_categories', 'transportation_fee',
             'remarks', 'subtotal', 'discount', 'total_amount',
             'pre_balance', 'post_balance'  # Added pre and post balance
         ]
