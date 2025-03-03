@@ -481,10 +481,17 @@ class StudentPayment(models.Model):
             self.date = timezone.now()
         if not self.payment_number:  # Generate payment number only if not set
             year = str(self.date.year)
+            attempt = 1  # Track retry attempts
             # Find the next payment number for this student by counting existing payments
-            existing_payments_count = StudentPayment.objects.filter(student=self.student).count()
-            payment_number = f"{year}P{str(existing_payments_count + 1).zfill(2)}"  # Format: 2025P01, 2025P02, etc.
-            self.payment_number = payment_number  # Unique for each student        
+            while True:
+                existing_payments_count = StudentPayment.objects.filter(student=self.student).count()
+                payment_number = f"{year}P{str(existing_payments_count + 1).zfill(2)}"  # Format: 2025P01, 2025P02, etc.
+
+                if not StudentPayment.objects.filter(payment_number=payment_number).exists():
+                    self.payment_number = payment_number  # Unique for each student 
+                    break  
+
+                attempt += 1  # Increment and retry if duplicate     
         super().save(*args, **kwargs)
 
     def __str__(self):
