@@ -53,6 +53,8 @@ import LedgerPage from "./pages/accountant/LedgerPage"
 import FeePayment from "./pages/accountant/FeePaymant";
 import PaymentPage from "./pages/accountant/PaymentPage"
 import ArrayInput from "./pages/example";
+import SuccessTransection from "./pages/accountant/SuccessInvoice";
+import SuccessPayment from "./pages/accountant/SuccessPayment"
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -108,6 +110,8 @@ function App() {
 {path: "/addFeeAmount",element: <AddFeeAmount />},
 {path: "/addTransportationFee" ,element: <AddTransportationFee />},
 {path: "/invoicing/:studentId", element: <LedgerPage />},
+{path: "/successTransection", element : <SuccessTransection />},
+{path: "/successPayment", element : <SuccessPayment />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
   ]);
