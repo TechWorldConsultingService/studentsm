@@ -100,7 +100,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
 
   const formik = useFormik({
     initialValues: {
-      calendarType: "", // initially no calendar type is selected
+      calendarType: "", 
       month: "",
       remarks: "",
       fee_categories: [],
@@ -108,7 +108,6 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
     },
     validationSchema: createInvoiceSchema,
     onSubmit: async (values) => {
-      console.log("Submitting form with values:", values);
       if (!studentId) {
         toast.error("No student selected!");
         return;
@@ -130,12 +129,13 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
           payload.transportation_fee = selectedTransportationId;
         }
 
-        await axios.post(`http://localhost:8000/api/bills/${studentId}/`, payload, {
+       const res= await axios.post(`http://localhost:8000/api/bills/${studentId}/`, payload, {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${access}` },
         });
-        toast.success("Invoice created successfully!");
+        const billNum = res?.data?.bill_details?.bill_number
         fetchLedger(studentId);
-        onClose();
+        toast.success("Invoice created successfully!");
+        navigate(`/successTransection?billNumber=${billNum}`);
       } catch (error) {
         if (error.response && error.response.status === 401) {
           navigate("/");
@@ -145,6 +145,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
       }
     },
   });
+
 
   const handleCategoryCheck = (categoryId) => {
     const exists = formik.values.fee_categories.some(
@@ -171,6 +172,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
       )
     );
   };
+
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
