@@ -2924,11 +2924,19 @@ class ClassListView(APIView):
 
 
 
-class PaymentSearchADAPIView(APIView):
+import nepali_datetime as ndt
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
+
+class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        # Get dates from request body
+        # Get start and end dates from the request body
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
 
@@ -2936,73 +2944,30 @@ class PaymentSearchADAPIView(APIView):
         if not start_date or not end_date:
             return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Parse dates and validate format
         try:
-            start_date = parse_date(start_date)
-            end_date = parse_date(end_date)
+            # Check if the date is in BS format (YYYY/MM/DD) or AD format (YYYY-MM-DD)
+            if '/' in start_date and '/' in end_date:
+                # Convert BS to AD
+                start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
+                end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
+                
+                start_date_ad = start_date_bs_obj.to_datetime_date()
+                end_date_ad = end_date_bs_obj.to_datetime_date()
+            else:
+                # Parse as AD date (YYYY-MM-DD)
+                start_date_ad = parse_date(start_date)
+                end_date_ad = parse_date(end_date)
 
-            if not start_date or not end_date:
-                raise ValueError  # If parsing fails
+                if not start_date_ad or not end_date_ad:
+                    raise ValueError  # If parsing fails
 
-            if start_date > end_date:
-                return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
+                if start_date_ad > end_date_ad:
+                    return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
 
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch payments within the date range
-        payments = StudentPayment.objects.filter(date__date__range=(start_date, end_date))
-
-        # Calculate total amount directly using aggregation (efficient)
-        total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
-
-        # Serialize payment data
-        payment_data = []
-        for payment in payments:
-            student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
-            class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
-            created_by = payment.created_by.username if payment.created_by else "Unknown"
-
-            payment_data.append({
-                "student_name": student_name,
-                "class": class_name,
-                "payment_amount": payment.amount_paid,
-                "payment_date": payment.date.strftime('%Y-%m-%d'),
-                "created_by": created_by
-            })
-
-        return Response({
-            "payments": payment_data,
-            "total_payment_amount": total_amount
-        }, status=status.HTTP_200_OK)
-
-
-import nepali_datetime as ndt
-
-class PaymentSearchBSAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        # Get BS format dates from request
-        start_date_bs = request.data.get('start_date')  # Example: "2081/01/01"
-        end_date_bs = request.data.get('end_date')      # Example: "2081/01/15"
-
-        # Validate input
-        if not start_date_bs or not end_date_bs:
-            return Response({"error": "Both start_date and end_date are required in BS."}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            # Convert BS to AD correctly
-            start_date_bs_obj = ndt.date(*map(int, start_date_bs.split('/')))  # Convert "2081/01/01" → nepali_datetime.date(2081, 1, 1)
-            end_date_bs_obj = ndt.date(*map(int, end_date_bs.split('/')))      # Convert "2081/01/15" → nepali_datetime.date(2081, 1, 15)
-            
-            start_date_ad = start_date_bs_obj.to_datetime_date()  # Convert BS → AD (date object)
-            end_date_ad = end_date_bs_obj.to_datetime_date()      # Convert BS → AD (date object)
-        
-        except ValueError:
-            return Response({"error": "Invalid BS date format. Use YYYY/MM/DD."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Fetch payments between converted AD dates
+        # Fetch payments within the date range (converted to AD)
         payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
 
         # Calculate total amount directly using aggregation (efficient)
