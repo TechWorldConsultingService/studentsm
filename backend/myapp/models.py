@@ -474,6 +474,7 @@ class StudentPayment(models.Model):
     payment_number = models.CharField(max_length=10, unique=True, blank=True)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     remarks = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def save(self, *args, **kwargs):
         # Ensure date is set to the current date if not already set

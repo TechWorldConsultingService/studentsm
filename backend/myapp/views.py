@@ -2618,14 +2618,14 @@ class StudentBillDetailAPIView(APIView):
         except StudentBill.DoesNotExist:
             return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    
+
 class StudentPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all payments for a specific student."""
         payments = StudentPayment.objects.filter(student__id=student_id)
-        serializer = StudentPaymentSerializer(payments, many=True)
+        serializer = GetStudentPaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
@@ -2634,19 +2634,17 @@ class StudentPaymentAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Calculate pre_balance (last transaction balance)
         last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
         pre_balance = last_transaction.balance if last_transaction else 0
 
         data = request.data
         data['student'] = student_id
 
-        serializer = StudentPaymentSerializer(data=data)
+        serializer = StudentPaymentSerializer(data=data, context={'request': request})  # Pass request context
 
         if serializer.is_valid():
             payment = serializer.save()
 
-            # Calculate post_balance (pre_balance - payment amount)
             post_balance = pre_balance - payment.amount_paid
 
             payment_data = GetStudentPaymentSerializer(payment).data
@@ -2661,6 +2659,7 @@ class StudentPaymentAPIView(APIView):
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -2922,3 +2921,74 @@ class ClassListView(APIView):
                 })
 
         return Response(class_list)
+
+
+
+import nepali_datetime as ndt
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from datetime import datetime
+from django.db.models import Sum
+from django.utils.dateparse import parse_date
+
+class PaymentSearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        # Get start and end dates from the request body
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+
+        # Validate that both dates are provided
+        if not start_date or not end_date:
+            return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Check if the date is in BS format (YYYY/MM/DD) or AD format (YYYY-MM-DD)
+            if '/' in start_date and '/' in end_date:
+                # Convert BS to AD
+                start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
+                end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
+                
+                start_date_ad = start_date_bs_obj.to_datetime_date()
+                end_date_ad = end_date_bs_obj.to_datetime_date()
+            else:
+                # Parse as AD date (YYYY-MM-DD)
+                start_date_ad = parse_date(start_date)
+                end_date_ad = parse_date(end_date)
+
+                if not start_date_ad or not end_date_ad:
+                    raise ValueError  # If parsing fails
+
+                if start_date_ad > end_date_ad:
+                    return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
+
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch payments within the date range (converted to AD)
+        payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
+
+        # Calculate total amount directly using aggregation (efficient)
+        total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Serialize payment data
+        payment_data = []
+        for payment in payments:
+            student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
+            class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
+            created_by = payment.created_by.username if payment.created_by else "Unknown"
+
+            payment_data.append({
+                "student_name": student_name,
+                "class": class_name,
+                "payment_amount": payment.amount_paid,
+                "payment_date": payment.date.strftime('%Y-%m-%d'),
+                "created_by": created_by
+            })
+
+        return Response({
+            "payments": payment_data,
+            "total_payment_amount": total_amount
+        }, status=status.HTTP_200_OK)
