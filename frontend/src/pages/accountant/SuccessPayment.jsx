@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
 import ReceiptModal from "./ReceiptModal";
@@ -18,6 +18,14 @@ const SuccessPayment = () => {
   const handleGoBack = () => {
     navigate("/feePayment");
   };
+
+  useEffect(() => {
+    if (showReceiptModal) {
+      setTimeout(() => {
+        window.print(); 
+      }, 500); 
+    }
+  }, [showReceiptModal]);
 
   if (showReceiptModal) {
     return (

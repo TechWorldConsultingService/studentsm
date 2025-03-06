@@ -16,10 +16,6 @@ import TeacherHomePage from "./pages/teacherdashboard";
 import Profile from "./pages/profile";
 import MyStudents from "./pages/myStudents";
 import AcademicCalendar from "./pages/calendar";
-import ApplyLeave from "./pages/leave/applyLeave";
-import ViewLeave from "./pages/leave/viewLeave";
-import Myleave from "./pages/leave/myleave";
-import LeaveDetail from "./pages/leave/leaveDetails";
 import HomePage from "./pages/homepage";
 import LearningManagemanetSystem from "./pages/LMS/lms";
 import Subject from "./pages/LMS/subject";
@@ -39,9 +35,6 @@ import StudentRoutine from "./pages/reports/StudentRoutine";
 import ExamPublish from "./pages/reports/ExamPublish";
 import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher";
 import AddRollNumber from "./pages/Teacher/AddRollNumber"
-import LeavesDashboard from "./pages/leave/newLeavesDashboard";
-import ManageLeaves from "./pages/leave/newManageLeaves";
-import MyLeaves from "./pages/leave/newMyLeaves";
 import PrincipalCalendar from "./pages/Calander/PrincipalCalendar"
 import AccountantList from "./pages/principal/accountent/AccountentList";
 import AccountantDashboard from "./pages/AccountantDahboard"
@@ -55,6 +48,8 @@ import PaymentPage from "./pages/accountant/PaymentPage"
 import ArrayInput from "./pages/example";
 import SuccessTransection from "./pages/accountant/SuccessInvoice";
 import SuccessPayment from "./pages/accountant/SuccessPayment"
+import MyLeaves from "./pages/leave/MyLeaves";
+import ManageAllLeaves from "./pages/leave/ManageAllLeaves";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
@@ -72,10 +67,6 @@ function App() {
     { path: "/myrequest", element: <MyRequest /> },
     { path: "/allrequest", element: <AllRequest /> },
     { path: "/mybus", element: <MyBus /> },
-    { path: "/applyLeave", element: <ApplyLeave /> },
-    { path: "/viewLeave", element: <ViewLeave /> },
-    { path: "/leave-view/:id", element: <LeaveDetail /> },
-    { path: "/myLeave", element: <Myleave /> },
     { path: "/profile", element: <Profile /> },
     { path: "/myStudents", element: <MyStudents /> },
     { path: "/lms", element: <LearningManagemanetSystem /> },
@@ -96,9 +87,6 @@ function App() {
     { path: "/exam-details/:examId", element: <AddExamDetailsByPrincipal /> },
     { path: "/examRoutine", element: <StudentRoutine /> },
     {path: "/addRollNumber", element: <AddRollNumber />},
-    {path: "/myLeavePrincipal", element: <LeavesDashboard />},
-    {path: "manage-leaves", element: <ManageLeaves />},
-    {path: "my-leaves", element: <MyLeaves />},
     { path:"/principal-calendar", element:<PrincipalCalendar />},
 {path: "/attendancePrincipal", element: <AttendancePrincipal />},
 {path: "/accountantList", element: <AccountantList />},
@@ -112,6 +100,8 @@ function App() {
 {path: "/invoicing/:studentId", element: <LedgerPage />},
 {path: "/successTransection", element : <SuccessTransection />},
 {path: "/successPayment", element : <SuccessPayment />},
+{path:"/my-leaves" , element:<MyLeaves />},
+{path:"/manage-leaves", element:<ManageAllLeaves />},
     { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
     { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
   ]);

@@ -26,6 +26,24 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.creator.username}"
+    
+
+class DateSetting(models.Model):
+    is_ad = models.BooleanField(default=True)  # True = AD, False = BS
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        self.pk = 1
+        super(DateSetting, self).save(*args, **kwargs)
+
+    @classmethod
+    def get_instance(cls):
+        instance, _ = cls.objects.get_or_create(pk=1)
+        return instance
+
+    def __str__(self):
+        return f"Date Format: {'AD' if self.is_ad else 'BS'}"
+
 
 class Policies(models.Model):
     policies = models.CharField(max_length=2000, unique=True)

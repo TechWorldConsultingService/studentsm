@@ -44,6 +44,31 @@ class PostListCreateView(generics.ListCreateAPIView):
         else:
             raise PermissionDenied("You do not have permission to create posts.")
         
+
+
+class DateSettingView(APIView):
+    """
+    API to get and update the global date setting.
+    """
+
+    def get(self, request):
+        """Fetch the current date setting (AD or BS)."""
+        setting = DateSetting.get_instance()
+        return Response({"is_ad": setting.is_ad}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Update the date setting (AD or BS)."""
+        setting = DateSetting.get_instance()
+        is_ad = request.data.get("is_ad")  # Boolean value expected
+
+        if is_ad is not None:
+            setting.is_ad = is_ad
+            setting.save()
+            return Response({"message": "Date setting updated", "is_ad": setting.is_ad}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "Missing 'is_ad' parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        
 # View for handling teacher registration
 # @csrf_exempt
 class RegisterTeacherView(APIView):
@@ -2925,12 +2950,6 @@ class ClassListView(APIView):
 
 
 import nepali_datetime as ndt
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from datetime import datetime
-from django.db.models import Sum
-from django.utils.dateparse import parse_date
 
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]

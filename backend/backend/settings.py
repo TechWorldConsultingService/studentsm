@@ -176,8 +176,9 @@ CORS_ALLOW_METHODS = [
     'GET',
     'POST',
     'PUT',
+    'PATCH',  # Include PATCH method
     'DELETE',
-    'OPTIONS', # Include OPTIONS for preflight
+    'OPTIONS',  # Include OPTIONS for preflight
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True  # Temporarily allow all origins for testing
