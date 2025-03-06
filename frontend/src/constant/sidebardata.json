@@ -46,7 +46,7 @@
       "id": 8,
       "title": "Leave",
       "icon": "MdCoPresent",
-      "link": "/myLeave"
+      "link": "/my-leaves"
     },
     {
       "id": 9,
@@ -98,8 +98,9 @@
       "title": "Leave",
       "icon": "MdCoPresent",
       "subSidebar": [
-        { "id": 1, "title": "View", "link": "/viewLeave" },
-        { "id": 2, "title": "Apply", "link": "/myleave" }
+        { "id": 1, "title": "Manage", "link": "/manage-leaves" },
+        { "id": 2, "title": "My Leave", "link": "/my-leaves" }
+
       ]
     },
     {
@@ -194,8 +195,7 @@
       "icon": "MdCoPresent",
       "subSidebar": [
         { "id": 1, "title": "Overview", "link": "/myleavePrincipal" },
-        { "id": 2, "title": "Manage Leave", "link": "/manage-leaves" },
-        { "id": 2, "title": "My Leaves", "link": "/my-leaves" }
+        { "id": 2, "title": "Manage Leave", "link": "/manage-leaves" }
       ]
     },
     {

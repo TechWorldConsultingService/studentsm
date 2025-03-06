@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
-import BillModal from "./BillModal"; // Adjust the path as needed
+import BillModal from "./BillModal"; 
 
 const SuccessInvoice = () => {
   const location = useLocation();
@@ -19,7 +19,14 @@ const SuccessInvoice = () => {
     navigate("/invoicing");
   };
 
-  // Render BillModal when the user chooses to view the details
+  useEffect(() => {
+    if (showBillModal) {
+      setTimeout(() => {
+        window.print(); 
+      }, 500); 
+    }
+  }, [showBillModal]);
+
   if (showBillModal) {
     return <BillModal billNumber={billNumber} onClose={handleGoBack} />;
   }
@@ -27,12 +34,12 @@ const SuccessInvoice = () => {
   return (
     <MainLayout>
       <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-1/3 ">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-1/3">
           <h1 className="text-3xl font-bold text-green-700 mb-4">
             Invoice Created Successfully!
           </h1>
           <p className="mb-6">Your invoice was created successfully.</p>
-          <p className="mb-6">Would you like to view the invoice details?</p>
+          <p className="mb-6">Would you like to view and print the invoice?</p>
           <div className="flex space-x-4 items-center justify-center">
             <button
               onClick={handleViewDetails}
