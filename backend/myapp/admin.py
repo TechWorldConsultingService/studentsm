@@ -10,6 +10,11 @@ class PostAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)  # Default ordering (newest posts first)
     date_hierarchy = 'created_at'  # Adds a date-based drill-down for `created_at`
 
+@admin.register(DateSetting)
+class DateSettingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'is_ad')  # Show ID and whether it's AD or BS
+    list_editable = ('is_ad',)  # Allow quick toggle in the list view
+
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'get_first_name', 'phone', 'address', 'gender', 'class_teacher')
