@@ -89,24 +89,12 @@ urlpatterns = [
 
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
-    
-    # New endpoint for teachers to see their created assignments
-    path('api/teacher/assignments/', TeacherAssignmentsView.as_view(), name='teacher-assignments'),
-    
-    #endpoint for student to see their assignments as per subject
-    path('api/student/assignments/subject/', StudentAssignmentsBySubjectView.as_view(), name='student-assignments-by-subject'),
-
-    # Filter subjects for a teacher and class
-    path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'),
-
-    # Get assignments for students / to see all the assginments given by teacher
-    path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'),
-    
-    # Submit assignment by the student
-    path('api/submit-assignment/', SubmitStudentAssignmentView.as_view(), name='assignment-list'),
-    
-    # Review assignments by the teacher
-    path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'),
+    path('api/teacher/assignments/', TeacherAssignmentsView.as_view(), name='teacher-assignments'),# New endpoint for teachers to see their created assignments
+    path('api/student/assignments/subject/', StudentAssignmentsBySubjectView.as_view(), name='student-assignments-by-subject'),#endpoint for student to see their assignments as per subject
+    path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'), # Filter subjects for a teacher and class
+    path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'), # Get assignments for students / to see all the assginments given by teacher
+    path('api/submit-assignment/', SubmitStudentAssignmentView.as_view(), name='assignment-list'), # Submit assignment by the student
+    path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'), # Review assignments by the teacher
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
 
@@ -179,7 +167,7 @@ urlpatterns = [
     path('api/attendance-summary/<str:date>/', AttendanceSummaryAPIView.as_view(), name='attendance-summary'),
     path('api/syllabus-summary/<int:teacher_id>/', SyllabusSummaryAPIView.as_view(), name='assignment-syllabus'),
     path('api/fee-summary/', FeeDashboardAPIView.as_view(), name='fee-summary'),
-
+    path('api/payments/search/', PaymentSearchAPIView.as_view(), name='payment-search'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
