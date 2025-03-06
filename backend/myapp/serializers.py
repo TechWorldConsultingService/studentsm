@@ -986,8 +986,9 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
     def get_student(self, obj):
         return {
             'id': obj.student.id,
-            'name': obj.student.user.username,
+            'name': obj.student.user.get_full_name(),
             'roll_no': obj.student.roll_no,
+            'class': obj.student.class_code.class_name,
             'phone': obj.student.phone,
             'address': obj.student.address,
             'date_of_birth': obj.student.date_of_birth,
@@ -1027,79 +1028,59 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
         return self.get_pre_balance(obj) + obj.total_amount  # Adding the bill amount
 
 
-
 class StudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())  # Auto-set the logged-in user
     amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
 
     class Meta:
         model = StudentPayment
-        fields = ('id', 'student', 'date', 'payment_number', 'amount_paid', 'remarks')
-        extra_fields = ['pre_balance', 'post_balance']
-
-    def get_pre_balance(self, obj):
-        last_transaction = obj.student.transactions.order_by('-transaction_date').first()
-        return last_transaction.balance if last_transaction else 0
-
-    def get_post_balance(self, obj):
-        return self.get_pre_balance(obj) - obj.amount_paid  # Subtracting the payment amount
+        fields = ('id', 'student', 'created_by', 'date', 'payment_number', 'amount_paid', 'remarks')
 
     def validate(self, data):
-        """Validate and calculate the payment number before saving."""
-        amount_paid = data.get('amount_paid', Decimal('0.00'))
-        if amount_paid < 0:
+        if data.get('amount_paid', Decimal('0.00')) < 0:
             raise serializers.ValidationError("Amount paid cannot be negative")
-
-        return data  # ✅ Return validated data
+        return data
 
     def create(self, validated_data):
-        # Create the payment
+        user = self.context['request'].user  # Get the logged-in user
+        validated_data['created_by'] = user  # Set `created_by` automatically
         payment = StudentPayment.objects.create(**validated_data)
 
-        # Fetch the last transaction based on the most recent transaction date
-        last_transaction = (
-            StudentTransaction.objects.filter(student=payment.student)
-            .order_by('-transaction_date')
-            .first()
-        )
-
-        # Default to 0 balance if no previous transaction exists
+        last_transaction = StudentTransaction.objects.filter(student=payment.student).order_by('-transaction_date').first()
         last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
-
-        # Determine the new balance based on the last transaction type
         new_balance = last_balance - Decimal(str(payment.amount_paid))
 
-        # Ensure no duplicate transaction creation
-        existing_transaction = StudentTransaction.objects.filter(payment=payment).exists()
-        if not existing_transaction:
+        if not StudentTransaction.objects.filter(payment=payment).exists():
             StudentTransaction.objects.create(
                 student=payment.student,
                 transaction_type='payment',
                 payment=payment,
                 balance=new_balance,
-                transaction_date=payment.date  # Use the payment's date as the transaction date
+                transaction_date=payment.date
             )
 
         return payment
 
-
 class GetStudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
+    created_by = serializers.CharField(source="created_by.username", read_only=True)  # Show username
     pre_balance = serializers.SerializerMethodField()
     post_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPayment
         fields = [
-            'student', 'date', 'payment_number', 'amount_paid', 'remarks',
-            'pre_balance', 'post_balance'  # Added pre and post balance
+            'student', 'created_by', 'date', 'payment_number', 'amount_paid', 'remarks',
+            'pre_balance', 'post_balance'
         ]
 
     def get_student(self, obj):
         return {
             'id': obj.student.id,
-            'name': obj.student.user.username,
+            'name': obj.student.user.get_full_name(),
             'roll_no': obj.student.roll_no,
+            'class': obj.student.class_code.class_name,
             'phone': obj.student.phone,
             'address': obj.student.address,
             'date_of_birth': obj.student.date_of_birth,
@@ -1111,11 +1092,10 @@ class GetStudentPaymentSerializer(serializers.ModelSerializer):
         last_transaction = StudentTransaction.objects.filter(
             student=obj.student, transaction_date__lt=obj.date
         ).order_by('-transaction_date').first()
-
         return last_transaction.balance if last_transaction else 0
 
     def get_post_balance(self, obj):
-        return self.get_pre_balance(obj) - obj.amount_paid  # Subtracting the payment amount
+        return self.get_pre_balance(obj) - obj.amount_paid
 
 class StudentTransactionSerializer(serializers.ModelSerializer):
     bill = serializers.SerializerMethodField()
