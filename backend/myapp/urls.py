@@ -34,6 +34,8 @@ urlpatterns = [
     # API endpoint for posts
     path('api/posts/', PostListCreateView.as_view(), name='post-list-create'),
 
+    path("api/date-setting/", DateSettingView.as_view(), name="date-setting"),
+
     # API endpoints for user registration
     path('api/register/teacher/', RegisterTeacherView.as_view(), name='register-teacher'),  # URL for teacher registration API
     path('api/register/principal/', RegisterPrincipalView.as_view(), name='register-principal'),  # URL for principal registration API
