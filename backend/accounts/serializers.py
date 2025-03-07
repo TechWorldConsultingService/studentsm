@@ -7,6 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         # Fields to be included in the serialized representation
+        # fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_accountant','is_driver')
         fields = ('username', 'email', 'password', 'first_name', 'last_name', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_accountant')
         # Ensure password is write-only (won't be returned in response)
         extra_kwargs = {'password': {'write_only': True}}
@@ -54,6 +55,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         elif role == 'student':
             user.is_student = True
         elif role == 'accountant':
+            user.is_accountant = True
+        elif role == 'driver':
             user.is_accountant = True
         
         # Set the user's password

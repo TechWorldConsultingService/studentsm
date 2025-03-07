@@ -9,3 +9,4 @@ class CustomUser(AbstractUser):
     is_teacher = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
     is_accountant = models.BooleanField(default=False)
+    # is_driver = models.BooleanField(default=False)

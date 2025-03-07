@@ -14,5 +14,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "src/screens/TeacherDashboard.tsx", "src/screens/StudentDashboard.tsx", "src/screens/PrincipalDashboard.tsx"  ]
+, "src/screens/teacher/TeacherDashboard.tsx", "src/screens/student/StudentDashboard.tsx", "src/screens/principal/PrincipalDashboard.tsx"  ]
 }

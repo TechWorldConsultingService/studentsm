@@ -68,7 +68,6 @@ class Class(models.Model):
 
     def __str__(self):
         return self.class_name
-
     
 class Section(models.Model):
     school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
@@ -78,7 +77,8 @@ class Section(models.Model):
         return f"{self.school_class.class_name} - {self.section_name}"
     
 class Teacher(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField() 
@@ -97,8 +97,11 @@ class Teacher(models.Model):
         self.user.delete()  # Delete the associated user
         super().delete(*args, **kwargs)  # Call the parent delete method
 
+
+
 class Principal(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
@@ -111,7 +114,8 @@ class Principal(models.Model):
         super().delete(*args, **kwargs)  # Call the parent delete method
 
 class Student(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_birth = models.DateField()
@@ -129,7 +133,8 @@ class Student(models.Model):
         super().delete(*args, **kwargs)
 
 class Accountant(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 
 
 const SelectClassForAttendance = ({setSelectedClassForAttendance}) => {
-    const { classes } = useSelector((state) => state.user);
+  const { classes } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [selectedClass, setSelectedClass] = useState("");
 

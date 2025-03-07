@@ -32,6 +32,7 @@ const LoginScreen: React.FC = () => {
     setError("");
     try {
       const userData = await loginUser(username, password);
+
       console.log("User Data:", userData);
       if (userData && userData.role) {
         navigateToDashboard(userData.role);
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f4f4f4",
+    backgroundColor: "#F1C338",
     paddingHorizontal: 20,
   },
   card: {
@@ -89,6 +90,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     elevation: 4,
+    backgroundColor: "#ffaa33",
   },
   title: {
     textAlign: "center",
