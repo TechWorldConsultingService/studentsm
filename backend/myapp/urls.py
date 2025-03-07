@@ -91,6 +91,10 @@ urlpatterns = [
 
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),
+    # Delete homework by same teacher
+    path('api/assignments/<int:assignment_id>/delete/', DeleteAssignmentView.as_view(), name='delete-homework'),
+    # Update assigned assignment by teacher
+    path('api/assignments/<int:assignment_id>/update/', UpdateAssignmentView.as_view(), name='update-assignment'),
     path('api/teacher/assignments/', TeacherAssignmentsView.as_view(), name='teacher-assignments'),# New endpoint for teachers to see their created assignments
     path('api/student/assignments/subject/', StudentAssignmentsBySubjectView.as_view(), name='student-assignments-by-subject'),#endpoint for student to see their assignments as per subject
     path('api/filter-subjects/', FilterSubjectsView.as_view(), name='filter-subjects'), # Filter subjects for a teacher and class
@@ -99,6 +103,9 @@ urlpatterns = [
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'), # Review assignments by the teacher
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
+    # delete submited assignment of student by student if not reviewed yet
+    path('api/delete-submission/<int:submission_id>/', DeleteStudentSubmissionView.as_view(), name='delete-submission'),
+
 
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),

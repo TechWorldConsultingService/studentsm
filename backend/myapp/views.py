@@ -996,6 +996,7 @@ class StudentAssignmentsBySubjectView(APIView):
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# to assign homework for student by teacher
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
 
@@ -1031,6 +1032,57 @@ class AssignHomeworkView(APIView):
             return Response(AssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
         # Return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# delete assignment by same teacher who assigned the assignment
+class DeleteAssignmentView(APIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request, assignment_id, format=None):
+        # Ensure the request has a logged-in user
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if the user is a teacher
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can delete assignments."}, status=status.HTTP_403_FORBIDDEN)
+        
+        teacher = request.user.teacher  # Get the associated teacher instance
+        
+        try:
+            assignment = Assignment.objects.get(id=assignment_id, teacher=teacher)
+        except Assignment.DoesNotExist:
+            return Response({"error": "Assignment not found or you are not authorized to delete it."}, status=status.HTTP_404_NOT_FOUND)
+        
+        assignment.delete()
+        return Response({"message": "Assignment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# update assignment detail by teacher
+class UpdateAssignmentView(APIView):
+    permission_classes = [AllowAny]
+
+    def put(self, request, assignment_id, format=None):
+        # Ensure the request has a logged-in user
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if the user is a teacher
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can update assignments."}, status=status.HTTP_403_FORBIDDEN)
+        
+        teacher = request.user.teacher  # Get the associated teacher instance
+        
+        try:
+            assignment = Assignment.objects.get(id=assignment_id, teacher=teacher)
+        except Assignment.DoesNotExist:
+            return Response({"error": "Assignment not found or you are not authorized to update it."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = AssignmentSerializer(assignment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class FilterSubjectsView(APIView):
     permission_classes = [AllowAny]
@@ -1164,6 +1216,37 @@ class SubmitStudentAssignmentView(APIView):
         serializer = AssignmentSubmissionSerializer(submission)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
+# delete submitted assignment of student by student if not reviewed yet:
+class DeleteStudentSubmissionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, submission_id, format=None):
+        try:
+            student = request.user.student  # Ensure the user is a student
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can delete their submissions."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            submission = AssignmentSubmission.objects.get(id=submission_id, student=request.user)
+        except AssignmentSubmission.DoesNotExist:
+            return Response(
+                {"error": "Submission not found or you are not authorized to delete it."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if submission.is_checked:
+            return Response(
+                {"error": "You cannot delete a submission that has been reviewed by the teacher."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        submission.delete()
+        return Response({"message": "Submission deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
 # review list of assignements given by teacher//uses by teacher 
 class ReviewAssignmentsView(APIView):
     permission_classes = [IsAuthenticated]
