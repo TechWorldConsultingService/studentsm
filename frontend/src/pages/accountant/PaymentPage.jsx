@@ -106,7 +106,6 @@ const PaymentPage = () => {
           <form onSubmit={formik.handleSubmit}>
             <div className="mb-4">
               <label
-                htmlFor="amount_paid"
                 className="block font-semibold text-purple-800 mb-2"
               >
                 Amount Paid

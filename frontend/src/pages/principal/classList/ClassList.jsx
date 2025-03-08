@@ -1,3 +1,4 @@
+// ClassList.js
 import React, { useState, useEffect } from "react";
 import MainLayout from "../../../layout/MainLayout";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,7 @@ import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import AddClassModal from "./AddClassModal";
 import EditClassModal from "./EditClassModal";
+import SectionListModal from "./SectionListModal"; // import your new modal
 
 const ClassList = () => {
   const { access } = useSelector((state) => state.user);
@@ -18,6 +20,10 @@ const ClassList = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false); 
   const [classToDelete, setClassToDelete] = useState(null); 
+
+  // New state for section modal
+  const [showSectionListModal, setShowSectionListModal] = useState(false);
+  const [selectedClassIdForSection, setSelectedClassIdForSection] = useState(null);
 
   // Fetch classes 
   const fetchClasses = async () => {
@@ -108,6 +114,17 @@ const ClassList = () => {
     setShowDeleteModal(false); 
   };
 
+  // New handler for showing section modal
+  const handleShowSections = (classId) => {
+    setSelectedClassIdForSection(classId);
+    setShowSectionListModal(true);
+  };
+
+  const handleCloseSectionListModal = () => {
+    setShowSectionListModal(false);
+    setSelectedClassIdForSection(null);
+  };
+
   return (
     <MainLayout>
       <div className="bg-purple-50 p-6">
@@ -154,7 +171,7 @@ const ClassList = () => {
                       <td className="px-4 py-2">{classItem.class_name}</td>
                       <td className="px-4 py-2">
                         <button
-                          onClick={() => handleViewDetails(classItem)} // View Details
+                          onClick={() => handleViewDetails(classItem)}
                           className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
                         >
                           View Details
@@ -167,9 +184,16 @@ const ClassList = () => {
                         </button>
                         <button
                           onClick={() => handleConfirmDelete(classItem.id)} 
-                          className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
+                          className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800 mr-2"
                         >
                           Delete
+                        </button>
+                        {/* New "Sections" button */}
+                        <button
+                          onClick={() => handleShowSections(classItem.id)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        >
+                          Sections
                         </button>
                       </td>
                     </tr>
@@ -183,7 +207,7 @@ const ClassList = () => {
         </div>
 
         {/* Modal for class details */}
-        {selectedClass && !isEditMode && (  // Only show details modal when not in edit mode
+        {selectedClass && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
               <h2 className="text-2xl font-bold text-purple-800">
@@ -196,7 +220,6 @@ const ClassList = () => {
                 <p className="text-gray-700">
                   <strong>Class Name:</strong> {selectedClass.class_name}
                 </p>
-
                 <p className="text-gray-700">
                   <strong>Subject List:</strong> Subject code along with subject name:
                   <br />
@@ -207,7 +230,6 @@ const ClassList = () => {
                     </span>
                   ))}
                 </p>
-
               </div>
               <div className="mt-6 text-center">
                 <button
@@ -246,7 +268,7 @@ const ClassList = () => {
           </div>
         )}
 
-        {/* Add or Edit Modal */}
+        {/* Add or Edit Class Modal */}
         {showModal &&
           (isEditMode ? (
             <EditClassModal
@@ -260,6 +282,14 @@ const ClassList = () => {
               fetchClasses={fetchClasses} 
             />
           ))}
+          
+        {/* Section List Modal */}
+        {showSectionListModal && (
+          <SectionListModal
+            classId={selectedClassIdForSection}
+            handleCloseSectionListModal={handleCloseSectionListModal}
+          />
+        )}
       </div>
     </MainLayout>
   );

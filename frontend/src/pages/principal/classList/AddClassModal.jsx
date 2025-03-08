@@ -8,10 +8,10 @@ import * as Yup from "yup";
 import { Select } from "antd";
 
 export const addClassSchema = Yup.object().shape({
-  class_code: Yup.number()
-    .required("Class Code is Required.")
-    .typeError("Class Code must be a number."),
-  class_name: Yup.string().required("Class Name is Required."),
+  class_code: Yup.string()
+    .required("Class Code is required.")
+    .typeError("Class Code must be a string."),
+  class_name: Yup.string().required("Class Name is required."),
   subjects: Yup.array()
     .min(3, "At least three subjects must be selected.")
     .of(
@@ -20,28 +20,29 @@ export const addClassSchema = Yup.object().shape({
         subject_code: Yup.string().required("Subject code is required."),
       })
     ),
-  sections: Yup.array()
-    .of(Yup.string().required("Section name is required."))
-    .optional(),
+  optional_subjects: Yup.array().of(
+    Yup.object().shape({
+      subject_name: Yup.string().required("Subject name is required."),
+      subject_code: Yup.string().required("Subject code is required."),
+    })
+  ),
 });
 
 const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [subjectList, setSubjectList] = useState([]);
-  const [sectionInput, setSectionInput] = useState("");
-  const [sections, setSections] = useState([]); // State to store sections
+  const [optionalSubjectList, setOptionalSubjectList] = useState([]);
 
   const formik = useFormik({
     initialValues: {
       class_code: "",
       class_name: "",
       subjects: [],
-      sections: [],
+      optional_subjects: [],
     },
     validationSchema: addClassSchema,
     onSubmit: async (values) => {
-      values.sections = sections; // Assign sections array before submitting
       await addClass(values);
     },
   });
@@ -88,8 +89,27 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
     }
   };
 
+  const fetchOptionalSubjects = async () => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/optional_subjects/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setOptionalSubjectList(data);
+    } catch (error) {
+      toast.error("Error fetching optional subjects:", error.message || error);
+    }
+  };
+
   useEffect(() => {
     fetchSubjects();
+    fetchOptionalSubjects();
   }, [access, navigate]);
 
   const handleSubjectChange = (selectedValues) => {
@@ -105,17 +125,17 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
     formik.setFieldValue("subjects", selectedSubjects);
   };
 
-  // Handle adding sections dynamically
-  const handleAddSection = () => {
-    if (sectionInput.trim() !== "" && !sections.includes(sectionInput)) {
-      setSections([...sections, sectionInput]);
-      setSectionInput("");
-    }
-  };
-
-  // Handle removing a section
-  const handleRemoveSection = (section) => {
-    setSections(sections.filter((s) => s !== section));
+  const handleOptionalSubjectChange = (selectedValues) => {
+    const selectedOptionalSubjects = selectedValues.map((subjectName) => {
+      const subject = optionalSubjectList.find(
+        (item) => item.subject_name === subjectName
+      );
+      return {
+        subject_name: subject.subject_name,
+        subject_code: subject.subject_code,
+      };
+    });
+    formik.setFieldValue("optional_subjects", selectedOptionalSubjects);
   };
 
   return (
@@ -123,10 +143,15 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800">Add Class</h2>
         <form onSubmit={formik.handleSubmit} className="mt-4">
+          {/* Class Code */}
           <div className="mb-4">
+            <label htmlFor="class_code" className="block text-sm font-semibold ">
+              Class Code:
+            </label>
             <input
               type="text"
-              className="border border-gray-300 p-2 rounded w-full"
+              id="class_code"
+              className="border border-gray-300 p-2 rounded w-full mt-1"
               placeholder="Class Code"
               name="class_code"
               onChange={formik.handleChange}
@@ -140,10 +165,15 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
             )}
           </div>
 
+          {/* Class Name */}
           <div className="mb-4">
+            <label htmlFor="class_name" className="block text-sm font-semibold">
+              Class Name:
+            </label>
             <input
               type="text"
-              className="border border-gray-300 p-2 rounded w-full"
+              id="class_name"
+              className="border border-gray-300 p-2 rounded w-full mt-1"
               placeholder="Class Name"
               name="class_name"
               onChange={formik.handleChange}
@@ -157,12 +187,16 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
             )}
           </div>
 
+          {/* Select Subjects */}
           <div className="mb-4 border border-gray-300 p-2 rounded w-full">
+            <label htmlFor="subjects" className="block text-sm font-semibold ">
+             Composary Subjects: 
+            </label>
             <Select
               mode="multiple"
               name="subjects"
-              placeholder="Select all subjects"
-              className="w-full"
+              placeholder="Select Composary Subject"
+              className="w-full mt-1"
               onChange={handleSubjectChange}
               onBlur={formik.handleBlur}
               value={formik.values.subjects.map(
@@ -183,39 +217,37 @@ const AddClassModal = ({ handleCloseModal, fetchClasses }) => {
             )}
           </div>
 
-          {/* Sections Input */}
-          <div className="mb-4">
-            <input
-              type="text"
-              className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Add Section"
-              value={sectionInput}
-              onChange={(e) => setSectionInput(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={handleAddSection}
-              className="bg-green-500 text-white px-4 py-2 rounded mt-2"
+          {/* Select Optional Subjects */}
+          <div className="mb-4 border border-gray-300 p-2 rounded w-full">
+            <label htmlFor="optional_subjects" className="block text-sm font-semibold ">
+              Optional Subjects
+            </label>
+            <Select
+              mode="multiple"
+              name="optional_subjects"
+              placeholder="Select Optional Subjects"
+              className="w-full mt-1"
+              onChange={handleOptionalSubjectChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.optional_subjects.map(
+                (subject) => subject.subject_name
+              )}
             >
-              Add Section
-            </button>
-
-            <ul className="mt-2">
-              {sections.map((section, index) => (
-                <li key={index} className="flex justify-between bg-gray-100 p-2 rounded mt-1">
-                  {section}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSection(section)}
-                    className="text-red-500"
-                  >
-                    ❌
-                  </button>
-                </li>
-              ))}
-            </ul>
+              {optionalSubjectList.length > 0 &&
+                optionalSubjectList.map((item) => (
+                  <Select.Option key={item.id} value={item.subject_name}>
+                    {item.subject_name}
+                  </Select.Option>
+                ))}
+            </Select>
+            {formik.touched.optional_subjects && formik.errors.optional_subjects && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.optional_subjects}
+              </div>
+            )}
           </div>
 
+          {/* Submit and Cancel Buttons */}
           <div className="mt-6 text-center">
             <button
               type="submit"
