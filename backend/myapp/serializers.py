@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from datetime import datetime
+from django.shortcuts import get_object_or_404
 
 
 # Serializer for the CustomUser model
@@ -81,6 +82,17 @@ class SectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Section
         fields = ['id', 'school_class', 'school_class_name', 'section_name']
+        extra_kwargs = {'school_class': {'required': False}}  # Make school_class optional in input
+
+    def create(self, validated_data):
+        """
+        Assign the school_class automatically when creating a section.
+        """
+        class_id = self.context.get('class_id')  # Retrieve class_id from serializer context
+        school_class = get_object_or_404(Class, id=class_id)  # Fetch the class instance
+        validated_data['school_class'] = school_class  # Assign class instance
+        return super().create(validated_data)  # Proceed with creation
+
 
 # Serializer for the subjects
 class SubjectSerializer(serializers.ModelSerializer):
