@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
-from accounts.models import *
 from datetime import datetime
+
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
@@ -62,6 +62,18 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+    
+# Serializer for user login
+class LoginSerializer(serializers.Serializer):
+    # Username field for login
+    username = serializers.CharField()
+    # Password field for login
+    password = serializers.CharField()
+
+# Serializer for user logout
+class LogoutSerializer(serializers.Serializer):
+    # Refresh token field for logout
+    refresh = serializers.CharField()
 
 class SectionSerializer(serializers.ModelSerializer):
     school_class_name = serializers.CharField(source="school_class.class_name", read_only=True)

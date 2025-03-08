@@ -6,19 +6,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
 from rest_framework.routers import DefaultRouter
-from .views import (
-    AssignHomeworkView,
-    FilterSubjectsView,
-    StudentAssignmentsView,
-    SubmitStudentAssignmentView,
-    ReviewAssignmentsView,
-    ExamsByClassView,
-    ExamTimetableView,
-    SyllabusView,
-    ChapterViewSet,
-    TopicViewSet,
-    SubtopicViewSet,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+
 
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
@@ -30,6 +19,9 @@ router.register(r'subtopics', SubtopicViewSet)
 urlpatterns = [
     # Admin site URL
     # path('dashboard/', admin.site.urls),  # URL for the Django admin dashboard
+    path('api/login/', LoginAPIView.as_view(), name='api-login'),
+    path('api/logout/', LogoutAPIView.as_view(), name='api-logout'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # API endpoint for posts
     path('api/posts/', PostListCreateView.as_view(), name='post-list-create'),
