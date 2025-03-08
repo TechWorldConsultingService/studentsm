@@ -1018,6 +1018,22 @@ class SubjectDetailView(APIView):
         subject = self.get_object(pk)
         subject.delete()
         return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+    
+class CompulsorySubjectsAPIView(APIView):
+    """API to list all compulsory subjects (is_optional=False)"""
+    
+    def get(self, request):
+        subjects = Subject.objects.filter(is_optional=False)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
+
+class OptionalSubjectsAPIView(APIView):
+    """API to list all optional subjects (is_optional=True)"""
+    
+    def get(self, request):
+        subjects = Subject.objects.filter(is_optional=True)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):

@@ -70,6 +70,8 @@ urlpatterns = [
     # API endpoints for subjects
     path('api/subjects/', SubjectListCreateView.as_view(), name='subject-list-create'),  # Endpoint for listing and creating subjects
     path('api/subjects/<int:pk>/', SubjectDetailView.as_view(), name='subject-detail'),  # Endpoint for subject details, update, and delete
+    path('api/subjects/compulsory/', CompulsorySubjectsAPIView.as_view(), name='compulsory-subjects'),
+    path('api/subjects/optional/', OptionalSubjectsAPIView.as_view(), name='optional-subjects'),
 
     # API endpoints for classes
     path('api/classes/', ClassListCreateView.as_view(), name='class-list-create'),  # Endpoint for listing and creating classes
