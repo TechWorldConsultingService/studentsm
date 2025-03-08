@@ -582,21 +582,13 @@ class LeaveApplicationListView(APIView):
 
     def get(self, request, format=None):
         """
-        Handle GET requests to retrieve all leave applications for the current user.
+        Handle GET requests to retrieve all leave applications for the current user,
+        whether they are a student or a teacher.
         """
-        try:
-            student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            return Response(
-                {"error": "No student profile associated with the current user."},
-                status=404,
-            )
-        
-        # Get all leave applications for the current user
-        applications = LeaveApplication.objects.filter(applicant=student.user)
-        # Serialize the leave applications
+        user = request.user
+        applications = LeaveApplication.objects.filter(applicant=user)
+
         serializer = LeaveApplicationSerializer(applications, many=True)
-        # Return the serialized data
         return Response(serializer.data)
 
 # API view to create a new leave application
