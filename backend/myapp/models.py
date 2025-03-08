@@ -5,7 +5,7 @@ from accounts.models import CustomUser
 from django.utils.timezone import now
 from decimal import Decimal
 from django.core.exceptions import ValidationError
-
+import os
 # For creating Post/reel type content
 class Post(models.Model):
     POST_TYPES = [
@@ -370,9 +370,18 @@ class StudentOverallResult(models.Model):
 
 
 def validate_file_size(value):
+    """Validate file size and type."""
+    
+    # File size validation (max 5MB)
     max_size = 5 * 1024 * 1024  # 5MB limit
     if value.size > max_size:
         raise ValidationError("File size cannot exceed 5MB.")
+    
+    # File type validation
+    valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+    ext = os.path.splitext(value.name)[1].lower()  # Get the file extension and convert to lowercase
+    if ext not in valid_extensions:
+        raise ValidationError(f"File type '{ext}' is not allowed. Please upload a PDF, Word, PNG, or JPG file.")
 
 class Notes(models.Model):
     chapter = models.CharField(max_length=255)  # Chapter name
