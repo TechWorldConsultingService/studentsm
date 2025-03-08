@@ -129,10 +129,17 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
           payload.transportation_fee = selectedTransportationId;
         }
 
-       const res= await axios.post(`http://localhost:8000/api/bills/${studentId}/`, payload, {
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${access}` },
-        });
-        const billNum = res?.data?.bill_details?.bill_number
+        const res = await axios.post(
+          `http://localhost:8000/api/bills/${studentId}/`,
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
+        const billNum = res?.data?.bill_details?.bill_number;
         fetchLedger(studentId);
         toast.success("Invoice created successfully!");
         navigate(`/successTransection?billNumber=${billNum}`);
@@ -145,7 +152,6 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
       }
     },
   });
-
 
   const handleCategoryCheck = (categoryId) => {
     const exists = formik.values.fee_categories.some(
@@ -172,7 +178,6 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
       )
     );
   };
-
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
@@ -256,30 +261,31 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
                   </thead>
                   <tbody>
                     {feeCategories.map((cat) => (
-                      <tr key={cat.fee_category_name.id} className="border-b hover:bg-purple-50">
+                      <tr key={cat.id} className="border-b hover:bg-purple-50">
                         <td className="px-4 py-2 text-center">
                           <input
                             type="checkbox"
                             checked={formik.values.fee_categories.some(
-                              (item) => item.fee_category === cat.fee_category_name.id
+                              (item) => item.fee_category === cat.id
                             )}
-                            onChange={() => handleCategoryCheck(cat.fee_category_name.id)}
+                            onChange={() => handleCategoryCheck(cat.id)}
                           />
                         </td>
                         <td className="px-4 py-2">{cat.fee_category_name.name}</td>
                         <td className="px-4 py-2">
-                          {cat.class_assigned?.class_name} ({cat.class_assigned?.class_code})
+                          {cat.class_assigned?.class_name} (
+                          {cat.class_assigned?.class_code})
                         </td>
                         <td className="px-4 py-2">{cat.amount}</td>
                         <td className="px-4 py-2">
                           <select
                             onChange={(e) =>
-                              handleScholarshipChange(cat.fee_category_name.id, e.target.value)
+                              handleScholarshipChange(cat.id, e.target.value)
                             }
                             className="border border-gray-300 p-2 rounded"
                             value={
                               (formik.values.fee_categories.find(
-                                (item) => item.fee_category === cat.fee_category_name.id
+                                (item) => item.fee_category === cat.id
                               ) || { scholarship: false }).scholarship
                                 ? "true"
                                 : "false"

@@ -19,14 +19,6 @@ const SuccessPayment = () => {
     navigate("/feePayment");
   };
 
-  useEffect(() => {
-    if (showReceiptModal) {
-      setTimeout(() => {
-        window.print(); 
-      }, 500); 
-    }
-  }, [showReceiptModal]);
-
   if (showReceiptModal) {
     return (
       <ReceiptModal paymentNumber={paymentNumber} onClose={handleGoBack} />

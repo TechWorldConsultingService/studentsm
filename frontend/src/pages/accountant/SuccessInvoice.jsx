@@ -19,13 +19,6 @@ const SuccessInvoice = () => {
     navigate("/invoicing");
   };
 
-  useEffect(() => {
-    if (showBillModal) {
-      setTimeout(() => {
-        window.print(); 
-      }, 500); 
-    }
-  }, [showBillModal]);
 
   if (showBillModal) {
     return <BillModal billNumber={billNumber} onClose={handleGoBack} />;

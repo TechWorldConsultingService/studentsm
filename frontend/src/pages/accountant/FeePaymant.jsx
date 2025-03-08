@@ -20,7 +20,6 @@ const FeePayment = () => {
   return (
     <MainLayout>
       <div className="p-6">
-        {/* Payment Button and Error Message */}
         <div className="flex flex-col items-end mb-4">
           <button
             onClick={handleMakePayment}
