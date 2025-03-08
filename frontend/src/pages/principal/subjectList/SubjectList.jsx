@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import MainLayout from '../../../layout/MainLayout';
+import React, { useState, useEffect } from "react";
+import MainLayout from "../../../layout/MainLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import AddSubjectModal from './AddSubjectModal';
-import EditSubjectModal from './EditSubjectModal';
+import AddSubjectModal from "./AddSubjectModal";
+import EditSubjectModal from "./EditSubjectModal";
 
 const SubjectList = () => {
   const { access } = useSelector((state) => state.user);
@@ -16,8 +16,8 @@ const SubjectList = () => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // New state for delete confirmation modal
-  const [subjectToDelete, setSubjectToDelete] = useState(null); // Store subject to delete
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState(null);
 
   // Fetch subjects
   const fetchSubjects = async () => {
@@ -38,7 +38,7 @@ const SubjectList = () => {
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error('Error fetching subjects:', error.message || error);
+        toast.error("Error fetching subjects: " + (error.message || error));
       }
     } finally {
       setLoading(false);
@@ -49,16 +49,6 @@ const SubjectList = () => {
     fetchSubjects();
   }, [access, navigate]);
 
-  const handleViewDetails = (subject) => {
-    setSelectedSubject(subject);  
-    setShowModal(false);
-    setIsEditMode(false); 
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedSubject(null);  
-  };
-
   const handleShowAddModal = () => {
     setIsEditMode(false);
     setShowModal(true);
@@ -66,15 +56,15 @@ const SubjectList = () => {
 
   const handleShowEditModal = (subject) => {
     setIsEditMode(true);
-    setSelectedSubject(subject); 
-    setShowModal(true);  
+    setSelectedSubject(subject);
+    setShowModal(true);
   };
 
   const handleCloseModal = () => setShowModal(false);
 
   const handleConfirmDelete = (subjectId) => {
     setSubjectToDelete(subjectId);
-    setShowDeleteModal(true); 
+    setShowDeleteModal(true);
   };
 
   const handleDeleteSubject = async () => {
@@ -88,16 +78,18 @@ const SubjectList = () => {
           Authorization: `Bearer ${access}`,
         },
       });
-      setSubjectsList((prev) => prev.filter((subject) => subject.id !== subjectToDelete));
-      toast.success('Subject deleted successfully');
-      setShowDeleteModal(false); 
+      setSubjectsList((prev) =>
+        prev.filter((subject) => subject.id !== subjectToDelete)
+      );
+      toast.success("Subject deleted successfully");
+      setShowDeleteModal(false);
     } catch (error) {
-      toast.error('Error deleting subject');
+      toast.error("Error deleting subject");
     }
   };
 
   const handleCloseDeleteModal = () => {
-    setShowDeleteModal(false); 
+    setShowDeleteModal(false);
   };
 
   return (
@@ -129,65 +121,53 @@ const SubjectList = () => {
                   <tr className="bg-purple-700 text-white">
                     <th className="px-4 py-2 text-left">Subject Code</th>
                     <th className="px-4 py-2 text-left">Subject Name</th>
+                    <th className="px-4 py-2 text-left">Credit?</th>
+                    <th className="px-4 py-2 text-left">Credit Hours</th>
+                    <th className="px-4 py-2 text-left">Optional?</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {subjectList.length > 0 ?  subjectList.map((subject) => (
-                    <tr key={subject.subject_code} className="border-b hover:bg-purple-50">
-                      <td className="px-4 py-2">{subject.subject_code}</td>
-                      <td className="px-4 py-2">{subject.subject_name}</td>
-                      <td className="px-4 py-2">
-                        <button
-                          onClick={() => handleViewDetails(subject)}
-                          className="bg-purple-700 text-white px-4 py-2 rounded-lg hover:bg-purple-800 mr-2"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => handleShowEditModal(subject)}
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleConfirmDelete(subject.id)} // Show delete confirmation modal
-                          className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
-                        >
-                          Delete
-                        </button>
+                  {subjectList.length > 0 ? (
+                    subjectList.map((subject) => (
+                      <tr key={subject.id} className="border-b hover:bg-purple-50">
+                        <td className="px-4 py-2">{subject.subject_code}</td>
+                        <td className="px-4 py-2">{subject.subject_name}</td>
+                        <td className="px-4 py-2">
+                          {subject.is_credit ? "Yes" : "No"}
+                        </td>
+                        <td className="px-4 py-2">{subject.credit_hours || "-"}</td>
+                        <td className="px-4 py-2">
+                          {subject.is_optional ? "Yes" : "No"}
+                        </td>
+                        <td className="px-4 py-2">
+                          <button
+                            onClick={() => handleShowEditModal(subject)}
+                            className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 mr-2"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleConfirmDelete(subject.id)}
+                            className="bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-800"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="px-4 py-2 text-gray-600">
+                        No subject is added to show.
                       </td>
                     </tr>
-                  )) : (
-                    <span className=" text-gray-600">No subject is added to show.</span>
-                  )
-                  }
+                  )}
                 </tbody>
               </table>
             </div>
           )}
         </div>
-
-        {/* Subject Details Modal */}
-        {selectedSubject && !isEditMode && (
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">Subject Details</h2>
-              <div className="mt-4">
-                <p className="text-gray-700"><strong>Subject Code:</strong> {selectedSubject.subject_code}</p>
-                <p className="text-gray-700"><strong>Subject Name:</strong> {selectedSubject.subject_name}</p>
-              </div>
-              <div className="mt-6 text-center">
-                <button
-                  onClick={handleCloseDetails}
-                  className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
@@ -215,8 +195,8 @@ const SubjectList = () => {
         )}
 
         {/* Add or Edit Modal */}
-        {showModal && (
-          isEditMode ? (
+        {showModal &&
+          (isEditMode ? (
             <EditSubjectModal
               subject={selectedSubject}
               handleCloseModal={handleCloseModal}
@@ -227,8 +207,7 @@ const SubjectList = () => {
               handleCloseModal={handleCloseModal}
               fetchSubjects={fetchSubjects}
             />
-          )
-        )}
+          ))}
       </div>
     </MainLayout>
   );
