@@ -1105,11 +1105,12 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
             {
                 'id': fc.fee_category.id,
                 'fee_category': fc.fee_category.fee_category_name.name,
-                'amount': str(fc.fee_category.amount),
+                'amount': "0" if fc.scholarship else str(fc.fee_category.amount),  # Set amount to "0" if scholarship is True
                 'scholarship': fc.scholarship
             }
             for fc in fee_categories
         ]
+
 
     def get_transportation_fee(self, obj):
         if obj.transportation_fee:
