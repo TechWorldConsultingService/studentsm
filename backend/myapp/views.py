@@ -1087,7 +1087,7 @@ class SectionListCreateAPIView(APIView):
         """
         Retrieve all sections for a specific class.
         """
-        sections = Section.objects.filter(class_id=class_id)
+        sections = Section.objects.filter(school_class_id=class_id)
         serializer = SectionSerializer(sections, many=True)
         return Response({"status": "success", "sections": serializer.data}, status=status.HTTP_200_OK)
 
@@ -1095,12 +1095,11 @@ class SectionListCreateAPIView(APIView):
         """
         Create a section and automatically assign it to the class from the URL.
         """
-        class_instance = get_object_or_404(Class, id=class_id)
-
-        serializer = SectionSerializer(data=request.data)
+        serializer = SectionSerializer(data=request.data, context={'class_id': class_id})  # Pass class_id in context
         if serializer.is_valid():
-            serializer.save(class_field=class_instance)
+            serializer.save()  # school_class is set automatically in the serializer
             return Response({"message": "Section created successfully"}, status=status.HTTP_201_CREATED)
+        
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
