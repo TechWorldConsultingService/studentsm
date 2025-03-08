@@ -1,4 +1,3 @@
-// src/components/leaves/ApplyLeaveModal.js
 import React, { useState } from "react";
 import { DatePicker } from "antd";
 import moment from "moment";
@@ -31,12 +30,7 @@ const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
       <div className="bg-white w-11/12 md:w-1/2 p-6 rounded shadow-lg relative">
-        <button
-          onClick={handleClose}
-          className="absolute top-3 right-3 bg-purple-700 text-white px-2 py-1 rounded hover:bg-purple-800"
-        >
-          ✕
-        </button>
+
         <h2 className="text-2xl font-bold text-purple-800 mb-4">Apply for Leave</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,13 +55,19 @@ const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
             />
           </div>
 
-          <div className="text-center">
+          <div className=" flex space-x-5 justify-center">
             <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded hover:bg-purple-800"
             >
               Submit
             </button>
+            <button
+          onClick={handleClose}
+          className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
+        >
+          Cancel
+        </button>
           </div>
         </form>
       </div>

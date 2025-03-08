@@ -5,9 +5,11 @@ import { useSelector } from "react-redux";
 import MainLayout from "../../layout/MainLayout";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { format } from "date-fns";
+
 
 const BillModal = ({ billNumber, onClose }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, first_name, last_name } = useSelector((state) => state.user);
   const [billData, setBillData] = useState(null);
   const [loading, setLoading] = useState(false);
   const billRef = useRef(null); // Ref for the bill content
@@ -55,35 +57,54 @@ const BillModal = ({ billNumber, onClose }) => {
     });
   };
 
+ 
+
+    const onPrint = () => {
+      {
+        setTimeout(() => {
+          window.print(); 
+        }, 500); 
+      }
+    }
+
   return (
     <MainLayout>
       <div className="fixed inset-0 z-50 bg-gray-700 bg-opacity-50 flex items-center justify-center p-4">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2 max-h-full overflow-auto">
-          <div ref={billRef} className="p-4">
+        <div className="bg-white p-1 rounded-lg shadow-lg w-11/12 md:w-1/2 max-h-full overflow-auto">
+          <div ref={billRef} className="p-1">
             {loading ? (
               <p>Loading Bill...</p>
             ) : billData ? (
               <div
-                className="border-4 border-blue-600 p-4 text-sm md:text-base relative"
-                style={{ minHeight: "800px" }}
+                className="border-4 border-blue-600 p-4 text-sm md:text-base relative h-fit"
+                // style={{ minHeight: "400px" }}
               >
                 {/* School Header */}
                 <div className="text-center mb-2">
                   <h1 className="text-xl font-bold uppercase text-blue-700">
                     Satyam Xaviers English School
                   </h1>
-                  <p className="text-xs">Bharatpur-3, Chitwan, Nepal</p>
-                  <p className="text-xs">Tel: 055-544545141</p>
+                  <p className="text-xm">Bharatpur-3, Chitwan, Nepal</p>
+                  <p className="text-xm">Tel: 055-544545141</p>
+                  <p className="text-xm">
+                    <span className="text-xm">PAN:</span> 301566090
+                  </p>
                 </div>
 
                 {/* Bill Title */}
-                <div className="border-b border-blue-700 pb-2 mb-2 flex justify-between items-center">
-                  <h2 className="text-lg font-bold text-blue-700 tracking-wider">
+
+                <div className="border-b border-blue-700 pb-2 mb-2 flex justify-between ">
+                <p>
+                      <span className="font-semibold">Bill No:</span>{" "}
+                      {billNumber}
+                    </p>
+                  <h2 className="text-lg  font-bold text-blue-700 tracking-wider">
                     INTIMATION - BILL
                   </h2>
-                  <p className="text-xs">
-                    <span className="font-semibold">PAN:</span> 301566090
-                  </p>
+                  <p>
+                      <span className="font-semibold">Date:</span>{" "}
+                    {format(new Date(billData.date), "yyyy-MM-dd")}
+                    </p>
                 </div>
 
                 {/* Header Info */}
@@ -95,11 +116,7 @@ const BillModal = ({ billNumber, onClose }) => {
                     </p>
                     <p>
                       <span className="font-semibold">Class:</span>{" "}
-                      {billData.student?.class_name || "-"}
-                    </p>
-                    <p>
-                      <span className="font-semibold">A/C No:</span>{" "}
-                      {billData.student?.account_number || "--"}
+                      {billData.student?.class || "-"}
                     </p>
                   </div>
                   <div>
@@ -108,12 +125,8 @@ const BillModal = ({ billNumber, onClose }) => {
                       {billData.month || "-"}
                     </p>
                     <p>
-                      <span className="font-semibold">Bill No:</span>{" "}
-                      {billNumber}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Date:</span>{" "}
-                      {new Date().toLocaleDateString()}
+                      <span className="font-semibold">Section:</span>{" "}
+                      {billData.student?.class_name || "-"}
                     </p>
                   </div>
                 </div>
@@ -172,25 +185,31 @@ const BillModal = ({ billNumber, onClose }) => {
                       <span className="font-semibold">
                         Dr/Cr Balance From Last Month:
                       </span>{" "}
-                      Rs. {billData.previous_balance || "0"}
+                      Rs. {billData.pre_balance || "0"}
                     </p>
                     <p>
-                      <span className="font-semibold">
-                        This Month's Total:
-                      </span>{" "}
-                      Rs. {billData.subtotal || "0"}
+                      <span className="font-semibold">Balance Due Amount:</span>{" "}
+                      Rs. {billData.post_balance || "0"}
                     </p>
                   </div>
                   <div className="border border-blue-600 p-2">
+                  <p>
+                      <span className="font-semibold">Sub-total:</span>{" "}
+                      Rs. {billData.subtotal || "0"}
+                    </p>
+                  <p>
+                      <span className="font-semibold">Discount:</span>{" "}
+                      Rs. {billData.discount || "0"}
+                    </p>
                     <p>
-                      <span className="font-semibold">Total Balance Due:</span>{" "}
+                      <span className="font-semibold">Total:</span>{" "}
                       Rs. {billData.total_amount || "0"}
                     </p>
                   </div>
                 </div>
 
                 {/* Remarks */}
-                <div className="mb-4">
+                <div >
                   <p>
                     <span className="font-semibold">Remarks:</span>{" "}
                     {billData.remarks || "-"}
@@ -198,18 +217,13 @@ const BillModal = ({ billNumber, onClose }) => {
                 </div>
 
                 {/* Signature Area */}
-                <div className="flex justify-end mt-4">
-                  <div className="text-center">
+                <div className="flex justify-end">
+                  <div className="text-center flex flex-col">
                     <p className="font-semibold">Accountant</p>
+                    <p >{first_name} {last_name}</p>
                   </div>
                 </div>
 
-                <div
-                  className="text-blue-600 text-xs font-semibold mt-4"
-                  style={{ width: "200px" }}
-                >
-                  This bill must be presented at the time of payment
-                </div>
               </div>
             ) : (
               <p>No Bill data available.</p>
@@ -218,10 +232,16 @@ const BillModal = ({ billNumber, onClose }) => {
 
           {/* Download & Close Buttons */}
           {!loading && billData && (
-            <div className="p-4 pt-0 flex justify-end space-x-2">
+            <div className="p-4 pt-0 flex justify-end space-x-2 print:hidden">
+                            <button
+                onClick={onPrint}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors print:hidden"
+              >
+                Print
+              </button>
               <button
                 onClick={downloadPDF}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors print:hidden"
               >
                 Download PDF
               </button>
