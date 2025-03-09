@@ -1273,3 +1273,38 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
         elif obj.transaction_type == "payment" and obj.payment:
             return obj.payment.remarks
         return None
+
+
+class CommunicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Communication
+        fields = ["id", "sender", "receiver", "message", "receiver_role", "sent_at"]
+        read_only_fields = ["id", "sender", "sent_at"]
+
+    def validate(self, data):
+        """
+        Ensure that either receiver OR receiver_role is provided.
+        """
+        receiver = data.get("receiver")
+        receiver_role = data.get("receiver_role")
+
+        if not receiver and not receiver_role:
+            raise serializers.ValidationError("Either receiver or receiver_role must be provided.")
+        
+        return data
+
+    def create(self, validated_data):
+        """
+        Assign the sender as the logged-in user before saving.
+        """
+        validated_data["sender"] = self.context["request"].user
+        return super().create(validated_data)
+
+class GetCommunicationSerializer(serializers.ModelSerializer):
+    """Serializer to get full details of sender & receiver instead of just IDs"""
+    sender = UserSerializer(read_only=True)
+    receiver = UserSerializer(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Communication
+        fields = '__all__'  # Includes sender & receiver as full objects

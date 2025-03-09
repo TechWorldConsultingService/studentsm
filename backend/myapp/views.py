@@ -3306,3 +3306,104 @@ class PaymentSearchAPIView(APIView):
             "payments": payment_data,
             "total_payment_amount": total_amount
         }, status=status.HTTP_200_OK)
+
+
+# API to create a new message
+class CreateMessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CommunicationSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()  # sender is automatically set in the serializer
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API to get messages for a specific receiver
+class UserMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages where the logged-in user is the direct receiver.
+        """
+        user = request.user
+        messages = Communication.objects.filter(receiver=user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# API to get messages based on logged-in user's role
+class RoleBasedMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages based on the logged-in user's role.
+        """
+        user = request.user
+        role_filters = []
+
+        # Logic for Teachers
+        if user.is_teacher:
+            role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
+
+        # Logic for Students
+        if user.is_student:
+            role_filters += ["student", "teacher_student", "student_accountant", "all"]
+
+        # Logic for Accountants
+        if user.is_accountant:
+            role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
+
+        # Fetch messages where receiver_role matches the above filter
+        messages = Communication.objects.filter(receiver_role__in=role_filters)
+
+        # Serialize the messages and send the response
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommunicationDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        """
+        Retrieve a single message by ID
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        serializer = GetCommunicationSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """
+        Update an existing message, but only if the logged-in user is the sender
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to edit this message.")
+        
+        serializer = CommunicationSerializer(message, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """
+        Delete a message, but only if the logged-in user is the sender.
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to delete this message.")
+        
+        message.delete()
+        
+        # Return 200 OK with the success message
+        return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)

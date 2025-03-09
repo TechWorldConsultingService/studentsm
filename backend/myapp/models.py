@@ -548,3 +548,22 @@ class StudentTransaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type.capitalize()} - Balance: {self.balance}"
+
+
+
+class Communication(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_communications")
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="received_communications")
+    message = models.TextField()
+    receiver_role = models.CharField(max_length=255, choices=(
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+        ('accountant', 'Accountant'),
+        ('teacher_student', 'Teacher and Student'),
+        ('teacher_accountant', 'Teacher and Accountant'),
+        ('student_accountant', 'Student and Accountant'),
+        ('all', 'All'),),null=True,blank=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.sender.username} to {self.receiver.username if self.receiver else self.receiver_role}"
