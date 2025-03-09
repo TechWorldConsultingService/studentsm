@@ -172,6 +172,12 @@ urlpatterns = [
     path('api/fee-summary/', FeeDashboardAPIView.as_view(), name='fee-summary'),
     path('api/payments/search/', PaymentSearchAPIView.as_view(), name='payment-search'),
 
+    path('api/messages/create/', CreateMessageAPIView.as_view(), name='create-message'),
+    path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),
+    path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'),
+    path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'),
+
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
