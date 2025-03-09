@@ -192,10 +192,7 @@
       "id": 8,
       "title": "Leave",
       "icon": "MdCoPresent",
-      "subSidebar": [
-        { "id": 1, "title": "Overview", "link": "/myleavePrincipal" },
-        { "id": 2, "title": "Manage Leave", "link": "/manage-leaves" }
-      ]
+      "link": "/manage-leaves"
     },
     {
       "id": 9,

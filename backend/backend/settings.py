@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-4w$7vob@#2d&zrp2_d9sh3q4sx!uc#7c6cnc$8hx4qbs#!0hgv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost","192.168.1.5"]
+ALLOWED_HOSTS = ["localhost","192.168.1.5","127.0.0.1"]
 
 # Application definition
 
@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'myapp',
-    'accounts',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -137,7 +136,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = 'myapp.CustomUser'
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',

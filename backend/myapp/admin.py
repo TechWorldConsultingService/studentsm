@@ -2,6 +2,11 @@ from django.contrib import admin
 from django import forms
 from .models import *
 
+@admin.register(CustomUser)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_accountant', 'is_active')
+    search_fields = ('username', 'email')
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'creator', 'title', 'caption', 'created_at')  # Fields to display in the list view

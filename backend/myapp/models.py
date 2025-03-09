@@ -1,10 +1,22 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from accounts.models import CustomUser
 from django.utils.timezone import now
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+import os
+from django.contrib.auth.models import AbstractUser
+# Create your models here.
+
+class CustomUser(AbstractUser):
+    # Add custom fields here to represent the different roles
+    is_master = models.BooleanField(default=False)
+    is_principal = models.BooleanField(default=False)
+    is_teacher = models.BooleanField(default=False)
+    is_student = models.BooleanField(default=False)
+    is_accountant = models.BooleanField(default=False)
+    # is_driver = models.BooleanField(default=False)
+
 
 # For creating Post/reel type content
 class Post(models.Model):
@@ -77,8 +89,7 @@ class Section(models.Model):
         return f"{self.school_class.class_name} - {self.section_name}"
     
 class Teacher(models.Model):
-    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField() 
@@ -100,8 +111,7 @@ class Teacher(models.Model):
 
 
 class Principal(models.Model):
-    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
@@ -114,8 +124,7 @@ class Principal(models.Model):
         super().delete(*args, **kwargs)  # Call the parent delete method
 
 class Student(models.Model):
-    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_birth = models.DateField()
@@ -133,8 +142,7 @@ class Student(models.Model):
         super().delete(*args, **kwargs)
 
 class Accountant(models.Model):
-    # user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    user = models.OneToOneField("accounts.CustomUser", on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15, unique=True)
     address = models.CharField(max_length=255)
     date_of_joining = models.DateField()
@@ -370,9 +378,18 @@ class StudentOverallResult(models.Model):
 
 
 def validate_file_size(value):
+    """Validate file size and type."""
+    
+    # File size validation (max 5MB)
     max_size = 5 * 1024 * 1024  # 5MB limit
     if value.size > max_size:
         raise ValidationError("File size cannot exceed 5MB.")
+    
+    # File type validation
+    valid_extensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']
+    ext = os.path.splitext(value.name)[1].lower()  # Get the file extension and convert to lowercase
+    if ext not in valid_extensions:
+        raise ValidationError(f"File type '{ext}' is not allowed. Please upload a PDF, Word, PNG, or JPG file.")
 
 class Notes(models.Model):
     chapter = models.CharField(max_length=255)  # Chapter name

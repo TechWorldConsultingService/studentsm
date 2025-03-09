@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import { useSelector } from "react-redux";
@@ -24,21 +24,8 @@ const PaymentPage = () => {
     (state) => state.paymentUser
   );
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
-  const formik = useFormik({
-    initialValues: {
-      amount_paid: "",
-      remarks: "",
-    },
-    validationSchema: PaymentSchema,
-    onSubmit: async (values) => {
-      setLoading(true);
-      await makePayment(values);
-      setLoading(false);
-    },
-  });
-
+  // Define makePayment function before using it in useFormik
   const makePayment = async (values) => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -46,9 +33,13 @@ const PaymentPage = () => {
     }
 
     try {
+      const payload = {
+        amount_paid: Number(values.amount_paid), // convert to number
+        remarks: values.remarks,
+      };
       const res = await axios.post(
         `http://localhost:8000/api/payments/${studentId}/`,
-        values,
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -68,6 +59,17 @@ const PaymentPage = () => {
       }
     }
   };
+
+  const formik = useFormik({
+    initialValues: {
+      amount_paid: "",
+      remarks: "",
+    },
+    validationSchema: PaymentSchema,
+    onSubmit: async (values) => {
+      await makePayment(values);
+    },
+  });
 
   return (
     <MainLayout>
@@ -104,7 +106,6 @@ const PaymentPage = () => {
           <form onSubmit={formik.handleSubmit}>
             <div className="mb-4">
               <label
-                htmlFor="amount_paid"
                 className="block font-semibold text-purple-800 mb-2"
               >
                 Amount Paid
@@ -151,7 +152,7 @@ const PaymentPage = () => {
                     ? "border-red-500"
                     : "border-gray-300"
                 }`}
-              />
+              ></textarea>
               {formik.touched.remarks && formik.errors.remarks && (
                 <div className="text-red-500 text-sm mt-1">
                   {formik.errors.remarks}
@@ -162,12 +163,9 @@ const PaymentPage = () => {
             <div className="mt-6 flex justify-center space-x-4">
               <button
                 type="submit"
-                disabled={loading}
-                className={`bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 transition duration-200 ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
               >
-                {loading ? "Processing..." : "Submit Payment"}
+                Submit Payment
               </button>
               <button
                 type="button"
