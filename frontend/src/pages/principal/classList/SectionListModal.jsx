@@ -1,4 +1,3 @@
-// SectionListModal.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
@@ -9,6 +8,7 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
   const { access } = useSelector((state) => state.user);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
 
@@ -19,15 +19,18 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
     }
     setLoading(true);
     try {
-      const { data } = await axios.get(`http://localhost:8000/api/classes/${classId}/sections/`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      setSections(data);
+      const { data } = await axios.get(
+        `http://localhost:8000/api/classes/${classId}/sections/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+      setSections(data.sections || []);
     } catch (error) {
-      toast.error("Error fetching sections");
+      toast.error("Error fetching sections: " + (error.message || error));
     } finally {
       setLoading(false);
     }
@@ -37,28 +40,38 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
     fetchSections();
   }, [classId]);
 
+  /** Handle Add Section */
   const handleAddSection = () => {
     setEditingSection(null);
     setShowSectionModal(true);
   };
 
+  /** Handle Edit Section */
   const handleEditSection = (section) => {
     setEditingSection(section);
     setShowSectionModal(true);
   };
 
+  /** Handle Delete Section */
   const handleDeleteSection = async (sectionId) => {
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
     try {
-      await axios.delete(`http://localhost:8000/api/classes/${classId}/sections/${sectionId}/`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
-      toast.success("Section deleted successfully");
+      await axios.delete(
+        `http://localhost:8000/api/classes/${classId}/sections/${sectionId}/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+      toast.success("Section deleted successfully.");
       fetchSections();
     } catch (error) {
-      toast.error("Error deleting section");
+      toast.error("Error deleting section: " + (error.message || error));
     }
   };
 
@@ -66,9 +79,17 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800">Sections</h2>
+        <button
+            onClick={handleAddSection}
+            className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 flex justify-self-end"
+          >
+            Add Section
+          </button>
         <div className="mt-4">
           {loading ? (
-            <p>Loading sections...</p>
+            <p className="text-gray-600">Loading sections...</p>
+          ) : sections.length === 0 ? (
+            <p className="text-gray-600">No sections found. Please add a new section.</p>
           ) : (
             <table className="min-w-full table-auto">
               <thead>
@@ -101,22 +122,14 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
             </table>
           )}
         </div>
-        <div className="mt-4">
-          <button
-            onClick={handleAddSection}
-            className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
-          >
-            Add Section
-          </button>
-        </div>
-        <div className="mt-4 text-center">
+
           <button
             onClick={handleCloseSectionListModal}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+            className="bg-gray-500 text-white px-6 py-2 mt-5 rounded-lg hover:bg-gray-600 flex justify-self-center"
           >
             Close
           </button>
-        </div>
+
         {showSectionModal && (
           <SectionModal
             classId={classId}

@@ -1,100 +1,96 @@
-import React from "react";
-import { useFormik } from "formik";
-import * as Yup from "yup";
-import { useSelector } from "react-redux";
+import React, { useState } from "react";
 import axios from "axios";
+import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
-const addSectionSchema = Yup.object().shape({
-  section_name: Yup.string().required("Section Name is required.")
-});
-
-const SectionModal = ({ handleCloseSectionModal, fetchSections, classId, initialSection }) => {
+const SectionModal = ({
+  classId,
+  handleCloseSectionModal,
+  fetchSections,
+  initialSection,
+}) => {
   const { access } = useSelector((state) => state.user);
-  const isEdit = Boolean(initialSection);
 
-  const formik = useFormik({
-    initialValues: {
-      section_name: initialSection ? initialSection.section_name : "C"
-    },
-    validationSchema: addSectionSchema,
-    onSubmit: async (values) => {
-      try {
-        if (isEdit) {
-          // Update section API call
-          await axios.put(
-            `http://localhost:8000/api/classes/${classId}/sections/${initialSection.id}/`,
-            values,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${access}`,
-              },
-            }
-          );
-          toast.success("Section updated successfully");
-        } else {
-          // Create section API call
-          await axios.post(
-            `http://localhost:8000/api/classes/${classId}/sections/`,
-            values,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${access}`,
-              },
-            }
-          );
-          toast.success("Section added successfully");
-        }
-        fetchSections();
-        handleCloseSectionModal();
-      } catch (error) {
-        toast.error("Error saving section");
-      }
+  // If `initialSection` is present, we are editing
+  const isEdit = Boolean(initialSection && initialSection.id);
+
+  // Local state
+  const [sectionName, setSectionName] = useState(
+    isEdit ? initialSection.section_name : ""
+  );
+
+  const handleSave = async () => {
+    if (!sectionName.trim()) {
+      toast.error("Section name cannot be empty.");
+      return;
     }
-  });
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+
+    try {
+      if (isEdit) {
+        // UPDATE (PUT)
+        await axios.put(
+          `http://localhost:8000/api/classes/${classId}/sections/${initialSection.id}/`,
+          { section_name: sectionName },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
+        toast.success("Section updated successfully.");
+      } else {
+        // CREATE (POST)
+        await axios.post(
+          `http://localhost:8000/api/classes/${classId}/sections/`,
+          { section_name: sectionName },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
+        toast.success("Section created successfully.");
+      }
+      fetchSections();
+      handleCloseSectionModal();
+    } catch (error) {
+      toast.error("Error saving section: " + (error.message || error));
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-        <h2 className="text-2xl font-bold text-purple-800">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/3">
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">
           {isEdit ? "Edit Section" : "Add Section"}
         </h2>
-        <form onSubmit={formik.handleSubmit} className="mt-4">
-          <div className="mb-4">
-            <label htmlFor="section_name" className="block text-sm font-semibold">
-              Section Name:
-            </label>
-            <input
-              type="text"
-              id="section_name"
-              name="section_name"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.section_name}
-              className="border border-gray-300 p-2 rounded w-full mt-1"
-              placeholder="Section Name"
-            />
-            {formik.touched.section_name && formik.errors.section_name && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.section_name}
-              </div>
-            )}
-          </div>
-          <div className="mt-6 text-center">
-            <button type="submit" className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-2">
-              Save
-            </button>
-            <button
-              onClick={handleCloseSectionModal}
-              type="button"
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        <input
+          type="text"
+          value={sectionName}
+          onChange={(e) => setSectionName(e.target.value)}
+          placeholder="Enter section name"
+          className="border border-gray-300 p-2 rounded w-full"
+        />
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={handleSave}
+            className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-4"
+          >
+            {isEdit ? "Update" : "Save"}
+          </button>
+          <button
+            onClick={handleCloseSectionModal}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
