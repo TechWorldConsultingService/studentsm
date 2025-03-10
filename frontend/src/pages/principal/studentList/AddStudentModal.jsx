@@ -7,8 +7,8 @@ import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
 
-
- const addStudentSchema = Yup.object().shape({
+// Schema for adding a student
+const addStudentSchema = Yup.object().shape({
   user: Yup.object().shape({
     username: Yup.string()
       .required("Username is required.")
@@ -57,20 +57,67 @@ import Password from "antd/es/input/Password";
     .max(25, "Parent's name can't exceed 25 characters."),
   gender: Yup.string()
     .required("Gender is required.")
-    .oneOf(
-      ["male", "female", "other"],
-      "Gender must be one of 'male', 'female', or 'other'."
-    ),
+    .oneOf(["male", "female", "other"]),
   class_code: Yup.string()
     .required("Class code is required.")
     .min(1, "Class code must be at least 1 character long.")
     .max(10, "Class code can't exceed 10 characters."),
+  class_code_section: Yup.number().required("Class section is required."),
+  optional_subjects: Yup.array().of(Yup.number()),
 });
 
 const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [subjectList, setSubjectList] = useState([])
+  const [optionalSubjects, setOptionalSubjects] = useState([]);
+  const [sectionsList, setSectionsList] = useState([]);
+
+  useEffect(() => {
+    if (access) {
+      fetchOptionalSubjects();
+      fetchSections();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [access]);
+
+  const fetchOptionalSubjects = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:8000/api/subjects/optional/",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+      setOptionalSubjects(data);
+    } catch (error) {
+      toast.error("Error fetching optional subjects.");
+    }
+  };
+
+  // Placeholder function - adapt or replace with your actual sections endpoint/data
+  const fetchSections = async () => {
+    try {
+      // Example:
+      // const { data } = await axios.get("http://localhost:8000/api/sections/", {
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${access}`,
+      //   },
+      // });
+      // setSectionsList(data);
+      // For demonstration, we hardcode some sections:
+      setSectionsList([
+        { id: 1, name: "Section A" },
+        { id: 2, name: "Section B" },
+        { id: 3, name: "Section C" },
+      ]);
+    } catch (error) {
+      toast.error("Error fetching class sections.");
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -87,6 +134,8 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
       parents: "",
       gender: "",
       class_code: "",
+      class_code_section: "",
+      optional_subjects: [],
     },
     validationSchema: addStudentSchema,
     onSubmit: async (values) => {
@@ -114,12 +163,26 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error adding student.", error.message || error);
+        toast.error("Error adding student: " + (error.message || error));
       }
     }
   };
 
-
+  // Handle multiple select changes for optional subjects
+  const handleOptionalSubjectsChange = (subjectId) => {
+    const { optional_subjects } = formik.values;
+    if (optional_subjects.includes(subjectId)) {
+      formik.setFieldValue(
+        "optional_subjects",
+        optional_subjects.filter((id) => id !== subjectId)
+      );
+    } else {
+      formik.setFieldValue(
+        "optional_subjects",
+        [...optional_subjects, subjectId]
+      );
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
@@ -330,6 +393,54 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
                 {formik.errors.class_code}
               </div>
+            )}
+          </div>
+
+          {/* Class Code Section */}
+          <div className="mb-4">
+            <select
+              name="class_code_section"
+              className="border border-gray-300 p-2 rounded w-full"
+              value={formik.values.class_code_section}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            >
+              <option value="">Select Section</option>
+              {sectionsList.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+            {formik.touched.class_code_section &&
+              formik.errors.class_code_section && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.class_code_section}
+                </div>
+              )}
+          </div>
+
+          {/* Optional Subjects (Multi-Select / Checkboxes) */}
+          <div className="mb-4">
+            <p className="font-semibold mb-2">Optional Subjects:</p>
+            {optionalSubjects.length > 0 ? (
+              optionalSubjects.map((subject) => (
+                <div key={subject.id} className="flex items-center mb-1">
+                  <input
+                    type="checkbox"
+                    id={`subject-${subject.id}`}
+                    value={subject.id}
+                    checked={formik.values.optional_subjects.includes(subject.id)}
+                    onChange={() => handleOptionalSubjectsChange(subject.id)}
+                    className="mr-2"
+                  />
+                  <label htmlFor={`subject-${subject.id}`}>
+                    {subject.subject_name}
+                  </label>
+                </div>
+              ))
+            ) : (
+              <p>No optional subjects available.</p>
             )}
           </div>
 

@@ -7,10 +7,10 @@ import { useNavigate } from "react-router-dom";
 import Password from "antd/es/input/Password";
 import * as Yup from "yup";
 
+// Validation schema for editing a student
 const EditStudentSchema = Yup.object().shape({
   user: Yup.object().shape({
     username: Yup.string()
-      .required("Username is required.")
       .min(3, "Username must be at least 3 characters long.")
       .max(20, "Username can't exceed 20 characters."),
     password: Yup.string()
@@ -20,94 +20,119 @@ const EditStudentSchema = Yup.object().shape({
         /[a-zA-Z0-9]/,
         "Password must contain at least one letter and one number."
       ),
-    email: Yup.string()
-      .required("Email is required.")
-      .email("Please enter a valid email address."),
+    email: Yup.string().email("Please enter a valid email address."),
     first_name: Yup.string()
-      .required("First name is required.")
       .min(2, "First name must be at least 2 characters.")
       .max(10, "First name can't exceed 10 characters."),
     last_name: Yup.string()
-      .required("Last name is required.")
       .min(2, "Last name must be at least 2 characters.")
       .max(10, "Last name can't exceed 10 characters."),
   }),
   phone: Yup.string()
-    .required("Phone number is required.")
     .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long.")
     .min(10, "Phone number must be 10 digits.")
     .max(10, "Phone number must be 10 digits."),
   address: Yup.string()
-    .required("Address is required.")
     .min(5, "Address must be at least 5 characters long.")
-    .max(25, "Address can't exceed 25 characters."),
-  date_of_birth: Yup.date()
-    .required("Date of birth is required.")
-    .max(new Date(), "Date of birth cannot be in the future.")
-    .test(
-      "age",
-      "Student must be at least 3 years old.",
-      (value) => new Date().getFullYear() - new Date(value).getFullYear() >= 3
-    ),
+    .max(50, "Address can't exceed 50 characters."),
+  date_of_birth: Yup.date().max(
+    new Date(),
+    "Date of birth cannot be in the future."
+  ),
   parents: Yup.string()
-    .required("Parent's name is required.")
     .min(2, "Parent's name must be at least 2 characters long.")
-    .max(25, "Parent's name can't exceed  characters."),
-  gender: Yup.string()
-    .required("Gender is required.")
-    .oneOf(
-      ["male", "female", "other"],
-      "Gender must be one of 'male', 'female', or 'other'."
-    ),
+    .max(25, "Parent's name can't exceed 25 characters."),
+  gender: Yup.string().oneOf(["male", "female", "other"]),
   class_code: Yup.string()
-    .required("Class is required.")
     .min(1, "Class must be at least 1 character long.")
-    .max(5, "Class can't exceed 5 characters."),
-    class_teacher: Yup.string()
-          .nullable()
-          .notRequired("Please select one class as Class Teacher if applicable."),
+    .max(10, "Class can't exceed 10 characters."),
+  class_code_section: Yup.number(),
+  optional_subjects: Yup.array().of(Yup.number()),
 });
 
 const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [classList, setClassList] = useState([]);
+  const [sectionsList, setSectionsList] = useState([]);
+  const [optionalSubjects, setOptionalSubjects] = useState([]);
+
+  // Toggles for username/password editing
   const [isUsernameEditable, setIsUsernameEditable] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
 
   useEffect(() => {
-    const fetchClassList = async () => {
-      if (!access) {
-        toast.error("User is not authenticated. Please log in.");
-        return;
-      }
+    if (access) {
+      fetchClassList();
+      fetchSections();
+      fetchOptionalSubjects();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [access]);
 
-      try {
-        const { data } = await axios.get("http://localhost:8000/api/classes/", {
+  const fetchClassList = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/classes/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setClassList(data);
+    } catch (error) {
+      toast.error("Error fetching class data.");
+    }
+  };
+
+  // Placeholder function - adapt or replace with your actual sections endpoint/data
+  const fetchSections = async () => {
+    try {
+      // Example:
+      // const { data } = await axios.get("http://localhost:8000/api/sections/", {
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${access}`,
+      //   },
+      // });
+      // setSectionsList(data);
+
+      // For demonstration, we hardcode some sections:
+      setSectionsList([
+        { id: 1, name: "Section A" },
+        { id: 2, name: "Section B" },
+        { id: 3, name: "Section C" },
+      ]);
+    } catch (error) {
+      toast.error("Error fetching sections.");
+    }
+  };
+
+  const fetchOptionalSubjects = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:8000/api/subjects/optional/",
+        {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${access}`,
           },
-        });
-        setClassList(data);
-      } catch (error) {
-        toast.error("Error fetching class data.");
-      }
-    };
+        }
+      );
+      setOptionalSubjects(data);
+    } catch (error) {
+      toast.error("Error fetching optional subjects.");
+    }
+  };
 
-    fetchClassList();
-  }, [access, navigate]);
-
-console.log(studentInfo,"student info is as ")
-
+  // Pre-populate the form based on studentInfo
   const formik = useFormik({
     initialValues: {
       user: {
-        username: studentInfo?.user.username || "",
-        email: studentInfo?.user.email || "",
+        username: studentInfo?.user?.username || "",
+        email: studentInfo?.user?.email || "",
         password: "",
-        first_name: studentInfo?.user.first_name || "",
-        last_name: studentInfo?.user.last_name || "",
+        first_name: studentInfo?.user?.first_name || "",
+        last_name: studentInfo?.user?.last_name || "",
       },
       phone: studentInfo?.phone || "",
       address: studentInfo?.address || "",
@@ -115,6 +140,9 @@ console.log(studentInfo,"student info is as ")
       parents: studentInfo?.parents || "",
       gender: studentInfo?.gender || "",
       class_code: studentInfo?.class_details?.id || "",
+      class_code_section: studentInfo?.class_code_section || "",
+      optional_subjects:
+        studentInfo?.optional_subjects?.map((sub) => sub.id) || [],
     },
     validationSchema: EditStudentSchema,
     onSubmit: async (values) => {
@@ -129,29 +157,32 @@ console.log(studentInfo,"student info is as ")
       return;
     }
 
+    // Build the payload with conditional fields
+    const payload = {
+      phone: values.phone,
+      address: values.address,
+      date_of_birth: values.date_of_birth,
+      parents: values.parents,
+      gender: values.gender,
+      class_code: values.class_code,
+      class_code_section: values.class_code_section,
+      optional_subjects: values.optional_subjects,
+      user: {},
+    };
+
+    // We only include the user fields if they changed them:
+    if (isUsernameEditable) {
+      payload.user.username = values.user.username;
+    }
+    if (isPasswordEditable) {
+      payload.user.password = values.user.password;
+    }
+    // Email, first_name, last_name we assume can always be updated:
+    payload.user.email = values.user.email;
+    payload.user.first_name = values.user.first_name;
+    payload.user.last_name = values.user.last_name;
+
     try {
-      const payload = {
-        ...values,
-      };
-
-      if (isUsernameEditable) {
-        payload.user = {
-          ...payload.user,
-          username: values.user.username,
-        };
-      } else {
-        delete payload.user.username;
-      }
-
-      if (isPasswordEditable) {
-        payload.user = {
-          ...payload.user,
-          password: values.user.password,
-        };
-      } else {
-        delete payload.user.password;
-      }
-
       await axios.put(
         `http://localhost:8000/api/student/${studentInfo.id}/update/`,
         payload,
@@ -167,6 +198,22 @@ console.log(studentInfo,"student info is as ")
       handleCloseModal();
     } catch (error) {
       toast.error("Error updating student.");
+    }
+  };
+
+  // Handle multiple select changes for optional subjects
+  const handleOptionalSubjectsChange = (subjectId) => {
+    const { optional_subjects } = formik.values;
+    if (optional_subjects.includes(subjectId)) {
+      formik.setFieldValue(
+        "optional_subjects",
+        optional_subjects.filter((id) => id !== subjectId)
+      );
+    } else {
+      formik.setFieldValue(
+        "optional_subjects",
+        [...optional_subjects, subjectId]
+      );
     }
   };
 
@@ -349,7 +396,7 @@ console.log(studentInfo,"student info is as ")
             )}
           </div>
 
-          {/* Parent's Name */}
+          {/* Parents */}
           <div className="mb-4">
             <input
               type="text"
@@ -411,9 +458,57 @@ console.log(studentInfo,"student info is as ")
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Class Code Section */}
+          <div className="mb-4">
+            <select
+              className="border border-gray-300 p-2 rounded w-full"
+              name="class_code_section"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.class_code_section}
+            >
+              <option value="">Select Section</option>
+              {sectionsList.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+            {formik.touched.class_code_section &&
+              formik.errors.class_code_section && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.class_code_section}
+                </div>
+              )}
+          </div>
+
+          {/* Optional Subjects (Multi-Select / Checkboxes) */}
+          <div className="mb-4">
+            <p className="font-semibold mb-2">Optional Subjects:</p>
+            {optionalSubjects.length > 0 ? (
+              optionalSubjects.map((subject) => (
+                <div key={subject.id} className="flex items-center mb-1">
+                  <input
+                    type="checkbox"
+                    id={`subject-${subject.id}`}
+                    value={subject.id}
+                    checked={formik.values.optional_subjects.includes(subject.id)}
+                    onChange={() => handleOptionalSubjectsChange(subject.id)}
+                    className="mr-2"
+                  />
+                  <label htmlFor={`subject-${subject.id}`}>
+                    {subject.subject_name}
+                  </label>
+                </div>
+              ))
+            ) : (
+              <p>No optional subjects available.</p>
+            )}
+          </div>
+
+          {/* Submit and Cancel */}
           <div className="mt-6 text-center">
-          <button
+            <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-2"
             >
@@ -427,8 +522,6 @@ console.log(studentInfo,"student info is as ")
               Cancel
             </button>
           </div>
-
-
         </form>
       </div>
     </div>

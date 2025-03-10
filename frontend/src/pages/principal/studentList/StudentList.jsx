@@ -21,7 +21,7 @@ const StudentList = () => {
   const [classList, setClassList] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
 
-  // Fetch students
+  // Fetch all students
   const fetchAllStudents = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -47,6 +47,7 @@ const StudentList = () => {
     }
   };
 
+  // Fetch class-wise students
   const fetchClassWiseStudents = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -54,12 +55,15 @@ const StudentList = () => {
     }
     setLoading(true);
     try {
-      const { data } = await axios.get(`http://localhost:8000/api/myStudents?class_id=${selectedClassId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const { data } = await axios.get(
+        `http://localhost:8000/api/myStudents?class_id=${selectedClassId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       setStudentList(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -73,15 +77,15 @@ const StudentList = () => {
   };
 
   useEffect(() => {
-    if(!selectedClassId){
+    if (!selectedClassId) {
       fetchAllStudents();
     } else {
-      fetchClassWiseStudents()
+      fetchClassWiseStudents();
     }
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access, navigate, selectedClassId]);
 
-  // fetch class
+  // Fetch classes
   const fetchClass = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -104,7 +108,7 @@ const StudentList = () => {
     fetchClass();
   }, [access, navigate]);
 
-
+  // View student details
   const handleViewDetails = (studentInfo) => {
     setSelectedStudent(studentInfo);
     setShowModal(false);
@@ -115,11 +119,13 @@ const StudentList = () => {
     setSelectedStudent(null);
   };
 
+  // Add student
   const handleShowAddModal = () => {
     setIsEditMode(false);
     setShowModal(true);
   };
 
+  // Edit student
   const handleShowEditModal = (studentInfo) => {
     setIsEditMode(true);
     setSelectedStudent(studentInfo);
@@ -130,18 +136,17 @@ const StudentList = () => {
     setShowModal(false);
   };
 
+  // Delete student
   const handleConfirmDelete = (studentId) => {
     setStudentToDelete(studentId);
     setShowDeleteModal(true);
   };
 
   const handleDeleteStudent = async () => {
-    console.log("studentToDelete:", studentToDelete);
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
-
     try {
       await axios.delete(
         `http://localhost:8000/api/students/${studentToDelete}/delete/`,
@@ -186,7 +191,7 @@ const StudentList = () => {
             </button>
           </div>
 
-          <div className=" bg-white">
+          <div className="bg-white mt-4">
             <div>
               <h2 className="text-2xl font-bold text-purple-700">
                 Available Students
@@ -209,10 +214,7 @@ const StudentList = () => {
                 <option value="">Select Class</option>
                 {classList.length > 0 &&
                   classList.map((item) => (
-                    <option
-                      key={item.id}
-                      value={item.id}
-                    >
+                    <option key={item.id} value={item.id}>
                       {item.class_name}
                     </option>
                   ))}
@@ -236,11 +238,11 @@ const StudentList = () => {
                   {studentList.length > 0 ? (
                     studentList.map((student) => (
                       <tr
-                        key={student.phone}
+                        key={student.id}
                         className="border-b hover:bg-purple-50"
                       >
                         <td className="px-4 py-2">
-                          {student.class_details.class_name}
+                          {student.class_details?.class_name}
                         </td>
                         <td className="px-4 py-2">
                           {student.user.first_name} {student.user.last_name}
@@ -268,9 +270,11 @@ const StudentList = () => {
                       </tr>
                     ))
                   ) : (
-                    <span className="text-gray-600">
-                      No student is added to show.
-                    </span>
+                    <tr>
+                      <td colSpan={3} className="p-4 text-gray-600">
+                        No student is added to show.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -278,7 +282,7 @@ const StudentList = () => {
           )}
         </div>
 
-        {/* Modal for student details */}
+        {/* Student Details Modal */}
         {selectedStudent && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
@@ -290,7 +294,8 @@ const StudentList = () => {
                   <strong>Username:</strong> {selectedStudent.user.username}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Name:</strong> {selectedStudent.user.first_name}{" "}
+                  <strong>Name:</strong>{" "}
+                  {selectedStudent.user.first_name}{" "}
                   {selectedStudent.user.last_name}
                 </p>
                 <p className="text-gray-700">
@@ -306,8 +311,7 @@ const StudentList = () => {
                   <strong>Address:</strong> {selectedStudent.address}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Date of Birth:</strong>{" "}
-                  {selectedStudent.date_of_birth}
+                  <strong>Date of Birth:</strong> {selectedStudent.date_of_birth}
                 </p>
                 <p className="text-gray-700">
                   <strong>Parent's Name:</strong> {selectedStudent.parents}
@@ -317,7 +321,24 @@ const StudentList = () => {
                 </p>
                 <p className="text-gray-700">
                   <strong>Class:</strong>{" "}
-                  {selectedStudent.class_details.class_name}
+                  {selectedStudent.class_details?.class_name}
+                </p>
+
+                {/* Optional Subjects */}
+                <p className="text-gray-700">
+                  <strong>Optional Subjects:</strong>{" "}
+                  {selectedStudent.optional_subjects &&
+                  selectedStudent.optional_subjects.length > 0
+                    ? selectedStudent.optional_subjects
+                        .map((sub) => sub.subject_name)
+                        .join(", ")
+                    : "N/A"}
+                </p>
+
+                {/* Class Section */}
+                <p className="text-gray-700">
+                  <strong>Class Section:</strong>{" "}
+                  {selectedStudent.class_code_section || "N/A"}
                 </p>
               </div>
               <div className="mt-6 text-center">
@@ -357,7 +378,7 @@ const StudentList = () => {
           </div>
         )}
 
-        {/* Add or Edit Modal */}
+        {/* Add or Edit Student Modal */}
         {showModal &&
           (isEditMode ? (
             <EditStudentModal
