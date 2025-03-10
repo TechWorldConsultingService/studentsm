@@ -18,12 +18,7 @@ import MyStudents from "./pages/myStudents";
 import AcademicCalendar from "./pages/calendar";
 import HomePage from "./pages/homepage";
 import LearningManagemanetSystem from "./pages/LMS/lms";
-import Subject from "./pages/LMS/subject";
-import AssignmentDetailPage from "./pages/LMS/AssignmentDetailPage";
 import TeachingManagementSystem from "./pages/TMS/tms";
-import Classes from "./pages/TMS/classes";
-import AssignmentSubmissions from "./pages/TMS/AssignmentSubmission";
-import NewAssignment from "./pages/TMS/NewAssignment";
 import ClassList from "./pages/principal/classList/ClassList";
 import SubjectList from "./pages/principal/subjectList/SubjectList";
 import StudentList from "./pages/principal/studentList/StudentList";
@@ -34,28 +29,35 @@ import AddExamDetailsByPrincipal from "./pages/reports/AddExamDetailsByPrincipal
 import StudentRoutine from "./pages/reports/StudentRoutine";
 import ExamPublish from "./pages/reports/ExamPublish";
 import ExamRoutineTeacher from "./pages/reports/ExamRoutineTeacher";
-import AddRollNumber from "./pages/Teacher/AddRollNumber"
-import PrincipalCalendar from "./pages/Calander/PrincipalCalendar"
+import AddRollNumber from "./pages/Teacher/AddRollNumber";
+import PrincipalCalendar from "./pages/Calander/PrincipalCalendar";
 import AccountantList from "./pages/principal/accountent/AccountentList";
-import AccountantDashboard from "./pages/AccountantDahboard"
-import Invoicing from "./pages/accountant/Invoicing"
-import CategoryList from "./pages/accountant/CategoryList"
-import AddFeeAmount from "./pages/accountant/ClassFeesList"
-import AddTransportationFee from "./pages/accountant/TransportationFeeList"
-import LedgerPage from "./pages/accountant/LedgerPage"
+import AccountantDashboard from "./pages/AccountantDahboard";
+import Invoicing from "./pages/accountant/Invoicing";
+import CategoryList from "./pages/accountant/CategoryList";
+import AddFeeAmount from "./pages/accountant/ClassFeesList";
+import AddTransportationFee from "./pages/accountant/TransportationFeeList";
+import LedgerPage from "./pages/accountant/LedgerPage";
 import FeePayment from "./pages/accountant/FeePaymant";
-import PaymentPage from "./pages/accountant/PaymentPage"
+import PaymentPage from "./pages/accountant/PaymentPage";
 import ArrayInput from "./pages/example";
 import SuccessTransection from "./pages/accountant/SuccessInvoice";
-import SuccessPayment from "./pages/accountant/SuccessPayment"
+import SuccessPayment from "./pages/accountant/SuccessPayment";
 import MyLeaves from "./pages/leave/MyLeaves";
 import ManageAllLeaves from "./pages/leave/ManageAllLeaves";
+import SubjectNotes from "./pages/LMS/subjectNotes";
+import AssignmentPage from "./pages/LMS/homework/AssignmentPage";
+import SubjectSyllabus from "./pages/LMS/subjectSyllabus";
+import ClassSyllabus from "./pages/TMS/syllabus/classSyllabus";
+import ClassHomework from "./pages/TMS/teacherHomework/classHomework";
+import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
 
 function App() {
-  const [selectedClassForAttendance, setSelectedClassForAttendance] = useState("");
+  const [selectedClassForAttendance, setSelectedClassForAttendance] =
+    useState("");
 
   const router = createBrowserRouter([
-    { path: "/examplePage", element:<ArrayInput/>},
+    { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
     { path: "/homepage", element: <HomePage /> },
     { path: "/studentdashboard", element: <StudentHomePage /> },
@@ -70,12 +72,7 @@ function App() {
     { path: "/profile", element: <Profile /> },
     { path: "/myStudents", element: <MyStudents /> },
     { path: "/lms", element: <LearningManagemanetSystem /> },
-    { path: "/lms/:subject", element: <Subject /> },
-    { path: "/assignment/:assignmentId", element: <AssignmentDetailPage /> },
     { path: "/tms", element: <TeachingManagementSystem /> },
-    { path: "/tms/:classes", element: <Classes /> },
-    { path: "/submissions/:assignmentId", element: <AssignmentSubmissions /> },
-    { path: "/new-assignment", element: <NewAssignment /> },
     { path: "/classList", element: <ClassList /> },
     { path: "/subjectList", element: <SubjectList /> },
     { path: "/studentList", element: <StudentList /> },
@@ -86,24 +83,42 @@ function App() {
     { path: "/examPublish", element: <ExamPublish /> },
     { path: "/exam-details/:examId", element: <AddExamDetailsByPrincipal /> },
     { path: "/examRoutine", element: <StudentRoutine /> },
-    {path: "/addRollNumber", element: <AddRollNumber />},
-    { path:"/principal-calendar", element:<PrincipalCalendar />},
-{path: "/attendancePrincipal", element: <AttendancePrincipal />},
-{path: "/accountantList", element: <AccountantList />},
-{path: "/accountantdashboard", element: <AccountantDashboard />},
-{path: "/feePayment", element: <FeePayment />},
-{path: "/payment/:studentId", element: <PaymentPage />},
-{path: "/invoicing", element: <Invoicing />},
-{path:"/addCategory",element: <CategoryList />},
-{path: "/addFeeAmount",element: <AddFeeAmount />},
-{path: "/addTransportationFee" ,element: <AddTransportationFee />},
-{path: "/invoicing/:studentId", element: <LedgerPage />},
-{path: "/successTransection", element : <SuccessTransection />},
-{path: "/successPayment", element : <SuccessPayment />},
-{path:"/my-leaves" , element:<MyLeaves />},
-{path:"/manage-leaves", element:<ManageAllLeaves />},
-    { path: "/selectClassForAttendence", element: <SelectClassForAttendance setSelectedClassForAttendance={setSelectedClassForAttendance} /> },
-    { path: "/attendance", element: <Attendance selectedClassForAttendance={selectedClassForAttendance} /> },
+    { path: "/addRollNumber", element: <AddRollNumber /> },
+    { path: "/principal-calendar", element: <PrincipalCalendar /> },
+    { path: "/attendancePrincipal", element: <AttendancePrincipal /> },
+    { path: "/accountantList", element: <AccountantList /> },
+    { path: "/accountantdashboard", element: <AccountantDashboard /> },
+    { path: "/feePayment", element: <FeePayment /> },
+    { path: "/payment/:studentId", element: <PaymentPage /> },
+    { path: "/invoicing", element: <Invoicing /> },
+    { path: "/addCategory", element: <CategoryList /> },
+    { path: "/addFeeAmount", element: <AddFeeAmount /> },
+    { path: "/addTransportationFee", element: <AddTransportationFee /> },
+    { path: "/invoicing/:studentId", element: <LedgerPage /> },
+    { path: "/successTransection", element: <SuccessTransection /> },
+    { path: "/successPayment", element: <SuccessPayment /> },
+    { path: "/my-leaves", element: <MyLeaves /> },
+    { path: "/manage-leaves", element: <ManageAllLeaves /> },
+    { path: "/lms/:subjectName/homework", element: <AssignmentPage /> },
+    { path: "/lms/:subjectName/notes", element: <SubjectNotes /> },
+    { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
+    {path: "/tms/:classId/syllabus", element: <ClassSyllabus />},
+    {path: "/tms/:classId/homework", element: <ClassHomework />},
+    {path: "/tms/:classId/notes", element: <ClassNotes />},
+    {
+      path: "/selectClassForAttendence",
+      element: (
+        <SelectClassForAttendance
+          setSelectedClassForAttendance={setSelectedClassForAttendance}
+        />
+      ),
+    },
+    {
+      path: "/attendance",
+      element: (
+        <Attendance selectedClassForAttendance={selectedClassForAttendance} />
+      ),
+    },
   ]);
 
   return <RouterProvider router={router} />;

@@ -214,7 +214,7 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
             >
               {subjectList.map((item) => (
                 <Select.Option key={item.id} value={item.subject_name}>
-                  {item.subject_name}
+                  {item.subject_name} ({item.subject_code})
                 </Select.Option>
               ))}
             </Select>
@@ -241,7 +241,7 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
             >
               {optionalSubjectList.map((item) => (
                 <Select.Option key={item.id} value={item.subject_name}>
-                  {item.subject_name}
+                  {item.subject_name}({item.subject_code})
                 </Select.Option>
               ))}
             </Select>

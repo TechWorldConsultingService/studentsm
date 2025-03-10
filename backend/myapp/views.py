@@ -3444,3 +3444,37 @@ class FinanceSummaryAPIView(APIView):
 
         serializer = FinanceSummarySerializer(data)
         return Response(serializer.data)
+    
+class IsPrincipal(BasePermission):
+    def has_permission(self, request, view):
+        return Principal.objects.filter(user=request.user).exists()
+
+@api_view(['GET'])
+def dashboard_stats(request):
+    # Check if user is a principal
+    if not Principal.objects.filter(user=request.user).exists():
+        return Response(
+            {"error": "Access Denied. Only principals can view this data."}, 
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    total_students = Student.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_subjects = Subject.objects.count()
+    total_classes = Class.objects.count()
+    pending_leaves = LeaveApplication.objects.filter(status='Pending').count()
+    exams_this_month = ExamDetail.objects.filter(
+        exam_date__month=now().month, 
+        exam_date__year=now().year
+    ).count()
+
+    data = {
+        "total_students": total_students,
+        "total_teachers": total_teachers,
+        "total_subjects": total_subjects,
+        "total_classes": total_classes,
+        "pending_leaves": pending_leaves,
+        "exams_this_month": exams_this_month,
+    }
+    
+    return Response(data, status=status.HTTP_200_OK)

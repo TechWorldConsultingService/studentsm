@@ -5,7 +5,8 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import useFetchData from "../../hooks/useFetch";
+import useFetchData from "../../../hooks/useFetch";
+import ClassLayout from "../../../layout/ClassLayout";
 
 
 
@@ -80,6 +81,7 @@ const ClassNotes = () => {
 
 
   return (
+    <ClassLayout >
     <div className="bg-purple-50 p-6">
       <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
         <h1 className="text-3xl font-extrabold text-purple-800">
@@ -202,6 +204,8 @@ const ClassNotes = () => {
         />
       )}
     </div>
+    </ClassLayout>
+
   );
 };
 

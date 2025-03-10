@@ -177,6 +177,9 @@ urlpatterns = [
     path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'),
 
     path('api/finance-summary/', FinanceSummaryAPIView.as_view(), name='finance-summary'),
+
+    path('api/dashboard-stats/', dashboard_stats, name='dashboard-stats'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

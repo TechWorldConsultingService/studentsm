@@ -1,5 +1,8 @@
-import React from "react";
+import React , { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
+import { useSelector } from "react-redux";
+import axios from "axios"; 
+
 import {
   BarChart,
   Bar,
@@ -48,9 +51,9 @@ const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
 const statsData = [
   { label: "Total Students", value: 1200 },
   { label: "Total Teachers", value: 45 },
-  { label: "Total Classes", value: 30 },
-  { label: "Pending Leaves", value: 5 },
-  { label: "Exams This Month", value: 2 },
+  { label: "Total Subject", value: 30 },
+  { label: "Total Class", value: 5 },
+  { label: "pending_leaves", value: 2 },
 ];
 
 const quickActions = [
@@ -110,6 +113,35 @@ const tasks = [
 ];
 
 const PrincipalHomePage = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { access } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    const fetchPrincipalDashboardSummary = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/dashboard-stats/", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        setDashboardData(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching Dashboard summary:", err);
+        setError("Failed to load Dashboard data.");
+        setLoading(false);
+      }
+    };
+
+    fetchPrincipalDashboardSummary();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
+
   return (
     <MainLayout>
       <div className="p-4 w-full h-full bg-gray-100">
@@ -125,17 +157,31 @@ const PrincipalHomePage = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-          {statsData.map((stat, index) => (
-            <div
-              key={index}
-              className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center"
-            >
-              <span className="text-sm text-gray-500">{stat.label}</span>
-              <span className="text-2xl font-bold text-purple-700">
-                {stat.value}
-              </span>
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Students</span>
+              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_students}</span>
             </div>
-          ))}
+
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Teachers</span>
+              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_teachers}</span>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Subjects</span>
+              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_subjects}</span>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Classes</span>
+              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_classes}</span>
+            </div>  
+
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Pending Leaves</span>
+              <span className="text-2xl font-bold text-purple-700">{dashboardData?.pending_leaves}</span>
+            </div>
+           
         </div>
 
         {/* Charts Container */}

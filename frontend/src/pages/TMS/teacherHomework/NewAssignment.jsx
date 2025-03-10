@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
@@ -11,9 +11,13 @@ const newAssignmentSchema = Yup.object({
   due_date: Yup.date().required("Due Date is required").nullable(),
 });
 
-const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkList }) => {
-  
-
+const NewAssignment = ({
+  closeModal,
+  subjects,
+  access,
+  selectedClass,
+  fetchHomeworkList,
+}) => {
   const formik = useFormik({
     initialValues: {
       subject: "",
@@ -29,23 +33,19 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
           toast.error("Authentication token is missing.");
           return;
         }
-        await axios.post(
-          "http://localhost:8000/api/assignments/assign/",
-          values,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: access ? `Bearer ${access}` : "",
-            },
-          }
-        );
+        await axios.post("http://localhost:8000/api/assignments/assign/", values, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: access ? `Bearer ${access}` : "",
+          },
+        });
 
-        toast.success("Assignment submitted successfully!");
-        fetchHomeworkList()
-        closeModal()
+        toast.success("Assignment created successfully!");
+        fetchHomeworkList();
+        closeModal();
       } catch (error) {
-        console.error("Error submitting assignment:", error.response || error);
-        toast.error("Error submitting assignment:", error.response || error);
+        console.error("Error creating assignment:", error.response || error);
+        toast.error("Error creating assignment.");
       }
     },
   });
@@ -53,7 +53,7 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
   return (
     <div className="bg-purple-50 p-6">
       <form onSubmit={formik.handleSubmit} className="space-y-4">
-        {/* Class input */}
+        {/* Class input (read-only or editable) */}
         <div className="flex flex-col">
           <label className="text-purple-700 font-semibold">Class</label>
           <input
@@ -64,6 +64,7 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
             onBlur={formik.handleBlur}
             value={formik.values.class_assigned}
             className="mt-2 p-2 rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            disabled
           />
         </div>
 
@@ -74,10 +75,13 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
             id="subject"
             name="subject"
             onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
             value={formik.values.subject}
             className="mt-2 p-2 rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
-            <option disabled value="">Select Subject</option>
+            <option disabled value="">
+              Select Subject
+            </option>
             {subjects.length > 0 ? (
               subjects.map((item) => (
                 <option key={item.id} value={item.id}>
@@ -85,7 +89,9 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
                 </option>
               ))
             ) : (
-              <option disabled value="">No subjects available</option>
+              <option disabled value="">
+                No subjects available
+              </option>
             )}
           </select>
           {formik.touched.subject && formik.errors.subject && (
@@ -106,7 +112,9 @@ const NewAssignment = ({ closeModal,subjects,access,selectedClass,fetchHomeworkL
             className="mt-2 p-2 rounded-lg border border-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           {formik.touched.assignment_name && formik.errors.assignment_name && (
-            <div className="text-red-500 text-sm">{formik.errors.assignment_name}</div>
+            <div className="text-red-500 text-sm">
+              {formik.errors.assignment_name}
+            </div>
           )}
         </div>
 

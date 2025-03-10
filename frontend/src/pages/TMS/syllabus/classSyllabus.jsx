@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import ClassLayout from "../../../layout/ClassLayout";
 
 // A small check icon for completed items
 const CheckIcon = () => (
@@ -149,6 +150,7 @@ const ClassSyllabus = () => {
   };
 
   return (
+    <ClassLayout >
     <div className="bg-gradient-to-r from-gray-100 to-purple-50 min-h-screen p-8">
       <div className="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-lg border border-purple-300">
         {/* Header */}
@@ -317,6 +319,7 @@ const ClassSyllabus = () => {
         )}
       </div>
     </div>
+    </ClassLayout>
   );
 };
 

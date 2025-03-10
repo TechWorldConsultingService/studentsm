@@ -201,13 +201,13 @@ const AccountantDashboard = () => {
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Refunds Processed</span>
             {/* <span className="text-2xl font-bold text-green-700">{financeData.refunds_processed}</span> */}
-            <span className="text-2xl font-bold text-green-700">100</span>
+            <span className="text-2xl font-bold text-green-700">0</span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Pending Refunds</span>
             {/* <span className="text-2xl font-bold text-yellow-700">{financeData.pending_refunds}</span> */}
-            <span className="text-2xl font-bold text-yellow-700">100</span>
+            <span className="text-2xl font-bold text-yellow-700">0</span>
           </div>
         </div>
 
