@@ -27,8 +27,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
-
-
+import nepali_datetime as ndt
+from .serializers import FinanceSummarySerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -1037,13 +1037,12 @@ class OptionalSubjectsAPIView(APIView):
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve a list of all classes.
-        """
-        classes = Class.objects.all()  # Retrieve all Class instances
-        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    
+    def get(self, request, *args, **kwargs):
+        # Fetch all classes, prefetched related sections (excluding subjects)
+        classes = Class.objects.prefetch_related("sections")  # Only prefetch sections, no subjects
+        serializer = ClassDetailSerializer(classes, many=True)
+        return Response({"status": "success", "classes": serializer.data})
 
     def post(self, request, format=None):
         """
@@ -2685,9 +2684,24 @@ class AttendanceByClassAPIView(APIView):
 
 class StudentsByClassAttendanceAPIView(APIView):
     def get(self, request, class_id):
-        students = Student.objects.filter(class_code_id=class_id)
+        students = Student.objects.filter(class_code_id=class_id).prefetch_related('user')
+
+        # Get student IDs to fetch last transactions in bulk (optimized)
+        student_ids = students.values_list('id', flat=True)
+
+        # Fetch last transaction for each student in bulk (avoiding N+1 queries)
+        last_transactions = {
+            txn.student_id: txn.balance
+            for txn in StudentTransaction.objects.filter(student_id__in=student_ids).order_by('student_id', '-transaction_date')
+        }
+
+        # Attach balance to each student instance
+        for student in students:
+            student.pre_balance = last_transactions.get(student.id, 0)  # Default to 0 if no transaction
+
         serializer = StudentListAttendanceSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 
 class SubjectWiseStudentListAPIView(APIView):
@@ -2877,7 +2891,6 @@ class TransportationFeeDetailAPIView(APIView):
 
 
 class StudentBillAPIView(APIView):
-
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all bills for a specific student."""
         bills = StudentBill.objects.filter(student__id=student_id)
@@ -2903,24 +2916,36 @@ class StudentBillAPIView(APIView):
         serializer = StudentBillSerializer(data=request.data)
 
         if serializer.is_valid():
-            student_bill = serializer.save()
+            # Start atomic transaction block
+            with transaction.atomic():
+                # Create the bill
+                student_bill = serializer.save()
 
-            # Calculate post_balance (pre_balance + bill amount)
-            post_balance = pre_balance + student_bill.total_amount
+                # Calculate post_balance (pre_balance + bill amount)
+                post_balance = pre_balance + student_bill.total_amount
 
-            bill_data = GetStudentBillSerializer(student_bill).data
-            bill_data.update({
-                "pre_balance": pre_balance,
-                "post_balance": post_balance
-            })
+                # Create the transaction for the bill
+                StudentTransaction.objects.create(
+                    student=student_bill.student,
+                    transaction_type='bill',
+                    bill=student_bill,
+                    balance=post_balance,
+                    transaction_date=student_bill.date
+                )
 
-            return Response({
-                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
-                'bill_details': bill_data
-            }, status=status.HTTP_201_CREATED)
+                # Commit the transaction
+                bill_data = GetStudentBillSerializer(student_bill).data
+                bill_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
+                    'bill_details': bill_data
+                }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
@@ -2965,24 +2990,43 @@ class StudentPaymentAPIView(APIView):
         serializer = StudentPaymentSerializer(data=data, context={'request': request})  # Pass request context
 
         if serializer.is_valid():
-            payment = serializer.save()
+            # Begin atomic transaction
+            with transaction.atomic():
+                # Create the payment object
+                payment = serializer.save()
 
-            post_balance = pre_balance - payment.amount_paid
+                # Update the balances
+                post_balance = pre_balance - payment.amount_paid
 
-            payment_data = GetStudentPaymentSerializer(payment).data
-            payment_data.update({
-                "pre_balance": pre_balance,
-                "post_balance": post_balance
-            })
+                # Create the transaction for the payment
+                last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+                last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+                new_balance = last_balance - Decimal(str(payment.amount_paid))
 
-            return Response({
-                'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
-                'payment_details': payment_data
-            }, status=status.HTTP_201_CREATED)
+                # Save the new transaction entry
+                StudentTransaction.objects.create(
+                    student=payment.student,
+                    transaction_type='payment',
+                    payment=payment,
+                    balance=new_balance,
+                    transaction_date=payment.date
+                )
+
+                # Commit the transaction
+                post_balance = pre_balance - payment.amount_paid
+
+                payment_data = GetStudentPaymentSerializer(payment).data
+                payment_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
+                    'payment_details': payment_data
+                }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class StudentPaymentDetailAPIView(APIView):
@@ -2998,12 +3042,6 @@ class StudentPaymentDetailAPIView(APIView):
 
         except StudentPayment.DoesNotExist:
             return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import StudentTransaction, Student
-from .serializers import StudentTransactionSerializer
 
 class StudentTransactionsAPIView(APIView):
 
@@ -3219,34 +3257,6 @@ class FeeDashboardAPIView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-class ClassListView(APIView):
-    def get(self, request):
-        class_list = []
-
-        # Get all classes
-        all_classes = Class.objects.all()
-
-        for school_class in all_classes:
-            sections = school_class.sections.all()
-            if sections.exists():
-                for section in sections:
-                    class_list.append({
-                        "class_id": school_class.id,  # Class ID
-                        "section_id": section.id,  # Section ID
-                        "name": f"{school_class.class_name} {section.section_name}"
-                    })
-            else:
-                class_list.append({
-                    "class_id": school_class.id,  # Only Class ID
-                    "section_id": None,  # No section
-                    "name": school_class.class_name
-                })
-
-        return Response(class_list)
-
-
-
-import nepali_datetime as ndt
 
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -3308,3 +3318,129 @@ class PaymentSearchAPIView(APIView):
             "payments": payment_data,
             "total_payment_amount": total_amount
         }, status=status.HTTP_200_OK)
+
+
+# API to create a new message
+class CreateMessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CommunicationSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()  # sender is automatically set in the serializer
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API to get messages for a specific receiver
+class UserMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages where the logged-in user is the direct receiver.
+        """
+        user = request.user
+        messages = Communication.objects.filter(receiver=user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# API to get messages based on logged-in user's role
+class RoleBasedMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages based on the logged-in user's role.
+        """
+        user = request.user
+        role_filters = []
+
+        # Logic for Teachers
+        if user.is_teacher:
+            role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
+
+        # Logic for Students
+        if user.is_student:
+            role_filters += ["student", "teacher_student", "student_accountant", "all"]
+
+        # Logic for Accountants
+        if user.is_accountant:
+            role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
+
+        # Fetch messages where receiver_role matches the above filter
+        messages = Communication.objects.filter(receiver_role__in=role_filters)
+
+        # Serialize the messages and send the response
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommunicationDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        """
+        Retrieve a single message by ID
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        serializer = GetCommunicationSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """
+        Update an existing message, but only if the logged-in user is the sender
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to edit this message.")
+        
+        serializer = CommunicationSerializer(message, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """
+        Delete a message, but only if the logged-in user is the sender.
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to delete this message.")
+        
+        message.delete()
+        
+        # Return 200 OK with the success message
+        return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)
+
+class FinanceSummaryAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Optional, restrict access
+    # permission_classes = [AllowAny]  # Optional, restrict access
+
+    def get(self, request, *args, **kwargs):
+        # Total Fees Collected
+        total_fees_collected = StudentPayment.objects.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Total Outstanding Amount
+        total_fees_billed = StudentBill.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+        total_outstanding_amount = total_fees_billed - total_fees_collected
+
+        # Total Transaction Count
+        total_transaction_count = StudentTransaction.objects.count()
+
+        # Prepare response data
+        data = {
+            "total_fees_collected": total_fees_collected,
+            "total_outstanding_amount": total_outstanding_amount,
+            "total_transaction_count": total_transaction_count
+        }
+
+        serializer = FinanceSummarySerializer(data)
+        return Response(serializer.data)

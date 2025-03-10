@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";  
+import { useSelector } from "react-redux";
+
 import MainLayout from "../layout/MainLayout";
 import {
   BarChart,
@@ -113,6 +116,43 @@ const tasks = [
 ];
 
 const AccountantDashboard = () => {
+  const [financeData, setFinanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { access } = useSelector((state) => state.user);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchFinanceSummary = async () => {
+      try {
+        const response = await axios.get("http://localhost:8000/api/finance-summary/", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        });
+        setFinanceData(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching finance summary:", err);
+        setError("Failed to load finance data.");
+        setLoading(false);
+      }
+    };
+
+    fetchFinanceSummary();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return <div className="p-6 text-center text-gray-700">Loading financial data...</div>;
+  }
+
+  // Error state
+  if (error) {
+    return <div className="p-6 text-center text-red-600">{error}</div>;
+  }
+
   return (
     <MainLayout>
       <div className="p-4 w-full h-full bg-gray-50">
@@ -128,7 +168,7 @@ const AccountantDashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           {statsData.map((stat, index) => (
             <div
               key={index}
@@ -140,6 +180,35 @@ const AccountantDashboard = () => {
               </span>
             </div>
           ))}
+        </div> */}
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
+            <span className="text-sm text-gray-500">Total Fees Collected</span>
+            <span className="text-2xl font-bold text-blue-700">${financeData?.total_fees_collected}</span>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
+            <span className="text-sm text-gray-500">Total Outstanding</span>
+            <span className="text-2xl font-bold text-red-700">${financeData?.total_outstanding_amount}</span>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
+            <span className="text-sm text-gray-500">Transactions</span>
+            <span className="text-2xl font-bold text-blue-700">{financeData?.total_transaction_count}</span>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
+            <span className="text-sm text-gray-500">Refunds Processed</span>
+            {/* <span className="text-2xl font-bold text-green-700">{financeData.refunds_processed}</span> */}
+            <span className="text-2xl font-bold text-green-700">100</span>
+          </div>
+
+          <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
+            <span className="text-sm text-gray-500">Pending Refunds</span>
+            {/* <span className="text-2xl font-bold text-yellow-700">{financeData.pending_refunds}</span> */}
+            <span className="text-2xl font-bold text-yellow-700">100</span>
+          </div>
         </div>
 
         {/* Charts Container */}

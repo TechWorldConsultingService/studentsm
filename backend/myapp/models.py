@@ -96,7 +96,7 @@ class Teacher(models.Model):
     gender = models.CharField(max_length=6, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
     subjects = models.ManyToManyField(Subject, related_name='teachers')
     classes = models.ManyToManyField(Class, related_name='teachers')
-    classes_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="teachersection")
+    classes_section = models.ManyToManyField(Section, blank=True, related_name="teacher_sections")
     class_teacher = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True)
     class_teacher_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="classteachersection")
 
@@ -132,7 +132,8 @@ class Student(models.Model):
     parents = models.CharField(max_length=15)
     class_code = models.ForeignKey(Class, on_delete=models.SET_NULL, related_name='students', null=True, blank=True)
     class_code_section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True, related_name="studentsection")
-    roll_no = models.CharField(max_length=10, null=True, blank=True)  # Add Roll Number Field
+    roll_no = models.CharField(max_length=10, null=True, blank=True)  
+    optional_subjects = models.ManyToManyField(Subject, blank=True)
 
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
@@ -548,3 +549,22 @@ class StudentTransaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type.capitalize()} - Balance: {self.balance}"
+
+
+
+class Communication(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_communications")
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="received_communications")
+    message = models.TextField()
+    receiver_role = models.CharField(max_length=255, choices=(
+        ('teacher', 'Teacher'),
+        ('student', 'Student'),
+        ('accountant', 'Accountant'),
+        ('teacher_student', 'Teacher and Student'),
+        ('teacher_accountant', 'Teacher and Accountant'),
+        ('student_accountant', 'Student and Accountant'),
+        ('all', 'All'),),null=True,blank=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.sender.username} to {self.receiver.username if self.receiver else self.receiver_role}"

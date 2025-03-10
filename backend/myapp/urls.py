@@ -78,7 +78,6 @@ urlpatterns = [
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
     path('api/classes/<int:class_id>/sections/', SectionListCreateAPIView.as_view(), name='section-list-create'),
     path('api/classes/sections/<int:pk>/', SectionDetailAPIView.as_view(), name='section-detail'),
-    path('api/sections/', ClassListView.as_view(), name='class-list'),
 
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
@@ -172,6 +171,12 @@ urlpatterns = [
     path('api/fee-summary/', FeeDashboardAPIView.as_view(), name='fee-summary'),
     path('api/payments/search/', PaymentSearchAPIView.as_view(), name='payment-search'),
 
+    path('api/messages/create/', CreateMessageAPIView.as_view(), name='create-message'),
+    path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),
+    path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'),
+    path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'),
+
+    path('api/finance-summary/', FinanceSummaryAPIView.as_view(), name='finance-summary'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
