@@ -1037,12 +1037,10 @@ class OptionalSubjectsAPIView(APIView):
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):
-    
     def get(self, request, *args, **kwargs):
-        # Fetch all classes, prefetched related sections (excluding subjects)
-        classes = Class.objects.prefetch_related("sections")  # Only prefetch sections, no subjects
+        classes = Class.objects.prefetch_related("sections")  # ✅ Prefetch only sections
         serializer = ClassDetailSerializer(classes, many=True)
-        return Response({"status": "success", "classes": serializer.data})
+        return Response(serializer.data)
 
     def post(self, request, format=None):
         """

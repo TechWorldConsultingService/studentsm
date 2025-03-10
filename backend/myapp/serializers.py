@@ -77,11 +77,9 @@ class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 class SectionSerializer(serializers.ModelSerializer):
-    school_class_name = serializers.CharField(source="school_class.class_name", read_only=True)
-
     class Meta:
         model = Section
-        fields = ['id', 'school_class', 'school_class_name', 'section_name']
+        fields = ['id', 'section_name']
         extra_kwargs = {'school_class': {'required': False}}  # Make school_class optional in input
 
     def create(self, validated_data):
