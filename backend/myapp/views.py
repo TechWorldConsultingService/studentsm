@@ -2954,6 +2954,8 @@ class StudentPaymentAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        
+
         last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
         pre_balance = last_transaction.balance if last_transaction else 0
 
