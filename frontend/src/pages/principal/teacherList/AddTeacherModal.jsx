@@ -6,21 +6,73 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
-import useFetchData from "../../../hooks/useFetch";
 import { Select } from "antd";
 
+// Example fetch hook or your approach
+// If you're using your custom `useFetchData`, that is fine, just replicate it for sections as well.
 const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const { fetchedData: classList } = useFetchData(
-    "http://localhost:8000/api/classes/"
-  );
 
-  const { fetchedData: subjectList } = useFetchData(
-    "http://localhost:8000/api/subjects/"
-  );
+  // We'll store the data from API calls here
+  const [classList, setClassList] = useState([]);
+  const [sectionList, setSectionList] = useState([]);
+  const [subjectList, setSubjectList] = useState([]);
 
-const addTeacherSchema = Yup.object().shape({
+  // Fetch classes, sections, and subjects on mount
+  useEffect(() => {
+    if (access) {
+      fetchClasses();
+      fetchSections();
+      fetchSubjects();
+    }
+  }, [access]);
+
+  const fetchClasses = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/classes/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setClassList(data);
+    } catch (err) {
+      toast.error("Error fetching classes.");
+    }
+  };
+
+  const fetchSections = async () => {
+    try {
+      // Replace with your actual endpoint for sections
+      const { data } = await axios.get("http://localhost:8000/api/sections/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setSectionList(data);
+    } catch (error) {
+      toast.error("Error fetching sections.");
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:8000/api/subjects/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
+      setSubjectList(data);
+    } catch (err) {
+      toast.error("Error fetching subjects.");
+    }
+  };
+
+  // Validation schema
+  const addTeacherSchema = Yup.object().shape({
     user: Yup.object().shape({
       username: Yup.string()
         .required("Username is required.")
@@ -48,39 +100,33 @@ const addTeacherSchema = Yup.object().shape({
     }),
     phone: Yup.string()
       .required("Phone number is required.")
-      .matches(/^[0-9]{10}$/, "Phone number must be 10 digits long.")
-      .min(10, "Phone number must be 10 digits.")
-      .max(10, "Phone number must be 10 digits."),
+      .matches(/^[0-9]{9,10}$/, "Phone number must be 9 or 10 digits.")
+      .max(10, "Phone number can't exceed 10 digits."),
     address: Yup.string()
       .required("Address is required.")
-      .min(5, "Address must be at least 5 characters long.")
-      .max(50, "Address can't exceed 50 characters."),
-    date_of_joining: Yup.date()
-      .required("Date of joining is required.")
-      .max(new Date(), "Date of birth cannot be in the future."),
+      .min(2, "Address must be at least 2 characters.")
+      .max(100, "Address can't exceed 100 characters."),
+    date_of_joining: Yup.string().required("Date of joining is required."),
     gender: Yup.string().required("Gender is required."),
 
+    // We'll only do a minimal validation for classes and sections
+    classes: Yup.array()
+      .of(Yup.number().required())
+      .min(1, "Please select at least one class."),
+    classes_section: Yup.array().of(Yup.number()).min(1, "Select at least one section."),
+
+    class_teacher: Yup.number().nullable(),
+    class_teacher_section: Yup.number().nullable(),
+
+    // subjects is array of objects
     subjects: Yup.array()
       .of(
         Yup.object().shape({
-          subject_code: Yup.string()
-            .required("Subject code is required.")
-            .oneOf(
-              subjectList.map((item) => item.subject_code),
-              "Invalid subject selected."
-            ),
-          subject_name: Yup.string()
-            .required("Subject name is required.")
-            .oneOf(
-              subjectList.map((item) => item.subject_name),
-              "Invalid subject name."
-            ),
+          subject_code: Yup.string().required("Subject code is required."),
+          subject_name: Yup.string().required("Subject name is required."),
         })
       )
       .min(1, "At least one subject is required."),
-    class_teacher: Yup.string()
-      .nullable()
-      .notRequired("Please select one class as Class Teacher if applicable."),
   });
 
   const formik = useFormik({
@@ -97,7 +143,10 @@ const addTeacherSchema = Yup.object().shape({
       date_of_joining: "",
       gender: "",
       subjects: [],
+      classes: [],
+      classes_section: [],
       class_teacher: "",
+      class_teacher_section: "",
     },
     validationSchema: addTeacherSchema,
     onSubmit: async (values) => {
@@ -125,9 +174,20 @@ const addTeacherSchema = Yup.object().shape({
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error adding teacher.", error.message || error);
+        toast.error("Error adding teacher: " + (error.message || error));
       }
     }
+  };
+
+  // Helper to map user’s selected subject_codes to objects
+  const handleSubjectsChange = (selectedSubjectCodes) => {
+    const selectedObjects = subjectList
+      .filter((sub) => selectedSubjectCodes.includes(sub.subject_code))
+      .map((sub) => ({
+        subject_code: sub.subject_code,
+        subject_name: sub.subject_name,
+      }));
+    formik.setFieldValue("subjects", selectedObjects);
   };
 
   return (
@@ -152,6 +212,7 @@ const addTeacherSchema = Yup.object().shape({
               </div>
             )}
           </div>
+
           {/* Password */}
           <div className="mb-4">
             <Password
@@ -168,6 +229,7 @@ const addTeacherSchema = Yup.object().shape({
               </div>
             )}
           </div>
+
           {/* Email */}
           <div className="mb-4">
             <input
@@ -185,6 +247,7 @@ const addTeacherSchema = Yup.object().shape({
               </div>
             )}
           </div>
+
           {/* First Name */}
           <div className="mb-4">
             <input
@@ -203,6 +266,7 @@ const addTeacherSchema = Yup.object().shape({
                 </div>
               )}
           </div>
+
           {/* Last Name */}
           <div className="mb-4">
             <input
@@ -221,6 +285,7 @@ const addTeacherSchema = Yup.object().shape({
                 </div>
               )}
           </div>
+
           {/* Phone */}
           <div className="mb-4">
             <input
@@ -238,6 +303,7 @@ const addTeacherSchema = Yup.object().shape({
               </div>
             )}
           </div>
+
           {/* Address */}
           <div className="mb-4">
             <input
@@ -255,11 +321,13 @@ const addTeacherSchema = Yup.object().shape({
               </div>
             )}
           </div>
+
           {/* Date of Joining */}
           <div className="mb-4">
             <input
-              type="date"
+              type="text"
               className="border border-gray-300 p-2 rounded w-full"
+              placeholder="Date of Joining (e.g. 2081/11/12)"
               name="date_of_joining"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -272,6 +340,7 @@ const addTeacherSchema = Yup.object().shape({
                 </div>
               )}
           </div>
+
           {/* Gender */}
           <div className="mb-4">
             <select
@@ -293,35 +362,21 @@ const addTeacherSchema = Yup.object().shape({
             )}
           </div>
 
-
-
-
-{/*  subjects */}
+          {/* Subjects (Multi-select) */}
           <div className="mb-4">
+            <label className="block font-semibold mb-1">Subjects:</label>
             <Select
               mode="multiple"
-              name="subjects"
               placeholder="Select all subjects"
               className="w-full"
-              onChange={(selectedValues) => {
-                // Map selected class codes to full objects
-                const selectedSubject = subjectList.filter((item) =>
-                  selectedValues.includes(item.subject_code)
-                );
-                formik.setFieldValue("subjects", selectedSubject);
-              }}
-              value={formik.values.subjects.map((item) => item.subject_code)}
-              onBlur={formik.handleBlur}
+              onChange={handleSubjectsChange}
+              value={formik.values.subjects.map((s) => s.subject_code)}
             >
-              {subjectList.length > 0 &&
-                subjectList.map((item) => (
-                  <Select.Option
-                    key={item.subjectList_code}
-                    value={item.subject_code}
-                  >
-                    {item.subject_name} ({item.subject_code})
-                  </Select.Option>
-                ))}
+              {subjectList.map((sub) => (
+                <Select.Option key={sub.subject_code} value={sub.subject_code}>
+                  {sub.subject_name} ({sub.subject_code})
+                </Select.Option>
+              ))}
             </Select>
             {formik.touched.subjects && formik.errors.subjects && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
@@ -330,34 +385,23 @@ const addTeacherSchema = Yup.object().shape({
             )}
           </div>
 
-
-
-          {/* Classes Teacher*/}
+          {/* Classes (Multi-select) */}
           <div className="mb-4">
+            <label className="block font-semibold mb-1">Classes:</label>
             <Select
               mode="multiple"
-              name="class_teacher"
-              placeholder="Select all classes"
+              placeholder="Select classes to teach"
               className="w-full"
-              onChange={(selectedValues) => {
-                // Map selected class codes to full objects
-                const selectedClasses = classList.filter((classItem) =>
-                  selectedValues.includes(classItem.class_code)
-                );
-                formik.setFieldValue("classes", selectedClasses);
+              onChange={(selectedIDs) => {
+                formik.setFieldValue("classes", selectedIDs);
               }}
-              value={formik.values.classes.map((item) => item.class_code)}
-              onBlur={formik.handleBlur}
+              value={formik.values.classes}
             >
-              {classList.length > 0 &&
-                classList.map((classItem) => (
-                  <Select.Option
-                    key={classItem.class_code}
-                    value={classItem.class_code}
-                  >
-                    {classItem.class_name}
-                  </Select.Option>
-                ))}
+              {classList.map((cls) => (
+                <Select.Option key={cls.id} value={cls.id}>
+                  {cls.class_name} (ID: {cls.id})
+                </Select.Option>
+              ))}
             </Select>
             {formik.touched.classes && formik.errors.classes && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
@@ -366,7 +410,84 @@ const addTeacherSchema = Yup.object().shape({
             )}
           </div>
 
-          <div className="flex justify-center space-x-4">
+          {/* Classes Section (Multi-select) */}
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">Classes Sections:</label>
+            <Select
+              mode="multiple"
+              placeholder="Select sections for those classes"
+              className="w-full"
+              onChange={(selectedSectionIDs) => {
+                formik.setFieldValue("classes_section", selectedSectionIDs);
+              }}
+              value={formik.values.classes_section}
+            >
+              {sectionList.map((section) => (
+                <Select.Option key={section.id} value={section.id}>
+                  {section.section_name} (ID: {section.id})
+                </Select.Option>
+              ))}
+            </Select>
+            {formik.touched.classes_section && formik.errors.classes_section && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.classes_section}
+              </div>
+            )}
+          </div>
+
+          {/* Class Teacher (Single-select) */}
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">Class Teacher of:</label>
+            <Select
+              allowClear
+              placeholder="Select one class if applicable"
+              className="w-full"
+              onChange={(value) => formik.setFieldValue("class_teacher", value)}
+              value={formik.values.class_teacher}
+            >
+              {classList.map((cls) => (
+                <Select.Option key={cls.id} value={cls.id}>
+                  {cls.class_name} (ID: {cls.id})
+                </Select.Option>
+              ))}
+            </Select>
+            {formik.touched.class_teacher && formik.errors.class_teacher && (
+              <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                {formik.errors.class_teacher}
+              </div>
+            )}
+          </div>
+
+          {/* Class Teacher Section (Single-select) */}
+          <div className="mb-4">
+            <label className="block font-semibold mb-1">
+              Class Teacher Section:
+            </label>
+            <Select
+              allowClear
+              placeholder="Select one section if applicable"
+              className="w-full"
+              onChange={(value) =>
+                formik.setFieldValue("class_teacher_section", value)
+              }
+              value={formik.values.class_teacher_section}
+            >
+              {sectionList.map((section) => (
+                <Select.Option key={section.id} value={section.id}>
+                  {section.section_name} (ID: {section.id})
+                </Select.Option>
+              ))}
+            </Select>
+            {formik.touched.class_teacher_section &&
+              formik.errors.class_teacher_section && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.class_teacher_section}
+                </div>
+              )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-center space-x-4 mt-6">
             <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
@@ -375,7 +496,7 @@ const addTeacherSchema = Yup.object().shape({
             </button>
             <button
               type="button"
-              className="bg-gray-300 text-black px-6 py-2 rounded-lg hover:bg-gray-400"
+              className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
               onClick={handleCloseModal}
             >
               Cancel
