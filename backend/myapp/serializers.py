@@ -989,10 +989,11 @@ class AttendanceDetailSerializer(serializers.ModelSerializer):
 class StudentListAttendanceSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     class_details = serializers.SerializerMethodField()
+    pre_balance = serializers.SerializerMethodField()  # New field for balance
 
     class Meta:
         model = Student
-        fields = ['id', 'full_name', 'roll_no', 'parents', 'class_details']  # Added the missing comma here
+        fields = ['id', 'full_name', 'roll_no', 'parents', 'class_details', 'pre_balance']  # Added pre_balance
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
@@ -1005,6 +1006,16 @@ class StudentListAttendanceSerializer(serializers.ModelSerializer):
                 "class_code": obj.class_code.class_code,
             }
         return None
+
+    def get_pre_balance(self, obj):
+        """ Fetch the last transaction balance of the student. """
+        last_transaction = (
+            StudentTransaction.objects.filter(student=obj)
+            .order_by('-transaction_date')
+            .first()
+        )
+        return last_transaction.balance if last_transaction else 0  # Default to 0 if no transaction
+
 
     
 class SimpleAttendanceSerializer(serializers.ModelSerializer):
@@ -1173,37 +1184,56 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
 
 class StudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
-    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())  # Auto-set the logged-in user
+    created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())  
     amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+    pre_balance = serializers.SerializerMethodField()
+    post_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = StudentPayment
-        fields = ('id', 'student', 'created_by', 'date', 'payment_number', 'amount_paid', 'remarks')
+        fields = ('id', 'student', 'created_by', 'date', 'payment_number', 'amount_paid', 'remarks', 'pre_balance', 'post_balance')
+
+    def get_pre_balance(self, obj):
+        """Fetch last transaction balance before this payment."""
+        last_transaction = (
+            StudentTransaction.objects.filter(student=obj.student)
+            .order_by('-transaction_date')
+            .only("balance")  # Fetch only balance field
+            .first()
+        )
+        return last_transaction.balance if last_transaction else Decimal('0.00')
+
+    def get_post_balance(self, obj):
+        """Calculate post balance dynamically."""
+        return self.get_pre_balance(obj) - obj.amount_paid
 
     def validate(self, data):
-        if data.get('amount_paid', Decimal('0.00')) < 0:
-            raise serializers.ValidationError("Amount paid cannot be negative")
+        """Ensure amount paid is non-negative."""
+        if data.get("amount_paid", Decimal("0.00")) < 0:
+            raise serializers.ValidationError("Amount paid cannot be negative.")
         return data
 
     def create(self, validated_data):
-        user = self.context['request'].user  # Get the logged-in user
-        validated_data['created_by'] = user  # Set `created_by` automatically
+        """Process payment creation and update transactions."""
+        request = self.context.get("request")
+        pre_balance = self.context.get("pre_balance", Decimal("0.00"))  # Pass from API view
+        validated_data["created_by"] = request.user if request else None
+
+        # Create payment
         payment = StudentPayment.objects.create(**validated_data)
+        post_balance = pre_balance - payment.amount_paid
 
-        last_transaction = StudentTransaction.objects.filter(student=payment.student).order_by('-transaction_date').first()
-        last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
-        new_balance = last_balance - Decimal(str(payment.amount_paid))
-
-        if not StudentTransaction.objects.filter(payment=payment).exists():
-            StudentTransaction.objects.create(
-                student=payment.student,
-                transaction_type='payment',
-                payment=payment,
-                balance=new_balance,
-                transaction_date=payment.date
-            )
+        # Create corresponding transaction
+        StudentTransaction.objects.create(
+            student=payment.student,
+            transaction_type="payment",
+            payment=payment,
+            balance=post_balance,
+            transaction_date=payment.date
+        )
 
         return payment
+
 
 class GetStudentPaymentSerializer(serializers.ModelSerializer):
     student = serializers.SerializerMethodField()

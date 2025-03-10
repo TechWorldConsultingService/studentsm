@@ -78,7 +78,6 @@ urlpatterns = [
     path('api/classes/<int:pk>/', ClassDetailView.as_view(), name='class-detail'),  # Endpoint for class details, update, and delete
     path('api/classes/<int:class_id>/sections/', SectionListCreateAPIView.as_view(), name='section-list-create'),
     path('api/classes/sections/<int:pk>/', SectionDetailAPIView.as_view(), name='section-detail'),
-    path('api/sections/', ClassListView.as_view(), name='class-list'),
 
     path('api/events/', EventListView.as_view(), name='event-list'),
     path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),

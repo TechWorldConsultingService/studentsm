@@ -1038,13 +1038,12 @@ class OptionalSubjectsAPIView(APIView):
 
 # API view to list all classes or create a new class
 class ClassListCreateView(APIView):
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve a list of all classes.
-        """
-        classes = Class.objects.all()  # Retrieve all Class instances
-        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    
+    def get(self, request, *args, **kwargs):
+        # Fetch all classes, prefetched related sections (excluding subjects)
+        classes = Class.objects.prefetch_related("sections")  # Only prefetch sections, no subjects
+        serializer = ClassDetailSerializer(classes, many=True)
+        return Response({"status": "success", "classes": serializer.data})
 
     def post(self, request, format=None):
         """
@@ -2686,9 +2685,24 @@ class AttendanceByClassAPIView(APIView):
 
 class StudentsByClassAttendanceAPIView(APIView):
     def get(self, request, class_id):
-        students = Student.objects.filter(class_code_id=class_id)
+        students = Student.objects.filter(class_code_id=class_id).prefetch_related('user')
+
+        # Get student IDs to fetch last transactions in bulk (optimized)
+        student_ids = students.values_list('id', flat=True)
+
+        # Fetch last transaction for each student in bulk (avoiding N+1 queries)
+        last_transactions = {
+            txn.student_id: txn.balance
+            for txn in StudentTransaction.objects.filter(student_id__in=student_ids).order_by('student_id', '-transaction_date')
+        }
+
+        # Attach balance to each student instance
+        for student in students:
+            student.pre_balance = last_transactions.get(student.id, 0)  # Default to 0 if no transaction
+
         serializer = StudentListAttendanceSerializer(students, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 
 class SubjectWiseStudentListAPIView(APIView):
@@ -2945,43 +2959,40 @@ class StudentPaymentAPIView(APIView):
 
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all payments for a specific student."""
-        payments = StudentPayment.objects.filter(student__id=student_id)
+        payments = StudentPayment.objects.filter(student_id=student_id)
         serializer = GetStudentPaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
+        """Create a new payment entry and update transaction records."""
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
-        pre_balance = last_transaction.balance if last_transaction else 0
+        # Fetch last transaction once (avoid duplicate queries)
+        last_transaction = (
+            StudentTransaction.objects.filter(student=student)
+            .order_by('-transaction_date')
+            .only("balance")  # Fetch only balance field
+            .first()
+        )
+        pre_balance = last_transaction.balance if last_transaction else Decimal('0.00')
 
-        data = request.data
-        data['student'] = student_id
-
-        serializer = StudentPaymentSerializer(data=data, context={'request': request})  # Pass request context
+        # Serialize and validate payment
+        data = request.data.copy()  # Avoid modifying original request data
+        data["student"] = student_id
+        serializer = StudentPaymentSerializer(data=data, context={"request": request, "pre_balance": pre_balance}) 
 
         if serializer.is_valid():
-            payment = serializer.save()
-
-            post_balance = pre_balance - payment.amount_paid
-
-            payment_data = GetStudentPaymentSerializer(payment).data
-            payment_data.update({
-                "pre_balance": pre_balance,
-                "post_balance": post_balance
-            })
+            payment = serializer.save()  # Serializer handles transaction logic
 
             return Response({
                 'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
-                'payment_details': payment_data
+                'payment_details': GetStudentPaymentSerializer(payment).data
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 
 class StudentPaymentDetailAPIView(APIView):
@@ -2997,12 +3008,6 @@ class StudentPaymentDetailAPIView(APIView):
 
         except StudentPayment.DoesNotExist:
             return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
-
-
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import StudentTransaction, Student
-from .serializers import StudentTransactionSerializer
 
 class StudentTransactionsAPIView(APIView):
 
@@ -3218,14 +3223,6 @@ class FeeDashboardAPIView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-class ClassListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        # Fetch all classes, prefetched related sections (excluding subjects)
-        classes = Class.objects.prefetch_related("sections")  # Only prefetch sections, no subjects
-        serializer = ClassDetailSerializer(classes, many=True)
-        return Response({"status": "success", "classes": serializer.data})
 
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
