@@ -174,59 +174,73 @@ class ClassSerializer(serializers.ModelSerializer):
         return instance
 
 
-    
 class ClassDetailSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
     class Meta:
-        model = Class  # Your Class model
-        fields = ['id', 'class_code', 'class_name']
+        model = Class
+        fields = ['id', 'class_code', 'class_name', 'sections']
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
-    user = UserSerializer()  # Nested serializer for the user associated with the teacher
-    # subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True)
-    # subjects = SubjectSerializer(many=True)  # Nested serializer for subjects
-    
-    subjects = serializers.ListField(
-        child = serializers.DictField(), # Accept a list of dictionaries
-        write_only=True  # Only for input, won't include in the response
-    )
+    user = UserSerializer()
+    subjects = serializers.ListField(child=serializers.DictField(), write_only=True)
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
-    # classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
-    # classes = ClassSerializer(many=True)  # Nested serializer for classes
-    # classes = serializers.ListField(
-    #     child = serializers.DictField(), # Accept a list of dictionaries
-    #     write_only=True  # Only for input, won't include in the response
-    # )
-    class_details = ClassSerializer(source='classes', many=True, read_only=True)
+
+    classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+    classes_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), many=True, required=False)
+
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
+    class_teacher_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
 
     class Meta:
         model = Teacher
-        # fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details', 'classes','class_details','class_teacher']
-        fields = ['id','user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects','subject_details','class_details','class_teacher']
-        extra_kwargs = {'user.password': {'write_only': True}}
+        fields = [ 'id', 'user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'subject_details', 'classes', 'classes_section', 'class_teacher', 'class_teacher_section']
+    
+    def convert_bs_to_ad(self, bs_date):
+        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '/' in bs_date:
+            try:
+                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
+                return bs_date_obj.to_datetime_date()  # Return as a datetime.date object
+            except ValueError:
+                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY/MM/DD."})
+        return bs_date  # If it's already in AD, return as is
 
+    def to_internal_value(self, data):
+        """Preprocess date_of_joining before default validation"""
+        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
+            data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])  # Convert BS to AD before validation
+        return super().to_internal_value(data)
+    
     def create(self, validated_data):
-        # Extract user data from the validated data
         user_data = validated_data.pop('user')
         subjects_data = validated_data.pop('subjects', [])
-        # classes_data = validated_data.pop('classes', [])
+        classes = validated_data.pop('classes', [])
+        classes_section = validated_data.pop('classes_section', [])
         class_teacher = validated_data.pop('class_teacher', None)
+        class_teacher_section = validated_data.pop('class_teacher_section', None)
 
-        # Create the user associated with the teacher
+        user_data['is_teacher'] = True
         user_serializer = UserSerializer(data=user_data)
+
         if user_serializer.is_valid():
             user = user_serializer.save()
             user.is_teacher = True
             user.save()
-            # Create the Teacher instance without subjects and classes
-            teacher = Teacher.objects.create(user=user, **validated_data)
-            
-            
-            # Create or get Subject instances
-            subject_instances = []
-            class_instances = set()  # Using set to avoid duplicate classes
 
+            teacher = Teacher.objects.create(
+                user=user,
+                class_teacher=class_teacher,
+                class_teacher_section=class_teacher_section,
+                **validated_data
+            )
+            
+            teacher.classes.set(classes)
+            teacher.classes_section.set(classes_section)
+
+            subject_instances = []
             for subject_data in subjects_data:
                 subject, _ = Subject.objects.get_or_create(
                     subject_code=subject_data['subject_code'],
@@ -234,52 +248,31 @@ class TeacherSerializer(serializers.ModelSerializer):
                 )
                 subject_instances.append(subject)
 
-                # Get all classes linked to this subject
-                # related_classes = subject.classes.all()
-                related_classes = Class.objects.filter(subjects=subject)
-                class_instances.update(related_classes)
-
-            # Assign classes automatically based on subjects
-            teacher.classes.set(class_instances)
-
-            # Assign subjects to the teacher
             teacher.subjects.set(subject_instances)
-
-            # # Create or get Class instances
-            # class_instances = []
-            # for class_data in classes_data:
-            #     class_instance, _ = Class.objects.get_or_create(
-            #         class_code=class_data['class_code'],
-            #         defaults={'class_name': class_data['class_name']}
-            #     )
-            #     class_instances.append(class_instance)
-
-            # Assign classes to the teacher
-            # teacher.classes.set(class_instances)
-
-            # Assign class_teacher if provided
-            if class_teacher:
-                teacher.class_teacher = class_teacher
             teacher.save()
-
-            return teacher 
+            return teacher
         else:
             raise serializers.ValidationError(user_serializer.errors)
-            
+
     def update(self, instance, validated_data):
-        # Extract and update user data
         user_data = validated_data.pop('user', {})
+        subjects_data = validated_data.pop('subjects', [])
+        classes = validated_data.pop('classes', [])
+        classes_section = validated_data.pop('classes_section', [])
+        class_teacher = validated_data.pop('class_teacher', None)
+        class_teacher_section = validated_data.pop('class_teacher_section', None)
+
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
             user = user_serializer.save()
-            # Ensure the user is marked as a teacher
             user.is_teacher = True
             user.save()
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
-        # Handle subjects
-        subjects_data = validated_data.pop('subjects', [])
+        instance.classes.set(classes)
+        instance.classes_section.set(classes_section)
+
         subject_instances = []
         for subject_data in subjects_data:
             subject, _ = Subject.objects.get_or_create(
@@ -287,25 +280,16 @@ class TeacherSerializer(serializers.ModelSerializer):
                 defaults={'subject_name': subject_data['subject_name']}
             )
             subject_instances.append(subject)
-        instance.subjects.set(subject_instances)  # Update subjects relationship
+        instance.subjects.set(subject_instances)
 
-        # Handle classes
-        classes_data = validated_data.pop('classes', [])
-        class_instances = []
-        for class_data in classes_data:
-            class_instance, _ = Class.objects.get_or_create(
-                class_code=class_data['class_code'],
-                defaults={'class_name': class_data['class_name']}
-            )
-            class_instances.append(class_instance)
-        instance.classes.set(class_instances)  # Update classes relationship
-
-        # Update other fields
         for attr, value in validated_data.items():
-            if attr == 'class_teacher':
-                instance.class_teacher_id = value.id if isinstance(value, Class) else value
-            else:
-                setattr(instance, attr, value)
+            setattr(instance, attr, value)
+
+        if class_teacher is not None:
+            instance.class_teacher = class_teacher
+        if class_teacher_section is not None:
+            instance.class_teacher_section = class_teacher_section
+
         instance.save()
         return instance
 
@@ -313,21 +297,43 @@ class GetTeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
     class_details = ClassSerializer(source='classes', many=True, read_only=True)
-    class_teacher_details = serializers.SerializerMethodField()  # Add this for class teacher details
+    class_teacher_details = serializers.SerializerMethodField()
+    class_teacher_section_details = serializers.SerializerMethodField()
+    classes_section_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Teacher
-        fields = ['id', 'user', 'phone', 'address', 'date_of_joining', 'gender',
-                  'subject_details', 'class_details', 'class_teacher_details']
+        fields = [
+            'id', 'user', 'phone', 'address', 'date_of_joining', 'gender',
+            'subject_details', 'class_details', 'class_teacher_details',
+            'class_teacher_section_details', 'classes_section_details'
+        ]
 
     def get_class_teacher_details(self, obj):
-        """Retrieve class_code and class_name of the class teacher"""
         if obj.class_teacher:
             return {
+                "id": obj.class_teacher.id,
                 "class_code": obj.class_teacher.class_code,
                 "class_name": obj.class_teacher.class_name
             }
-        return None  # Return None if class_teacher is not assigned
+        return None
+
+    def get_class_teacher_section_details(self, obj):
+        if obj.class_teacher_section:
+            return {
+                "id": obj.class_teacher_section.id,
+                "section_name": obj.class_teacher_section.section_name
+            }
+        return None
+
+    def get_classes_section_details(self, obj):
+        if obj.classes_section:
+            return {
+                "id": obj.classes_section.id,
+                "section_name": obj.classes_section.section_name
+            }
+        return None
+
 
 
 
@@ -383,10 +389,11 @@ class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
     class_code_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
+    optional_subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.filter(is_optional=True), many=True, required=False)  # ✅ Add optional subjects
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'class_code_section', 'roll_no']
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'class_code_section', 'roll_no', 'optional_subjects']
 
     def convert_bs_to_ad(self, bs_date):
         """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
@@ -410,6 +417,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user')
         class_instance = validated_data.pop('class_code')
         section_instance = validated_data.pop('class_code_section', None)
+        optional_subjects = validated_data.pop('optional_subjects', [])
 
         user_data['is_student'] = True
 
@@ -417,6 +425,7 @@ class StudentSerializer(serializers.ModelSerializer):
         if user_serializer.is_valid():
             user = user_serializer.save()
             student = Student.objects.create(user=user, class_code=class_instance, class_code_section=section_instance, **validated_data)
+            student.optional_subjects.set(optional_subjects)  # ✅ Assign optional subjects
             return student
         else:
             raise serializers.ValidationError(user_serializer.errors)
@@ -425,6 +434,7 @@ class StudentSerializer(serializers.ModelSerializer):
         user_data = validated_data.pop('user', {})
         class_instance = validated_data.pop('class_code', None)
         section_instance = validated_data.pop('class_code_section', None)
+        optional_subjects = validated_data.pop('optional_subjects', None)
 
         user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
         if user_serializer.is_valid():
@@ -442,6 +452,8 @@ class StudentSerializer(serializers.ModelSerializer):
             instance.class_code = class_instance
         if section_instance:
             instance.class_code_section = section_instance
+        if optional_subjects is not None:
+            instance.optional_subjects.set(optional_subjects)  # ✅ Update optional subjects
 
         return instance
 
@@ -450,10 +462,11 @@ class StudentSerializer(serializers.ModelSerializer):
 class GetStudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     class_details = serializers.SerializerMethodField()
+    optional_subjects = serializers.SerializerMethodField()  # ✅ Add field for optional subjects
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no']
+        fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_details', 'roll_no', 'optional_subjects']
 
     def get_class_details(self, obj):
         if obj.class_code:
@@ -464,6 +477,8 @@ class GetStudentSerializer(serializers.ModelSerializer):
             }
         return None
 
+    def get_optional_subjects(self, obj):
+        return [{"id": sub.id, "subject_code": sub.subject_code, "subject_name": sub.subject_name} for sub in obj.optional_subjects.all()]
 
 
 class AccountantSerializer(serializers.ModelSerializer):

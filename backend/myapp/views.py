@@ -27,6 +27,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
+import nepali_datetime as ndt
 
 
 
@@ -3218,33 +3219,13 @@ class FeeDashboardAPIView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 class ClassListView(APIView):
-    def get(self, request):
-        class_list = []
+    permission_classes = [IsAuthenticated]
 
-        # Get all classes
-        all_classes = Class.objects.all()
-
-        for school_class in all_classes:
-            sections = school_class.sections.all()
-            if sections.exists():
-                for section in sections:
-                    class_list.append({
-                        "class_id": school_class.id,  # Class ID
-                        "section_id": section.id,  # Section ID
-                        "name": f"{school_class.class_name} {section.section_name}"
-                    })
-            else:
-                class_list.append({
-                    "class_id": school_class.id,  # Only Class ID
-                    "section_id": None,  # No section
-                    "name": school_class.class_name
-                })
-
-        return Response(class_list)
-
-
-
-import nepali_datetime as ndt
+    def get(self, request, *args, **kwargs):
+        # Fetch all classes, prefetched related sections (excluding subjects)
+        classes = Class.objects.prefetch_related("sections")  # Only prefetch sections, no subjects
+        serializer = ClassDetailSerializer(classes, many=True)
+        return Response({"status": "success", "classes": serializer.data})
 
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
