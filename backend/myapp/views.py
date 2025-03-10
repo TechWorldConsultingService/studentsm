@@ -2892,7 +2892,6 @@ class TransportationFeeDetailAPIView(APIView):
 
 
 class StudentBillAPIView(APIView):
-
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all bills for a specific student."""
         bills = StudentBill.objects.filter(student__id=student_id)
@@ -2918,24 +2917,36 @@ class StudentBillAPIView(APIView):
         serializer = StudentBillSerializer(data=request.data)
 
         if serializer.is_valid():
-            student_bill = serializer.save()
+            # Start atomic transaction block
+            with transaction.atomic():
+                # Create the bill
+                student_bill = serializer.save()
 
-            # Calculate post_balance (pre_balance + bill amount)
-            post_balance = pre_balance + student_bill.total_amount
+                # Calculate post_balance (pre_balance + bill amount)
+                post_balance = pre_balance + student_bill.total_amount
 
-            bill_data = GetStudentBillSerializer(student_bill).data
-            bill_data.update({
-                "pre_balance": pre_balance,
-                "post_balance": post_balance
-            })
+                # Create the transaction for the bill
+                StudentTransaction.objects.create(
+                    student=student_bill.student,
+                    transaction_type='bill',
+                    bill=student_bill,
+                    balance=post_balance,
+                    transaction_date=student_bill.date
+                )
 
-            return Response({
-                'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
-                'bill_details': bill_data
-            }, status=status.HTTP_201_CREATED)
+                # Commit the transaction
+                bill_data = GetStudentBillSerializer(student_bill).data
+                bill_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
+                    'bill_details': bill_data
+                }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
@@ -2959,38 +2970,60 @@ class StudentPaymentAPIView(APIView):
 
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all payments for a specific student."""
-        payments = StudentPayment.objects.filter(student_id=student_id)
+        payments = StudentPayment.objects.filter(student__id=student_id)
         serializer = GetStudentPaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
     def post(self, request, student_id, *args, **kwargs):
-        """Create a new payment entry and update transaction records."""
         try:
             student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Fetch last transaction once (avoid duplicate queries)
-        last_transaction = (
-            StudentTransaction.objects.filter(student=student)
-            .order_by('-transaction_date')
-            .only("balance")  # Fetch only balance field
-            .first()
-        )
-        pre_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
 
-        # Serialize and validate payment
-        data = request.data.copy()  # Avoid modifying original request data
-        data["student"] = student_id
-        serializer = StudentPaymentSerializer(data=data, context={"request": request, "pre_balance": pre_balance}) 
+        data = request.data
+        data['student'] = student_id
+
+        serializer = StudentPaymentSerializer(data=data, context={'request': request})  # Pass request context
 
         if serializer.is_valid():
-            payment = serializer.save()  # Serializer handles transaction logic
+            # Begin atomic transaction
+            with transaction.atomic():
+                # Create the payment object
+                payment = serializer.save()
 
-            return Response({
-                'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
-                'payment_details': GetStudentPaymentSerializer(payment).data
-            }, status=status.HTTP_201_CREATED)
+                # Update the balances
+                post_balance = pre_balance - payment.amount_paid
+
+                # Create the transaction for the payment
+                last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+                last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+                new_balance = last_balance - Decimal(str(payment.amount_paid))
+
+                # Save the new transaction entry
+                StudentTransaction.objects.create(
+                    student=payment.student,
+                    transaction_type='payment',
+                    payment=payment,
+                    balance=new_balance,
+                    transaction_date=payment.date
+                )
+
+                # Commit the transaction
+                post_balance = pre_balance - payment.amount_paid
+
+                payment_data = GetStudentPaymentSerializer(payment).data
+                payment_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
+                    'payment_details': payment_data
+                }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
