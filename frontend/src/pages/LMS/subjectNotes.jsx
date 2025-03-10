@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import SubjectLayout from "../../layout/SubjectLayout";
 
 const SubjectNotes = () => {
   const { access, selectedSubject } = useSelector((state) => state.user);
@@ -40,6 +41,7 @@ const SubjectNotes = () => {
   }, [access, selectedSubject]);
 
   return (
+    <SubjectLayout >
     <div className="bg-purple-50 p-6">
       <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
         <h1 className="text-3xl font-extrabold text-purple-800">Subject Notes</h1>
@@ -119,6 +121,7 @@ const SubjectNotes = () => {
         </div>
       )}
     </div>
+    </SubjectLayout>
   );
 };
 

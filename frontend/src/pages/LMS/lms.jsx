@@ -5,7 +5,6 @@ import SubjectLayout from '../../layout/SubjectLayout';
 const LearningManagementSystem = () => {
   const { subject } = useParams();
 
-  // Check if 'subject' is available, else provide a default value
   const subjectName = subject ? subject.charAt(0).toUpperCase() + subject.slice(1) : "Subject";
 
   return (

@@ -14,47 +14,29 @@ import iconMapping from "../constant/iconMapping";
 const Sidebar = () => {
   const { role } = useSelector((state) => state.user);
   const location = useLocation();
-
-  // Mobile sidebar open/close
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
-  // Desktop sidebar collapse/expand
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Track which submenu is open
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
 
-  /**
-   * Toggles mobile sidebar
-   */
+
   const handleMobileToggle = () => {
     setIsMobileOpen((prev) => !prev);
   };
 
-  /**
-   * Toggles desktop collapse
-   */
+
   const handleCollapseToggle = () => {
     setIsCollapsed((prev) => !prev);
   };
 
-  /**
-   * Toggles submenus by ID
-   */
   const handleSubMenu = (id) => {
     setOpenSubMenuId(openSubMenuId === id ? null : id);
   };
 
-  /**
-   * Auto-expand any sub-menu if one of its links
-   * matches the current location (so the parent menu is open).
-   */
+
   useEffect(() => {
     if (!sidebarData[role]) return;
 
-    // Find the parent that contains the active route
     sidebarData[role].forEach((item) => {
-      // Only check subSidebar items
       if (item.subSidebar) {
         const isAnySubActive = item.subSidebar.some((sub) =>
           location.pathname.includes(sub.link)
@@ -91,8 +73,8 @@ const Sidebar = () => {
           transition-all duration-300 ease-in-out
           ${
             isCollapsed
-              ? "w-16" /* Collapsed width on desktop */
-              : "w-64" /* Expanded width on desktop */
+              ? "w-16"
+              : "w-64" 
           }
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
@@ -111,7 +93,6 @@ const Sidebar = () => {
               alt="Logo"
               className="h-[42px] w-[90px] object-contain"
             />
-            {/* Show brand name only if NOT collapsed and on md+ screens */}
             {!isCollapsed && (
               <span className="ml-2 hidden md:block font-semibold text-purple-900">
                 Satyam Xavier's
@@ -119,7 +100,6 @@ const Sidebar = () => {
             )}
           </div>
 
-          {/* Collapse/Expand Button (only visible on md+ screens) */}
           <button
             onClick={handleCollapseToggle}
             className="hidden md:block text-purple-700 hover:text-purple-900"
@@ -137,7 +117,6 @@ const Sidebar = () => {
           {sidebarData[role]?.map((item) => {
             const Icon = iconMapping[item.icon];
 
-            // If the item has a nested subSidebar
             if (item.subSidebar) {
               return (
                 <div key={item.id}>
@@ -163,14 +142,12 @@ const Sidebar = () => {
                       >
                         {React.createElement(Icon)}
                       </span>
-                      {/* Show text only if not collapsed */}
                       {!isCollapsed && (
                         <span className="font-medium text-sm tracking-wide">
                           {item.title}
                         </span>
                       )}
                     </div>
-                    {/* Angle down icon (rotate if open), hidden if collapsed */}
                     {!isCollapsed && (
                       <FaAngleDown
                         className={`ml-2 transform transition-transform ${
@@ -208,7 +185,6 @@ const Sidebar = () => {
                 </div>
               );
             } else {
-              // Single-level item with no subSidebar
               return (
                 <NavLink
                   to={item.link}

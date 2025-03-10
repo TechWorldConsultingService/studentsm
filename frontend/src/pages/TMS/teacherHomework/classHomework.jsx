@@ -1,23 +1,29 @@
 import React, { useState, useEffect } from "react";
 import NewAssignment from "./NewAssignment";
+import AssignmentSubmissions from "./AssignmentSubmission";
 import { useSelector } from "react-redux";
-import useFetchData from "../../hooks/useFetch";
+import useFetchData from "../../../hooks/useFetch";
 import { Link } from "react-router-dom";
-
+import ClassLayout from "../../../layout/ClassLayout";
 
 const ClassHomework = () => {
-  
   const [newHomeworkModal, setNewHomeworkModal] = useState(false);
+
+  // For viewing submissions in a modal
+  const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+
   const [previousAssignments, setPreviousAssignments] = useState([]);
   const [runningAssignments, setRunningAssignments] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+
   const user = useSelector((state) => state.user);
   const { access } = user;
   const teacher_id = user?.id;
   const selectedClass = user?.selectedClass;
-  const [subjects, setSubjects] = useState([]);
-
   const todayDate = new Date().toISOString().split("T")[0];
 
+  // Custom fetch hook
   const {
     fetchedData: homeworkList = [],
     loadingData,
@@ -25,6 +31,7 @@ const ClassHomework = () => {
   } = useFetchData("http://localhost:8000/api/teacher/assignments/");
 
   useEffect(() => {
+    // Fetch subjects the teacher can assign
     if (access && teacher_id && selectedClass) {
       fetch(
         `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`
@@ -44,22 +51,22 @@ const ClassHomework = () => {
   }, [access, teacher_id, selectedClass]);
 
   useEffect(() => {
+    // Divide homework into running vs previous based on due date
     if (homeworkList && todayDate && selectedClass) {
       const running = [];
       const previous = [];
 
       homeworkList.forEach((homework) => {
-        if(selectedClass === homework.class_assigned){
+        if (selectedClass === homework.class_assigned) {
           const dueDate = new Date(homework.due_date);
           const today = new Date(todayDate);
-  
+
           if (dueDate >= today) {
             running.push(homework);
           } else {
             previous.push(homework);
           }
         }
-
       });
 
       setRunningAssignments(running);
@@ -69,11 +76,23 @@ const ClassHomework = () => {
 
   const toggleNewHomeworkModal = () => setNewHomeworkModal(!newHomeworkModal);
 
+  // Handle submissions modal
+  const openSubmissionsModal = (assignmentId) => {
+    setSelectedAssignmentId(assignmentId);
+    setShowSubmissionsModal(true);
+  };
+
+  const closeSubmissionsModal = () => {
+    setShowSubmissionsModal(false);
+    setSelectedAssignmentId(null);
+  };
+
   if (loadingData) {
     return <div>Loading...</div>;
   }
 
   return (
+    < ClassLayout >
     <div className="bg-purple-50 p-6">
       <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
         <h1 className="text-2xl font-extrabold text-purple-800">
@@ -137,12 +156,12 @@ const ClassHomework = () => {
                         .split("T")[0]
                     }
                   </span>
-                  <a
-                    href={`/submissions/${assignment.id}`}
+                  <button
+                    onClick={() => openSubmissionsModal(assignment.id)}
                     className="text-purple-700 hover:underline mt-2 block"
                   >
                     View Submissions
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -198,12 +217,12 @@ const ClassHomework = () => {
                         .split("T")[0]
                     }
                   </span>
-                  <Link
-                    href={`/submissions/${assignment.id}`}
+                  <button
+                    onClick={() => openSubmissionsModal(assignment.id)}
                     className="text-purple-700 hover:underline mt-2 block"
                   >
                     View Submissions
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -215,7 +234,7 @@ const ClassHomework = () => {
         {/* New Homework Modal */}
         {newHomeworkModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-1/2 max-h-[90vh] overflow-y-auto relative">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-1/2 max-h-[90vh] overflow-y-auto relative">
               <button
                 onClick={toggleNewHomeworkModal}
                 className="absolute top-2 text-2xl right-2 text-purple-700 hover:text-purple-900"
@@ -233,8 +252,27 @@ const ClassHomework = () => {
             </div>
           </div>
         )}
+
+        {/* Assignment Submissions Modal */}
+        {showSubmissionsModal && selectedAssignmentId && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 sm:w-3/4 max-h-[90vh] overflow-y-auto relative">
+              <button
+                onClick={closeSubmissionsModal}
+                className="absolute top-2 text-2xl right-2 text-purple-700 hover:text-purple-900"
+              >
+                X
+              </button>
+              <AssignmentSubmissions
+                assignmentId={selectedAssignmentId}
+                closeModal={closeSubmissionsModal}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
+    </ClassLayout>
   );
 };
 

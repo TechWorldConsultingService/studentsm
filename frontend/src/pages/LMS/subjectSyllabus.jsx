@@ -2,8 +2,8 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import SubjectLayout from "../../layout/SubjectLayout";
 
-// Small check icon for completed items
 const CheckIcon = () => (
   <svg
     className="w-4 h-4 inline-block ml-1"
@@ -48,7 +48,6 @@ const SubjectSyllabus = () => {
     }
   };
 
-  // Fetch syllabus on mount (and whenever 'access' changes)
   useEffect(() => {
     if (access) {
       fetchSyllabusData();
@@ -61,6 +60,7 @@ const SubjectSyllabus = () => {
   );
 
   return (
+    <SubjectLayout >
     <div className="w-full p-4 bg-purple-50 min-h-screen">
       {isLoading ? (
         <p className="text-center text-blue-500 font-semibold">Loading...</p>
@@ -174,6 +174,7 @@ const SubjectSyllabus = () => {
         </p>
       )}
     </div>
+    </SubjectLayout>
   );
 };
 
