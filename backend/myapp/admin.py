@@ -75,7 +75,7 @@ class ClassAdmin(admin.ModelAdmin):
 
 @admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
-    list_display = ('section_name', 'school_class',)  # Display section name and associated class
+    list_display = ('id','section_name', 'school_class',)  # Display section name and associated class
     search_fields = ('section_name', 'school_class__class_name')  # Allow searching by section and class name
     list_filter = ('school_class',)  # Filter by class in the admin panel
 
