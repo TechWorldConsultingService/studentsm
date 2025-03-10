@@ -174,11 +174,12 @@ class ClassSerializer(serializers.ModelSerializer):
         return instance
 
 
-    
 class ClassDetailSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
     class Meta:
-        model = Class  # Your Class model
-        fields = ['id', 'class_code', 'class_name']
+        model = Class
+        fields = ['id', 'class_code', 'class_name', 'sections']
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
