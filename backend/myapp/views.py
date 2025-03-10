@@ -28,8 +28,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
-
-
+from .serializers import FinanceSummarySerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -2980,6 +2979,8 @@ class StudentPaymentAPIView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
+        
+
         last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
         pre_balance = last_transaction.balance if last_transaction else 0
 
@@ -3418,3 +3419,62 @@ class CommunicationDetailAPIView(APIView):
         
         # Return 200 OK with the success message
         return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)
+
+class FinanceSummaryAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Optional, restrict access
+    # permission_classes = [AllowAny]  # Optional, restrict access
+
+    def get(self, request, *args, **kwargs):
+        # Total Fees Collected
+        total_fees_collected = StudentPayment.objects.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Total Outstanding Amount
+        total_fees_billed = StudentBill.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+        total_outstanding_amount = total_fees_billed - total_fees_collected
+
+        # Total Transaction Count
+        total_transaction_count = StudentTransaction.objects.count()
+
+        # Prepare response data
+        data = {
+            "total_fees_collected": total_fees_collected,
+            "total_outstanding_amount": total_outstanding_amount,
+            "total_transaction_count": total_transaction_count
+        }
+
+        serializer = FinanceSummarySerializer(data)
+        return Response(serializer.data)
+    
+class IsPrincipal(BasePermission):
+    def has_permission(self, request, view):
+        return Principal.objects.filter(user=request.user).exists()
+
+@api_view(['GET'])
+def dashboard_stats(request):
+    # Check if user is a principal
+    if not Principal.objects.filter(user=request.user).exists():
+        return Response(
+            {"error": "Access Denied. Only principals can view this data."}, 
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    total_students = Student.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_subjects = Subject.objects.count()
+    total_classes = Class.objects.count()
+    pending_leaves = LeaveApplication.objects.filter(status='Pending').count()
+    exams_this_month = ExamDetail.objects.filter(
+        exam_date__month=now().month, 
+        exam_date__year=now().year
+    ).count()
+
+    data = {
+        "total_students": total_students,
+        "total_teachers": total_teachers,
+        "total_subjects": total_subjects,
+        "total_classes": total_classes,
+        "pending_leaves": pending_leaves,
+        "exams_this_month": exams_this_month,
+    }
+    
+    return Response(data, status=status.HTTP_200_OK)

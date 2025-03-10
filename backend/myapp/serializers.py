@@ -1353,3 +1353,9 @@ class GetCommunicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Communication
         fields = '__all__'  # Includes sender & receiver as full objects
+
+
+class FinanceSummarySerializer(serializers.Serializer):
+    total_fees_collected = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_outstanding_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_transaction_count = serializers.IntegerField()

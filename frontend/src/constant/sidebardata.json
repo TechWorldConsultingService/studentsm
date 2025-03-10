@@ -147,7 +147,6 @@
       "id": 4,
       "title": "My Students",
       "icon": "SlPeople",
-
       "subSidebar": [
         { "id": 1, "title": "Class One", "link": "/myStudents?class_id=1" },
         { "id": 2, "title": "Class Two", "link": "/myStudents?class_id=2" },
