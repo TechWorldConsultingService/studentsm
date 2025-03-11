@@ -171,11 +171,12 @@ urlpatterns = [
     path('api/fee-summary/', FeeDashboardAPIView.as_view(), name='fee-summary'),
     path('api/payments/search/', PaymentSearchAPIView.as_view(), name='payment-search'),
 
-    path('api/messages/create/', CreateMessageAPIView.as_view(), name='create-message'),
-    path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),
-    path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'),
-    path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'),
+    path('api/messages/create/', CreateMessageAPIView.as_view(), name='create-message'), #API to create a msg/notification to a single user or a specific role
+    path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),   #API to view all the personal msg of a single user
+    path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'), #API to view all the role based msg of a single user
+    path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'), #API to view/edit/delete a specific msg
 
+    path('api/users/search/', UserSearchAPIView.as_view(), name='user-search'),
     path('api/finance-summary/', FinanceSummaryAPIView.as_view(), name='finance-summary'),
 
     path('api/dashboard-stats/', dashboard_stats, name='dashboard-stats'),

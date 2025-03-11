@@ -327,3 +327,9 @@ class StudentTransactionAdmin(admin.ModelAdmin):
     def payment_number(self, obj):
         return obj.payment.payment_number if obj.transaction_type == 'payment' else None
     payment_number.short_description = 'Payment Number'
+# Communication admin customization
+@admin.register(Communication)
+class CommunicationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'class_field', 'sent_at')
+    search_fields = ('sender__username', 'receiver__username', 'receiver_role')
+    list_filter = ('receiver_role', 'class_field', 'sent_at')

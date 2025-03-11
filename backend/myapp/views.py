@@ -3353,26 +3353,34 @@ class RoleBasedMessagesAPIView(APIView):
         """
         user = request.user
         role_filters = []
+        messages = Communication.objects.none()
 
         # Logic for Teachers
         if user.is_teacher:
             role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
 
-        # Logic for Students
-        if user.is_student:
-            role_filters += ["student", "teacher_student", "student_accountant", "all"]
-
         # Logic for Accountants
         if user.is_accountant:
             role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
 
-        # Fetch messages where receiver_role matches the above filter
+        # Fetch general role-based messages
         messages = Communication.objects.filter(receiver_role__in=role_filters)
+
+        # Additional logic for Students
+        if user.is_student:
+            student_instance = getattr(user, 'student', None)
+            if student_instance:
+                student_class = student_instance.class_code
+                student_messages = Communication.objects.filter(
+                    receiver_role__in=["student", "teacher_student", "student_accountant", "all"]
+                ).filter(
+                    Q(class_field__isnull=True) | Q(class_field=student_class)
+                )
+                messages = messages.union(student_messages)
 
         # Serialize the messages and send the response
         serializer = GetCommunicationSerializer(messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 class CommunicationDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -3476,3 +3484,18 @@ def dashboard_stats(request):
     }
     
     return Response(data, status=status.HTTP_200_OK)
+
+class UserSearchAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        fullname = request.query_params.get('fullname', None)
+        if fullname:
+            users = CustomUser.objects.filter(
+                Q(first_name__icontains=fullname) | Q(last_name__icontains=fullname)
+            )
+        else:
+            users = CustomUser.objects.all()
+        
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

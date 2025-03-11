@@ -1321,7 +1321,7 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
 class CommunicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Communication
-        fields = ["id", "sender", "receiver", "message", "receiver_role", "sent_at"]
+        fields = ["id", "sender", "receiver", "message","class_field", "receiver_role", "sent_at"]
         read_only_fields = ["id", "sender", "sent_at"]
 
     def validate(self, data):
@@ -1347,7 +1347,8 @@ class GetCommunicationSerializer(serializers.ModelSerializer):
     """Serializer to get full details of sender & receiver instead of just IDs"""
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True, allow_null=True)
-
+    class_field = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True)
+    
     class Meta:
         model = Communication
         fields = '__all__'  # Includes sender & receiver as full objects
