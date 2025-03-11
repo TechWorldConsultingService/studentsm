@@ -2,6 +2,7 @@ import React , { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import { useSelector } from "react-redux";
 import axios from "axios"; 
+import { Link } from 'react-router-dom';
 
 import {
   BarChart,
@@ -157,30 +158,51 @@ const PrincipalHomePage = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-              <span className="text-sm text-gray-500">Total Students</span>
-              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_students}</span>
-            </div>
+            
+            <Link 
+              to={`/studentList`}
+              className="text-purple-700  hover:no-underline">
+              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center group-hover:bg-gray-200">
+                <span className="text-sm text-gray-500">Total Students</span>
+                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_students}</span>
+              </div>
+            </Link>
 
+            <Link 
+              to={`/teacherList`}
+              className="text-purple-700 hover:underline">
             <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
               <span className="text-sm text-gray-500">Total Teachers</span>
               <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_teachers}</span>
             </div>
+            </Link>
 
-            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-              <span className="text-sm text-gray-500">Total Subjects</span>
-              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_subjects}</span>
-            </div>
+            <Link 
+              to={`/subjectList`}
+              className="text-purple-700 hover:underline">
+              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+                <span className="text-sm text-gray-500">Total Subjects</span>
+                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_subjects}</span>
+              </div>
+            </Link>
 
-            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-              <span className="text-sm text-gray-500">Total Classes</span>
-              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_classes}</span>
-            </div>  
+            <Link 
+              to={`/classList`}
+              className="text-purple-700 hover:underline">
+              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+                <span className="text-sm text-gray-500">Total Classes</span>
+                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_classes}</span>
+              </div>  
+            </Link>
 
-            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-              <span className="text-sm text-gray-500">Pending Leaves</span>
-              <span className="text-2xl font-bold text-purple-700">{dashboardData?.pending_leaves}</span>
-            </div>
+            <Link 
+              to={`/manage-leaves`}
+              className="text-purple-700 hover:underline">
+              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+                <span className="text-sm text-gray-500">Pending Leaves</span>
+                <span className="text-2xl font-bold text-purple-700">{dashboardData?.pending_leaves}</span>
+              </div>
+            </Link>
            
         </div>
 

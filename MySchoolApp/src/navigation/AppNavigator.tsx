@@ -9,6 +9,8 @@ import PrincipalDashboard from "../screens/principal/PrincipalDashboard";
 import TeacherBottomNav from "../screens/teacher/TeacherBottomNav"; // Use Bottom Nav
 import PrincipalBottomNav from "../screens/principal/PrincipalBottomNav"; // Use Bottom Nav
 import SelectClassForAttendanceScreen from "../screens/attendance/SelectClassForAttendanceScreen";
+import StudentBottomNav from "../screens/student/StudentBottomNav";
+import MyLeaves from "../screens/student/myLeaves";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -30,6 +32,7 @@ export type RootStackParamList = {
   NewsFeedScreen: undefined;
   CalendarScreen: undefined;
   ProfileScreen: undefined;
+  MyLeaves: undefined;
 };
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -37,10 +40,11 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="StudentDashboard" component={StudentDashboard} />
+      <Stack.Screen name="StudentDashboard" component={StudentBottomNav} />
       <Stack.Screen name="PrincipalDashboard" component={PrincipalBottomNav} /> 
       <Stack.Screen name="TeacherDashboard" component={TeacherBottomNav} />
       <Stack.Screen name="SelectClassForAttendanceScreen" component={SelectClassForAttendanceScreen} />
+      <Stack.Screen name="MyLeaves" component={MyLeaves} />
     </Stack.Navigator>
   );
 };

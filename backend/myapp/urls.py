@@ -5,12 +5,14 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import *
+from rest_framework import viewsets, permissions
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from .views import EventViewSet
 
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
+router.register(r'events', EventViewSet, basename='event')
 router.register(r'chapters', ChapterViewSet)
 router.register(r'topics', TopicViewSet)
 router.register(r'subtopics', SubtopicViewSet)
@@ -79,8 +81,8 @@ urlpatterns = [
     path('api/classes/<int:class_id>/sections/', SectionListCreateAPIView.as_view(), name='section-list-create'),
     path('api/classes/sections/<int:pk>/', SectionDetailAPIView.as_view(), name='section-detail'),
 
-    path('api/events/', EventListView.as_view(), name='event-list'),
-    path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
+    # path('api/events/', EventListView.as_view(), name='event-list'),
+    # path('api/events/<int:pk>/', EventDetailView.as_view(), name='event-detail'),
 
     # Assign homework by the teacher
     path('api/assignments/assign/', AssignHomeworkView.as_view(), name='assign-homework'),

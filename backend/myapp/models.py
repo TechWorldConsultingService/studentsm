@@ -69,9 +69,7 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.subject_name
-    
-
-    
+       
 class Class(models.Model):
     class_code = models.CharField(max_length=50, unique=True)
     class_name = models.CharField(max_length=100)
@@ -84,7 +82,6 @@ class Class(models.Model):
 class Section(models.Model):
     school_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="sections")
     section_name = models.CharField(max_length=10)  # e.g., "A", "B", "C"
-
     def __str__(self):
         return f"{self.school_class.class_name} - {self.section_name}"
     
@@ -103,7 +100,7 @@ class Teacher(models.Model):
     def __str__(self):
         # return self.user.username
         return self.user.username
-    
+
     def delete(self, *args, **kwargs):
         self.user.delete()  # Delete the associated user
         super().delete(*args, **kwargs)  # Call the parent delete method
@@ -183,11 +180,10 @@ class Event(models.Model):
     description = models.TextField(null=True, blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # If you want to track who created the event
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="events")  # If you want to track who created the event
 
     def __str__(self):
-        return self.title
+        return f"{self.title} ({self.start_time} - {self.end_time})"
     
 class Assignment(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, null=True, blank=True, related_name='assignments')

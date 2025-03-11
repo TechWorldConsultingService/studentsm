@@ -6,10 +6,14 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { loginUser } from "../api/api";
+import { useDispatch } from "react-redux";
+
+
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const theme = useTheme();
+  const dispatch = useDispatch();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +35,7 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     setError("");
     try {
-      const userData = await loginUser(username, password);
+      const userData = await loginUser(dispatch, username, password);
 
       console.log("User Data:", userData);
       if (userData && userData.role) {
