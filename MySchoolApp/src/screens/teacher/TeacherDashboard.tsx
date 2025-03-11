@@ -26,6 +26,7 @@ const features = [
   { name: "Newsfeed", icon: "newspaper", screen: "NewsFeedScreen" },
   { name: "Calendar", icon: "calendar", screen: "CalendarScreen" },
   { name: "Profile", icon: "account", screen: "ProfileScreen" },
+  { name: "MyLeaves", icon:"file-document", screen: "MyLeaves"}
 ];
 
 const TeacherDashboard: React.FC = () => {

@@ -13,7 +13,7 @@ SECRET_KEY = 'django-insecure-4w$7vob@#2d&zrp2_d9sh3q4sx!uc#7c6cnc$8hx4qbs#!0hgv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost","192.168.1.5","127.0.0.1"]
+ALLOWED_HOSTS = ["localhost","192.168.100.7","127.0.0.1"]
 
 # Application definition
 
@@ -143,7 +143,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:4000',
     'http://127.0.0.1:3000',
     'http://localhost:8000',
-    'http://192.168.100.9:8000'
+    'http://192.168.100.7:8000'
 ]
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all for testing
 
@@ -156,7 +156,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:4000',
-    'http://192.168.100.9',
+    'http://192.168.100.7',
 ]
 
 # If using credentials (like cookies), enable this

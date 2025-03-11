@@ -1124,18 +1124,30 @@ class SectionDetailAPIView(APIView):
         section.delete()
         return Response({"message": "Section deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
-class EventListView(generics.ListCreateAPIView):
-    queryset = Event.objects.all()
+from rest_framework import viewsets, permissions
+class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can view and create events
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Users can only see their own events
+        # return Event.objects.filter(created_by=self.request.user)
+        return Event.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)  # Save the user who created the event
+        serializer.save(created_by=self.request.user)
 
-class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=["GET"])
+    def all_events(self, request):
+        """Return all events for teachers and principals"""
+        user = request.user
+        if user.is_teacher or user.is_principal:
+            queryset = Event.objects.all()
+        else:
+            queryset = Event.objects.filter(created_by=user)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 from rest_framework.permissions import AllowAny
 class TeacherAssignmentsView(APIView):

@@ -16,7 +16,7 @@
       "id": 3,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
-      "link": "/calendar"
+      "link": "/principal-calendar"
     },
     {
       "id": 5,
@@ -72,7 +72,7 @@
       "id": 3,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
-      "link": "/calendar"
+      "link": "/principal-calendar"
     },
     {
       "id": 5,
@@ -225,7 +225,7 @@
       "id": 3,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
-      "link": "/calendar"
+      "link": "/principal-calendar"
     },
     {
       "id": 4,

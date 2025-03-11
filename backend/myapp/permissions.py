@@ -7,20 +7,22 @@ from django.core.exceptions import PermissionDenied
 
 # Custom permission to check if the user is a student or teacher
 class IsStudentOrTeacher(BasePermission):
+    """
+    Allow access to students and teachers.
+    """
+
     def has_permission(self, request, view):
-        """
-        Return True if the user is either a student or a teacher.
-        """
-        return request.user.is_student or request.user.is_teacher
+        return hasattr(request.user, 'student') or hasattr(request.user, 'teacher')
 
 # Custom permission to check if the user is a principal
 class IsPrincipal(BasePermission):
+    """
+    Allow only principals to access certain views.
+    """
+
     def has_permission(self, request, view):
-        """
-        Return True if the user is a principal.
-        """
-        return request.user.is_principal
-    
+        return hasattr(request.user, 'principal')
+
 
 class IsPrincipalOrTeacher(BasePermission):
     """
@@ -31,12 +33,11 @@ class IsPrincipalOrTeacher(BasePermission):
 
 class IsTeacher(BasePermission):
     """
-    Custom permission to ensure only teachers can access certain views.
+    Allow only teachers to access certain views.
     """
 
     def has_permission(self, request, view):
-        # Allow only teachers
-        return request.user.subjects.exists()
+        return hasattr(request.user, 'teacher')
 
 class IsStudent(BasePermission):
     """

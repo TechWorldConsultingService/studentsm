@@ -592,9 +592,10 @@ from .models import Event
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ['id', 'title', 'description', 'start_time', 'end_time', 'created_by', 'created_at']
-
-
+        fields = "__all__"
+        extra_kwargs = {
+            "created_by": {"read_only": True}  # ✅ This prevents it from being required in POST
+        }
 
 from .models import Assignment, AssignmentSubmission
 

@@ -7,29 +7,18 @@ import { toast } from "react-hot-toast";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+import { useSelector } from "react-redux";
 
-/* 
-  This localizer sets up moment as the date/time library 
-  for react-big-calendar. 
-*/
 const localizer = momentLocalizer(moment);
 
-/* 
-  We wrap the Calendar with drag-and-drop support.
-  This HOC provides onEventDrop / onEventResize handlers.
-*/
 const DnDCalendar = withDragAndDrop(Calendar);
 
-/*
-  The CalendarComponent receives these props:
-  - role: "student" | "teacher" | "principal"
-  - pageTitle: a string for the heading
-*/
 const CalendarComponent = ({
-  role = "student",
+  
   pageTitle = "School Calendar",
 }) => {
-  // State
+  const { access,role } = useSelector((state) => state.user);
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -48,6 +37,27 @@ const CalendarComponent = ({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteEventId, setDeleteEventId] = useState(null);
 
+  const confirmDeleteEvent = async () => {
+    try {
+      // const token = localStorage.getItem("token");
+      // if (!token) throw new Error("No token, please login.");
+
+      await axios.delete(`http://localhost:8000/api/events/${deleteEventId}/`, {
+        headers: { Authorization: `Bearer ${access}` },
+      });
+
+      setEvents((prev) => prev.filter((evt) => evt.id !== deleteEventId));
+      toast.success("Event deleted.");
+    } catch (err) {
+      toast.error("Error deleting event.");
+    } finally {
+      setDeleteModalOpen(false);
+      setDeleteEventId(null);
+    }
+  };
+
+
+
   // 1) Fetch events from server
   const fetchEvents = useCallback(async () => {
     try {
@@ -55,11 +65,13 @@ const CalendarComponent = ({
       setError("");
 
       // Example of retrieving token from localStorage:
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found. Please login.");
+      // const token = localStorage.getItem("token");
+      // if (!token) throw new Error("No token found. Please login.");
+
+
 
       const response = await axios.get("http://localhost:8000/api/events/", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${access}` },
       });
 
       // Convert server event data to RBC format
@@ -86,175 +98,109 @@ const CalendarComponent = ({
     fetchEvents();
   }, [fetchEvents]);
 
-  // 2) Open modal for adding a new event (by selecting a slot)
-  const handleSelectSlot = ({ start, end }) => {
-    // If student, do nothing
-    if (role === "student") return;
-
-    // Otherwise, open modal to create a new event
-    setSelectedEvent(null); // means "new" event
+// Only allow teachers/principals to open the add-event modal
+const handleSelectSlot = ({ start, end }) => {
+  if (role !== "student") {
+    setSelectedEvent(null); // "New" event
     setTempTitle("");
     setTempDesc("");
     setTempStart(start);
     setTempEnd(end);
     setModalOpen(true);
-  };
-
-  // 3) Open modal for editing an existing event
-  const handleSelectEvent = (event) => {
-    // If student, maybe just show an alert or do nothing
-    if (role === "student") {
-      alert(`Event: ${event.title}\nDetails: ${event.description}`);
-      return;
-    }
-
-    // For teacher/principal, open edit modal
+  }
+};
+// Only allow teachers/principals to edit/delete events
+const handleSelectEvent = (event) => {
+  if (role === "student") {
+    alert(`Event: ${event.title}\nDetails: ${event.description}`);
+  } else {
     setSelectedEvent(event);
     setTempTitle(event.title);
     setTempDesc(event.description);
     setTempStart(event.start);
     setTempEnd(event.end);
     setModalOpen(true);
-  };
+  }
+};
 
-  // 4) Save (create or update) event
-  const handleSaveEvent = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token, please login.");
 
-      // Convert to ISO
-      const startISO = tempStart.toISOString();
-      const endISO = tempEnd.toISOString();
+// Only allow teachers/principals to save (create or update) events
+const handleSaveEvent = async () => {
+  if (role === "student") return; // Prevent students from saving events
 
-      if (selectedEvent) {
-        // EDIT existing event
-        const eventId = selectedEvent.id;
-        const response = await axios.put(
-          `http://localhost:8000/api/events/${eventId}/`,
-          {
-            title: tempTitle,
-            description: tempDesc,
-            start_time: startISO,
-            end_time: endISO,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+  try {
+    // const token = localStorage.getItem("token");
+    // if (!token) throw new Error("No token, please login.");
 
-        // Update local state
-        setEvents((prev) =>
-          prev.map((evt) =>
-            evt.id === eventId
-              ? {
-                  ...evt,
-                  title: response.data.title,
-                  description: response.data.description,
-                  start: new Date(response.data.start_time),
-                  end: new Date(response.data.end_time),
-                }
-              : evt
-          )
-        );
-        toast.success("Event updated!");
-      } else {
-        // CREATE new event
-        const response = await axios.post(
-          "http://localhost:8000/api/events/",
-          {
-            title: tempTitle,
-            description: tempDesc,
-            start_time: startISO,
-            end_time: endISO,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+    const startISO = tempStart.toISOString();
+    const endISO = tempEnd.toISOString();
 
-        // Add new event to state
-        setEvents((prev) => [
-          ...prev,
-          {
-            id: response.data.id,
-            title: response.data.title,
-            description: response.data.description,
-            start: new Date(response.data.start_time),
-            end: new Date(response.data.end_time),
-          },
-        ]);
-        toast.success("Event created!");
-      }
-
-      // Close modal
-      setModalOpen(false);
-      setSelectedEvent(null);
-    } catch (err) {
-      toast.error("Error saving event.");
-      console.error(err);
-    }
-  };
-
-  // 5) Open the "Delete" confirmation
-  const handleDeleteEvent = (eventId) => {
-    setDeleteEventId(eventId);
-    setDeleteModalOpen(true);
-  };
-
-  // Actually delete the event
-  const confirmDeleteEvent = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token, please login.");
-
-      await axios.delete(`http://localhost:8000/api/events/${deleteEventId}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setEvents((prev) => prev.filter((evt) => evt.id !== deleteEventId));
-      toast.success("Event deleted.");
-    } catch (err) {
-      toast.error("Error deleting event.");
-    } finally {
-      setDeleteModalOpen(false);
-      setDeleteEventId(null);
-    }
-  };
-
-  // 6) Drag and Drop (move/reschedule event)
-  const handleEventDrop = async ({ event, start, end }) => {
-    // Only teachers/principals can drag & drop
-    if (role === "student") {
-      toast.error("Students cannot move events.");
-      return;
-    }
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token, please login.");
-
-      // Attempt an update
+    if (selectedEvent) {
+      const eventId = selectedEvent.id;
       await axios.put(
-        `http://localhost:8000/api/events/${event.id}/`,
-        {
-          title: event.title,
-          description: event.description,
-          start_time: start.toISOString(),
-          end_time: end.toISOString(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:8000/api/events/${eventId}/`,
+        { title: tempTitle, description: tempDesc, start_time: startISO, end_time: endISO },
+        { headers: { Authorization: `Bearer ${access}` } }
       );
-
-      // Update local state
-      setEvents((prevEvents) =>
-        prevEvents.map((evt) =>
-          evt.id === event.id
-            ? { ...evt, start, end }
-            : evt
+      setEvents((prev) =>
+        prev.map((evt) =>
+          evt.id === eventId ? { ...evt, title: tempTitle, description: tempDesc, start: tempStart, end: tempEnd } : evt
         )
       );
-      toast.success("Event moved.");
-    } catch (err) {
-      toast.error("Error moving event.");
-      console.error(err);
+      toast.success("Event updated!");
+    } else {
+      const response = await axios.post(
+        "http://localhost:8000/api/events/",
+        { title: tempTitle, description: tempDesc, start_time: startISO, end_time: endISO },
+        { headers: { Authorization: `Bearer ${access}` } }
+      );
+
+      setEvents((prev) => [
+        ...prev,
+        { id: response.data.id, title: response.data.title, description: response.data.description, start: tempStart, end: tempEnd },
+      ]);
+      toast.success("Event created!");
     }
-  };
+
+    setModalOpen(false);
+    setSelectedEvent(null);
+  } catch (err) {
+    toast.error("Error saving event.");
+    console.error(err);
+  }
+};
+
+// Only allow teachers/principals to delete events
+const handleDeleteEvent = (eventId) => {
+  if (role === "student") return;
+  setDeleteEventId(eventId);
+  setDeleteModalOpen(true);
+};
+
+// Only allow teachers/principals to move events
+const handleEventDrop = async ({ event, start, end }) => {
+  if (role === "student") {
+    toast.error("Students cannot move events.");
+    return;
+  }
+  try {
+    // const token = localStorage.getItem("token");
+    // if (!token) throw new Error("No token, please login.");
+
+    await axios.put(
+      `http://localhost:8000/api/events/${event.id}/`,
+      { title: event.title, description: event.description, start_time: start.toISOString(), end_time: end.toISOString() },
+      { headers: { Authorization: `Bearer ${access}` } }
+    );
+
+    setEvents((prevEvents) => prevEvents.map((evt) => (evt.id === event.id ? { ...evt, start, end } : evt)));
+    toast.success("Event moved.");
+  } catch (err) {
+    toast.error("Error moving event.");
+    console.error(err);
+  }
+};
+
 
   // 7) Resize Event
   const handleEventResize = async ({ event, start, end }) => {
@@ -264,8 +210,8 @@ const CalendarComponent = ({
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token, please login.");
+      // const token = localStorage.getItem("token");
+      // if (!token) throw new Error("No token, please login.");
 
       await axios.put(
         `http://localhost:8000/api/events/${event.id}/`,
@@ -275,7 +221,7 @@ const CalendarComponent = ({
           start_time: start.toISOString(),
           end_time: end.toISOString(),
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${access}` } }
       );
 
       setEvents((prevEvents) =>
@@ -336,15 +282,21 @@ const CalendarComponent = ({
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-lg w-11/12 md:w-1/2 relative">
-            <button
-              onClick={() => setModalOpen(false)}
-              className="absolute top-2 right-2 text-gray-600 hover:text-black"
-            >
-              &times;
-            </button>
+            
+          {role !== "student" && (
+              <button
+                onClick={() => setModalOpen(false)}
+                className="absolute top-2 right-2 text-gray-600 hover:text-black"
+              >
+                &times;
+              </button>
+          )}
+
             <h2 className="text-xl font-bold text-purple-700 mb-4">
               {selectedEvent ? "Edit Event" : "Add Event"}
             </h2>
+
+
             <div className="mb-3">
               <label className="block font-semibold mb-1 text-sm">
                 Title:

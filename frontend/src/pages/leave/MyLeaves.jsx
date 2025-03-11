@@ -244,12 +244,12 @@ const MyLeaves = () => {
                   columns={pendingColumns}
                   rowKey="id"
                   className="mt-4"
-                />
+                />  
               ) : (
                 <p className="mt-2 text-gray-600">No pending leaves found.</p>
               )}
 
-              <h3 className="text-xl font-bold text-purple-800 mt-8">Reviewed Requests</h3>
+              <h3 className="text-xl font-bold text-purple-800 mt-8">Reviewed Requestss</h3>
               {updatedRequests.length > 0 ? (
                 <Table
                   dataSource={updatedRequests}
