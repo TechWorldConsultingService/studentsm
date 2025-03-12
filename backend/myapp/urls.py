@@ -8,7 +8,7 @@ from .views import *
 from rest_framework import viewsets, permissions
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from .views import EventViewSet
+from .views import QuizViewSet, QuizQuestionViewSet, QuizScoreViewSet
 
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
@@ -16,7 +16,9 @@ router.register(r'events', EventViewSet, basename='event')
 router.register(r'chapters', ChapterViewSet)
 router.register(r'topics', TopicViewSet)
 router.register(r'subtopics', SubtopicViewSet)
-
+router.register(r'quizzes', QuizViewSet)
+router.register(r'questions', QuizQuestionViewSet)
+router.register(r'scores', QuizScoreViewSet)
 
 urlpatterns = [
     # Admin site URL

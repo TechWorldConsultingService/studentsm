@@ -1,22 +1,29 @@
 {
   "student": [
+    
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
-    },
-    {
-      "id": 2,
       "title": "Dashboard",
       "icon": "MdOutlineSpaceDashboard",
       "link": "/studentdashboard"
+    },
+    {
+      "id": 2,
+      "title": "NewsPosts",
+      "icon": "MdOutlineSpaceDashboard",
+      "link": "/homepage"
     },
     {
       "id": 3,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
+    },
+    {
+      "id": 4,
+      "title": "Quiz",
+      "icon": "IoCalendarOutline",
+      "link": "/playquiz"
     },
     {
       "id": 5,
@@ -75,6 +82,15 @@
       "link": "/principal-calendar"
     },
     {
+      "id": 4,
+      "title": "Quiz",
+      "icon": "IoCalendarOutline",
+      "subSidebar": [
+        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+      ]
+    },
+    {
       "id": 5,
       "title": "Exam",
       "icon": "TbReportSearch",
@@ -125,12 +141,7 @@
     }
   ],
   "principal": [
-    {
-      "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
-    },
+    
     {
       "id": 2,
       "title": "Dashboard",
@@ -138,13 +149,41 @@
       "link": "/principaldashboard"
     },
     {
+      "id": 1,
+      "title": "NewsPosts",
+      "icon": "MdOutlineSpaceDashboard",
+      "link": "/homepage"
+    },
+    {
       "id": 3,
+      "title": "Attendence",
+      "icon": "LuFileSpreadsheet",
+      "link": "/attendancePrincipal"
+    },
+    {
+      "id": 4,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
     },
     {
-      "id": 4,
+      "id": 5,
+      "title": "Quiz",
+      "icon": "IoCalendarOutline",
+      "subSidebar": [
+        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "All Leaves",
+      "icon": "MdCoPresent",
+      "link": "/manage-leaves"
+    },
+    
+    {
+      "id": 5,
       "title": "My Students",
       "icon": "SlPeople",
       "subSidebar": [
@@ -188,18 +227,7 @@
         { "id": 3, "title": "Accountent", "link": "/accountantList" }
       ]
     },
-    {
-      "id": 8,
-      "title": "Leave",
-      "icon": "MdCoPresent",
-      "link": "/manage-leaves"
-    },
-    {
-      "id": 9,
-      "title": "Attendence",
-      "icon": "LuFileSpreadsheet",
-      "link": "/attendancePrincipal"
-    },
+ 
     {
       "id": 10,
       "title": "All Buses",
@@ -220,6 +248,15 @@
       "title": "Dashboard",
       "icon": "MdOutlineSpaceDashboard",
       "link": "/accountantdashboard"
+    },
+    {
+      "id": 4,
+      "title": "Quiz",
+      "icon": "IoCalendarOutline",
+      "subSidebar": [
+        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+      ]
     },
     {
       "id": 3,

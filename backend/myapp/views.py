@@ -3511,3 +3511,31 @@ class UserSearchAPIView(APIView):
         
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+# from .models import Quiz, Question, UserScore
+from .models import Quiz, QuizQuestion, QuizScore
+from .serializers import QuizSerializer, QuizQuestionSerializer, QuizScoreSerializer
+
+class QuizViewSet(viewsets.ModelViewSet):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class QuizQuestionViewSet(viewsets.ModelViewSet):
+    queryset = QuizQuestion.objects.all()
+    serializer_class = QuizQuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class QuizScoreViewSet(viewsets.ModelViewSet):
+    queryset = QuizScore.objects.all()
+    serializer_class = QuizScoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

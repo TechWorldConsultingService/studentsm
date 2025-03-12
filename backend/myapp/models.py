@@ -565,3 +565,45 @@ class Communication(models.Model):
 
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username if self.receiver else self.receiver_role}"
+
+
+
+class Quiz(models.Model):
+    title = models.CharField(max_length=255)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quizzes")
+    highest_scorer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="highest_quiz_scores")
+    highest_score = models.IntegerField(default=0)
+
+    def update_highest_score(self, user, new_score):
+        if new_score > self.highest_score:
+            self.highest_score = new_score
+            self.highest_scorer = user
+            self.save()
+
+    def __str__(self):
+        return self.title
+
+# class Question(models.Model):
+class QuizQuestion(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+    question_text = models.TextField()
+    option1 = models.CharField(max_length=255)
+    option2 = models.CharField(max_length=255)
+    option3 = models.CharField(max_length=255)
+    option4 = models.CharField(max_length=255)
+    correct_answer = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.question_text
+    
+class QuizScore(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quiz_scores")
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="scores")
+    score = models.IntegerField()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.quiz.update_highest_score(self.user, self.score)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.score} in {self.quiz.title}"
