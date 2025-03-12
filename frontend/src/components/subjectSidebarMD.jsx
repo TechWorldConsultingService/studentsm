@@ -10,14 +10,12 @@ const SubjectSidebarMD = ({ setToggleSubjectSidebar }) => {
 
   return (
     <div className="flex flex-col bg-gradient-to-b from-purple-700 to-purple-500 min-h-screen p-3 shadow-lg w-52 fixed top-0 left-0 z-50 md:hidden">
-      {/* Close button */}
       <div className="flex justify-end text-white text-2xl font-bold p-1 ">
         <RxCross2
           onClick={() => setToggleSubjectSidebar((prevState) => !prevState)}
         />
       </div>
 
-      {/* Dashboard Link */}
       <NavLink
         to="/lms"
         className={({ isActive }) =>
@@ -31,7 +29,6 @@ const SubjectSidebarMD = ({ setToggleSubjectSidebar }) => {
         <span className="ml-3 text-sm">Dashboard</span>
       </NavLink>
 
-      {/* Dynamic Subject Links */}
       <div className="mb-2">
         {subjects.length > 0 ? (
           subjects.map((item) => (

@@ -5,27 +5,23 @@ import { FaBars, FaAngleLeft, FaAngleRight, FaHouse } from "react-icons/fa6";
 import { SiGoogleclassroom } from "react-icons/si";
 import { setSelectedClass } from "../redux/reducerSlices/userSlice";
 
-
-
 const buildClassSubSidebar = (classItem) => {
   return [
     {
-        id: `${classItem.id}-homework`,
-        title: "Homework",
-        link: `/tms/${classItem.class_name.toLowerCase()}/homework`,
-      },
-      {
-        id: `${classItem.id}-notes`,
-        title: "Notes",
-        link: `/tms/${classItem.class_name.toLowerCase()}/notes`,
-      },
+      id: `${classItem.id}-homework`,
+      title: "Homework",
+      link: `/tms/${classItem.class_name.toLowerCase()}/homework`,
+    },
+    {
+      id: `${classItem.id}-notes`,
+      title: "Notes",
+      link: `/tms/${classItem.class_name.toLowerCase()}/notes`,
+    },
     {
       id: `${classItem.id}-syllabus`,
       title: "Syllabus",
       link: `/tms/${classItem.class_name.toLowerCase()}/syllabus`,
     },
-
-
   ];
 };
 
@@ -49,14 +45,13 @@ const ClassSidebar = () => {
       id: `class-${classItem.id}`,
       icon: SiGoogleclassroom,
       title: classItem.class_name,
-      link: `/tms/${classItem.class_name.toLowerCase()}`, 
+      link: `/tms/${classItem.class_name.toLowerCase()}`,
       subSidebar: buildClassSubSidebar(classItem),
     })),
   ];
 
   const handleClassClick = (className) => {
-    console.log(className,"classname")
-    dispatch(setSelectedClass(className)); 
+    dispatch(setSelectedClass(className));
   };
 
   const handleMobileToggle = () => {
@@ -82,7 +77,7 @@ const ClassSidebar = () => {
         }
       }
     });
-  }, [location.pathname]);
+  }, [location.pathname, sidebarItems]);
 
   return (
     <>
@@ -100,23 +95,16 @@ const ClassSidebar = () => {
       <div
         className={`
           fixed md:static top-0 left-0 z-50
-          h-screen
-          border-r border-purple-200 shadow-lg
-          flex flex-col
-          bg-gradient-to-b from-purple-200 to-white
-          backdrop-blur-sm
-          transition-all duration-300 ease-in-out
-          ${
-            isCollapsed ? "w-14" : "w-52"
-          }
+          h-screen border-r border-purple-200 shadow-lg
+          flex flex-col bg-gradient-to-b from-purple-200 to-white
+          backdrop-blur-sm transition-all duration-300 ease-in-out
+          ${isCollapsed ? "w-14" : "w-52"}
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
       >
         <div
-          className={`flex items-center justify-between p-3 ${
-            isCollapsed ? "justify-center" : ""
-          }`}
+          className={`flex items-center justify-between p-3 ${isCollapsed ? "justify-center" : ""}`}
         >
           {/* Logo */}
           <div className="flex items-center">
@@ -157,18 +145,13 @@ const ClassSidebar = () => {
                     onClick={() => handleSubMenu(item.id)}
                     className={`
                       w-full text-left px-4 py-3 flex items-center justify-between
-                      text-purple-900
-                      transition-colors rounded-md
+                      text-purple-900 transition-colors rounded-md
                       hover:bg-purple-300 hover:text-purple-900
                       ${isCollapsed ? "justify-center" : ""}
                     `}
                   >
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`${
-                          isCollapsed ? "text-3xl" : "text-2xl"
-                        } transition-all duration-300`}
-                      >
+                      <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
                         <Icon />
                       </span>
                       {!isCollapsed && (
@@ -193,6 +176,7 @@ const ClassSidebar = () => {
                           to={subItem.link}
                           key={subItem.id}
                           end
+                          onClick={() => handleClassClick(item.title)}
                           className={({ isActive }) => `
                             py-2 pl-4 my-1 rounded-r-md text-sm transition-colors
                             ${
@@ -218,8 +202,7 @@ const ClassSidebar = () => {
                 key={item.id}
                 end
                 className={({ isActive }) => `
-                  px-4 py-3 flex items-center gap-2 rounded-md
-                  transition-colors
+                  px-4 py-3 flex items-center gap-2 rounded-md transition-colors
                   ${
                     isActive
                       ? "bg-purple-400 text-white font-semibold"
@@ -228,11 +211,7 @@ const ClassSidebar = () => {
                   ${isCollapsed ? "justify-center" : ""}
                 `}
               >
-                <span
-                  className={`${
-                    isCollapsed ? "text-3xl" : "text-2xl"
-                  } transition-all duration-300`}
-                >
+                <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
                   <Icon />
                 </span>
                 {!isCollapsed && (

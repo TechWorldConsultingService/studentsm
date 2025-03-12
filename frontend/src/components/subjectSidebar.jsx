@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setSelectedSubject } from "../redux/reducerSlices/userSlice";
+
+
+
 import { NavLink, useLocation } from "react-router-dom";
 import {
   FaBars,
@@ -8,28 +13,28 @@ import {
   FaHouse,
   FaBookOpen,
 } from "react-icons/fa6";
-import { useSelector } from "react-redux";
 
 const buildSubjectSubSidebar = (subject) => [
   {
     id: `${subject.id}-homework`,
     title: "Homework",
-    link: `/lms/${subject.subject_name.toLowerCase()}/homework`,
+    link: `/lms/${subject.subject_name}/homework`,
   },
   {
     id: `${subject.id}-notes`,
     title: "Notes",
-    link: `/lms/${subject.subject_name.toLowerCase()}/notes`,
+    link: `/lms/${subject.subject_name}/notes`,
   },
   {
     id: `${subject.id}-syllabus`,
     title: "Syllabus",
-    link: `/lms/${subject.subject_name.toLowerCase()}/syllabus`,
+    link: `/lms/${subject.subject_name}/syllabus`,
   },
 ];
 
 const SubjectSidebar = () => {
   const location = useLocation();
+    const dispatch = useDispatch();
   const { subjects = [] } = useSelector((state) => state.user);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -42,12 +47,16 @@ const SubjectSidebar = () => {
       link: "/lms",
     },
     ...subjects.map((subject) => ({
-      id: `subject-${subject.id}`,
+      id: subject.id,
       icon: FaBookOpen,
       title: subject.subject_name,
       subSidebar: buildSubjectSubSidebar(subject),
     })),
   ];
+
+  const handleSubjectClick = (subjectName) => {
+    dispatch(setSelectedSubject(subjectName));
+  };
 
   const handleMobileToggle = () => {
     setIsMobileOpen((prev) => !prev);
@@ -186,6 +195,7 @@ const SubjectSidebar = () => {
                       {item.subSidebar.map((subItem) => (
                         <NavLink
                           to={subItem.link}
+                          onClick={() => handleSubjectClick(item.id)}
                           key={subItem.id}
                           end
                           className={({ isActive }) => `
@@ -209,6 +219,7 @@ const SubjectSidebar = () => {
             return (
               <NavLink
                 to={item.link}
+                onClick={() => handleSubjectClick(item.title)}
                 key={item.id}
                 end
                 className={({ isActive }) => `
