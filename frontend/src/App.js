@@ -51,15 +51,18 @@ import SubjectSyllabus from "./pages/LMS/subjectSyllabus";
 import ClassSyllabus from "./pages/TMS/syllabus/classSyllabus";
 import ClassHomework from "./pages/TMS/teacherHomework/classHomework";
 import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
+import QuizComponent from "./pages/Quiz/QuizComponent";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
     useState("");
 
   const router = createBrowserRouter([
+
     { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
     { path: "/homepage", element: <HomePage /> },
+    { path: "/playquiz", element: <QuizComponent /> },
     { path: "/studentdashboard", element: <StudentHomePage /> },
     { path: "/masterdashboard", element: <MasterHomePage /> },
     { path: "/principaldashboard", element: <PrincipalHomePage /> },

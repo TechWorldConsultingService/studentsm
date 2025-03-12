@@ -1359,3 +1359,33 @@ class FinanceSummarySerializer(serializers.Serializer):
     total_fees_collected = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_outstanding_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_transaction_count = serializers.IntegerField()
+
+
+
+# Quiz
+from .models import Quiz, QuizQuestion, QuizScore
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    highest_scorer = serializers.SerializerMethodField()
+    class Meta:
+        model = Quiz
+        fields = ['id', 'title', 'created_by', 'highest_scorer', 'highest_score']
+        read_only_fields = ['created_by', 'highest_scorer', 'highest_score']
+
+
+    def get_highest_scorer(self, obj):
+        return obj.highest_scorer.username if obj.highest_scorer else None
+    
+class QuizQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizQuestion
+        fields = '__all__'
+
+
+class QuizScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizScore
+        fields = ['id', 'quiz', 'user', 'score']
+        read_only_fields = ['user']
+        
