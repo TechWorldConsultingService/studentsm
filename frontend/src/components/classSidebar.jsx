@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { FaBars, FaAngleLeft, FaAngleRight, FaHouse } from "react-icons/fa6";
 import { SiGoogleclassroom } from "react-icons/si";
+import { setSelectedClass } from "../redux/reducerSlices/userSlice";
 
-/**
- * Example: If you want sub-links for each class (just like subSidebar for subjects),
- * you can adjust `buildClassSubSidebar(item)` to return an array of sub-routes.
- * For now, this returns an empty array since your original code didn’t mention sub-routes.
- */
+
+
 const buildClassSubSidebar = (classItem) => {
   return [
     {
@@ -29,10 +27,10 @@ const buildClassSubSidebar = (classItem) => {
 
 
   ];
-//   return [];
 };
 
 const ClassSidebar = () => {
+  const dispatch = useDispatch();
   const location = useLocation();
   const { classes = [] } = useSelector((state) => state.user);
 
@@ -51,10 +49,15 @@ const ClassSidebar = () => {
       id: `class-${classItem.id}`,
       icon: SiGoogleclassroom,
       title: classItem.class_name,
-      link: `/tms/${classItem.class_name.toLowerCase()}`,
+      link: `/tms/${classItem.class_name.toLowerCase()}`, 
       subSidebar: buildClassSubSidebar(classItem),
     })),
   ];
+
+  const handleClassClick = (className) => {
+    console.log(className,"classname")
+    dispatch(setSelectedClass(className)); 
+  };
 
   const handleMobileToggle = () => {
     setIsMobileOpen((prev) => !prev);
@@ -211,6 +214,7 @@ const ClassSidebar = () => {
             return (
               <NavLink
                 to={item.link}
+                onClick={() => handleClassClick(item.title)}
                 key={item.id}
                 end
                 className={({ isActive }) => `
