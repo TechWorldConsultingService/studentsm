@@ -205,6 +205,7 @@ class LoginAPIView(APIView):
  
 
 # View for handling user logout
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutAPIView(APIView):
     permission_classes = (IsAuthenticated,)  # Ensure the user is authenticated
 
@@ -250,7 +251,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("You do not have permission to create posts.")
         
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class DateSettingView(APIView):
     """
     API to get and update the global date setting.
@@ -276,6 +277,7 @@ class DateSettingView(APIView):
         
 # View for handling teacher registration
 # @csrf_exempt
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterTeacherView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -329,6 +331,7 @@ class RegisterTeacherView(APIView):
             return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling principal registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterPrincipalView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -414,6 +417,7 @@ class RegisterStudentView(APIView):
 
 
 # View for handling staff registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterAccountantView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -798,6 +802,7 @@ class LeaveApplicationListView(APIView):
         return Response(serializer.data)
 
 # API view to create a new leave application
+@method_decorator(csrf_exempt, name='dispatch')
 class LeaveApplicationCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1037,6 +1042,7 @@ class OptionalSubjectsAPIView(APIView):
         return Response(serializer.data)
 
 # API view to list all classes or create a new class
+@method_decorator(csrf_exempt, name='dispatch')
 class ClassListCreateView(APIView):
     def get(self, request, *args, **kwargs):
         classes = Class.objects.prefetch_related("sections")  # ✅ Prefetch only sections
@@ -1080,6 +1086,7 @@ class ClassDetailView(APIView):
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SectionListCreateAPIView(APIView):
     def get(self, request, class_id, format=None):
         """
@@ -1219,6 +1226,7 @@ class StudentAssignmentsBySubjectView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # to assign homework for student by teacher
+@method_decorator(csrf_exempt, name='dispatch')
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
 
@@ -1379,6 +1387,7 @@ class StudentAssignmentsView(APIView):
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SubmitStudentAssignmentView(APIView):
     permission_classes = [IsAuthenticated]
  
@@ -1513,6 +1522,7 @@ class ReviewAssignmentsView(APIView):
 
 # to allow a teacher to review a specific assignment submission
 # from rest_framework import status
+@method_decorator(csrf_exempt, name='dispatch')
 class ReviewAssignmentSubmissionView(APIView):
     # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
@@ -1555,6 +1565,7 @@ class ReviewAssignmentSubmissionView(APIView):
             status=status.HTTP_200_OK
         )
         
+@method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1675,6 +1686,7 @@ class SubtopicViewSet(viewsets.ModelViewSet):
         return Response({"message": "Subtopic marked as completed"}, status=status.HTTP_200_OK)
 
 # Discussion Post API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionPostAPIView(APIView):
     """
     API View to list and create posts.
@@ -1695,6 +1707,7 @@ class DiscussionPostAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Discussion Comment API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionCommentAPIView(APIView):
     """
     API View to list and create comments under a specific post.
@@ -1748,7 +1761,7 @@ class DiscussionCommentDeleteAPIView(APIView):
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
     
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamAPIView(APIView):
     def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
@@ -1762,6 +1775,7 @@ class ExamAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamDetailAPIView(APIView):
     def get(self, request):
         """
@@ -1778,6 +1792,7 @@ class ExamDetailAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentResultAPIView(APIView):
     def get(self, request):
         results = StudentResult.objects.all()
@@ -1880,6 +1895,7 @@ class SingleStudentResultAPIView(APIView):
         student_result = self.get_object(result_id)
         student_result.delete()
         return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2009,6 +2025,7 @@ class ExamDetailsByExamView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class SubjectWiseExamResultsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2132,6 +2149,7 @@ class ExamDetailsByTeacherView(APIView):
             })
         return Response(response_data, status=200)
 
+
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, class_id, *args, **kwargs):
         try:
@@ -2179,6 +2197,7 @@ class ExamTimetableView(APIView):
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ExamsByClassView(APIView):
     def get(self, request, class_id, *args, **kwargs):
@@ -2366,6 +2385,7 @@ def recalculate_rankings(exam, class_instance):
         result.rank = rank
         result.save()
 
+
 class StudentRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2438,7 +2458,7 @@ class SendMessageView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class NotesCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -2518,7 +2538,7 @@ class NotesBySubjectAPIView(APIView):
         # Return the serialized data
         return Response({"notes": serializer.data}, status=status.HTTP_200_OK)
     
-
+@method_decorator(csrf_exempt, name='dispatch')
 class DailyAttendanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2744,6 +2764,7 @@ from .models import FeeCategoryName
 from .serializers import FeeCategoryNameSerializer
 from rest_framework.permissions import IsAuthenticated
 
+@method_decorator(csrf_exempt, name='dispatch')
 class FeeCategoryNameAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2789,7 +2810,7 @@ class FeeCategoryNameDetailAPIView(APIView):
         except FeeCategoryName.DoesNotExist:
             return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class FeeCategoryByClassAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2851,6 +2872,7 @@ from rest_framework.views import APIView
 from .models import TransportationFee
 from .serializers import TransportationFeeSerializer
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TransportationFeeListCreateAPIView(APIView):
     def get(self, request):
         transportation_fees = TransportationFee.objects.all()
@@ -2900,7 +2922,7 @@ class TransportationFeeDetailAPIView(APIView):
         transportation_fee.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentBillAPIView(APIView):
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all bills for a specific student."""
@@ -2974,7 +2996,7 @@ class StudentBillDetailAPIView(APIView):
         except StudentBill.DoesNotExist:
             return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -3268,7 +3290,7 @@ class FeeDashboardAPIView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
