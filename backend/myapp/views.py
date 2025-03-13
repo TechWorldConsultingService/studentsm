@@ -372,6 +372,7 @@ class RegisterPrincipalView(APIView):
             return Response(principal_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling student registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterStudentView(APIView):
     def post(self, request, format=None):
         if request.content_type == 'application/json':
