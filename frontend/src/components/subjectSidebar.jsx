@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setSelectedSubject } from "../redux/reducerSlices/userSlice";
+import { setSelectedSubject, setSelectedSubjectName } from "../redux/reducerSlices/userSlice";
 
 
 
@@ -54,8 +54,9 @@ const SubjectSidebar = () => {
     })),
   ];
 
-  const handleSubjectClick = (subjectName) => {
-    dispatch(setSelectedSubject(subjectName));
+  const handleSubjectClick = (selectedSubjectDetails) => {
+    dispatch(setSelectedSubject(selectedSubjectDetails.id));
+    dispatch(setSelectedSubjectName(selectedSubjectDetails.title));
   };
 
   const handleMobileToggle = () => {
@@ -195,7 +196,7 @@ const SubjectSidebar = () => {
                       {item.subSidebar.map((subItem) => (
                         <NavLink
                           to={subItem.link}
-                          onClick={() => handleSubjectClick(item.id)}
+                          onClick={() => handleSubjectClick(item)}
                           key={subItem.id}
                           end
                           className={({ isActive }) => `
@@ -219,7 +220,7 @@ const SubjectSidebar = () => {
             return (
               <NavLink
                 to={item.link}
-                onClick={() => handleSubjectClick(item.title)}
+                onClick={() => handleSubjectClick(item)}
                 key={item.id}
                 end
                 className={({ isActive }) => `
