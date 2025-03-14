@@ -3219,10 +3219,56 @@ class SyllabusSummaryAPIView(APIView):
 
         return Response({"syllabus_progress": syllabus_data}, status=200)
 
+class SyllabusCompletionPercentageAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_name = request.query_params.get("subject_name", None)
+        subject_code = request.query_params.get("subject_code", None)
+
+        if not subject_name and not subject_code:
+            return Response({"error": "Either subject_name or subject_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter syllabus by subject name or code
+        if subject_name:
+            syllabuses = Syllabus.objects.filter(subject__subject_name__icontains=subject_name)
+        elif subject_code:
+            syllabuses = Syllabus.objects.filter(subject__subject_code__icontains=subject_code)
+
+        if not syllabuses.exists():
+            return Response({"message": "No syllabuses found for this subject."}, status=status.HTTP_404_NOT_FOUND)
+
+        syllabus_data = []
+
+        # Calculate completion percentage for each syllabus
+        for syllabus in syllabuses:
+            total_topics = syllabus.chapters.aggregate(total=Count("topics"))["total"] or 0
+            total_subtopics = syllabus.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+
+            completed_topics = syllabus.chapters.aggregate(
+                completed=Count("topics", filter=Q(topics__is_completed=True))
+            )["completed"] or 0
+
+            completed_subtopics = syllabus.chapters.aggregate(
+                completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+            )["completed"] or 0
+
+            total_completed = completed_topics + completed_subtopics
+            total_items = total_topics + total_subtopics
+
+            completion_percentage = (total_completed / total_items * 100) if total_items else 0
+
+            syllabus_data.append({
+                "subject": syllabus.subject.subject_name,
+                "subject_code": syllabus.subject.subject_code,
+                "class_name": syllabus.class_assigned.class_name,
+                "teacher_name": syllabus.teacher.user.username,
+                "completion_percentage": round(completion_percentage, 2),
+            })
+
+        return Response({"syllabus_progress": syllabus_data}, status=status.HTTP_200_OK)
 
 from django.db.models import Sum
-
-
 class FeeDashboardAPIView(APIView):
     def get(self, request):
         # Get current month & year

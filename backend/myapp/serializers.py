@@ -696,16 +696,18 @@ class ChapterSerializer(serializers.ModelSerializer):
 
         return chapter
 
-
+from django.db.models import Count, Q
 class SyllabusSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, required=False)
     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
+    completion_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Syllabus
-        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at']
+        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at',
+            'completion_percentage']
 
     def create(self, validated_data):
         chapters_data = validated_data.pop('chapters', [])
@@ -722,6 +724,19 @@ class SyllabusSerializer(serializers.ModelSerializer):
                 for subtopic_data in subtopics_data:
                     Subtopic.objects.create(topic=topic, **subtopic_data)
         return syllabus
+    def get_completion_percentage(self, obj):
+        """
+        Calculates the syllabus completion percentage based on topics completed.
+        """
+        total_topics = obj.chapters.aggregate(total=Count("topics"))["total"] or 0
+        completed_topics = obj.chapters.aggregate(
+            completed=Count("topics", filter=Q(topics__is_completed=True))
+        )["completed"] or 0
+
+        # Calculate completion percentage
+        if total_topics == 0:
+            return 0
+        return round((completed_topics / total_topics) * 100, 2)
 
 class DiscussionPostSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
