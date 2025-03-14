@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import Modal from "./Modal";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const EditAssignmentModal = ({
   isOpen,
@@ -13,6 +16,8 @@ const EditAssignmentModal = ({
     description: assignment.description,
     due_date: assignment.due_date,
   });
+  const { access } = useSelector((state) => state.user);
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,25 +26,39 @@ const EditAssignmentModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
+    if (!access) {
+      toast.error("User is not authenticated. Please log in.");
+      return;
+    }
+  
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/teacher/assignments/${assignment.id}/`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+      const res = await fetch(`http://localhost:8000/api/assignments/${assignment.id}/update/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (!res.ok) {
+        if (res.status === 401) {
+          navigate("/");
+        } else {
+          throw new Error("Failed to update assignment");
         }
-      );
-      if (!res.ok) throw new Error("Failed to update assignment");
+      }
+  
       await res.json();
+      toast.success("Assignment updated successfully.");
       fetchHomeworkList();
       onClose();
-    } catch (err) {
-      console.error("Error updating assignment:", err);
+    } catch (error) {
+      toast.error("Error updating assignment. " + (error.message || error));
     }
   };
+  
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
