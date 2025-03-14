@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 
 
 const AddSyllabusByTeacher = ({ handleCloseModal }) => {
-  const { access, selectedClassID, id: teacher_id, selectedClass } = useSelector((state) => state.user);
+  const { access, id: teacher_id, selectedClassName , selectedClassID} = useSelector((state) => state.user);
 
 
     const navigate = useNavigate();
@@ -23,9 +23,9 @@ const AddSyllabusByTeacher = ({ handleCloseModal }) => {
 
 
   useEffect(() => {
-    if (access && teacher_id && selectedClass) {
+    if (access && teacher_id ) {
       fetch(
-        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClass}`
+        `http://localhost:8000/api/filter-subjects/?teacher=${teacher_id}&class_assigned=${selectedClassName}`
       )
         .then((response) => response.json())
         .then((data) => {
@@ -39,7 +39,7 @@ const AddSyllabusByTeacher = ({ handleCloseModal }) => {
     } else {
       console.error("Teacher ID or class is undefined");
     }
-  }, [access, teacher_id, selectedClass]);
+  }, [access, teacher_id, selectedClassName]);
 
 
 

@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { FaBars, FaAngleLeft, FaAngleRight, FaHouse } from "react-icons/fa6";
 import { SiGoogleclassroom } from "react-icons/si";
-import { setSelectedClass } from "../redux/reducerSlices/userSlice";
+import { setSelectedClass, setSelectedClassId } from "../redux/reducerSlices/userSlice";
 
 const buildClassSubSidebar = (classItem) => {
   return [
@@ -42,7 +42,7 @@ const ClassSidebar = () => {
       link: "/tms",
     },
     ...classes.map((classItem) => ({
-      id: `class-${classItem.id}`,
+      id: classItem.id,
       icon: SiGoogleclassroom,
       title: classItem.class_name,
       link: `/tms/${classItem.class_name.toLowerCase()}`,
@@ -50,8 +50,9 @@ const ClassSidebar = () => {
     })),
   ];
 
-  const handleClassClick = (className) => {
-    dispatch(setSelectedClass(className));
+  const handleClassClick = (clasesObject) => {
+    dispatch(setSelectedClass(clasesObject.title));
+    dispatch(setSelectedClassId(clasesObject.id))
   };
 
   const handleMobileToggle = () => {
@@ -176,7 +177,7 @@ const ClassSidebar = () => {
                           to={subItem.link}
                           key={subItem.id}
                           end
-                          onClick={() => handleClassClick(item.title)}
+                          onClick={() => handleClassClick(item)}
                           className={({ isActive }) => `
                             py-2 pl-4 my-1 rounded-r-md text-sm transition-colors
                             ${
@@ -198,7 +199,7 @@ const ClassSidebar = () => {
             return (
               <NavLink
                 to={item.link}
-                onClick={() => handleClassClick(item.title)}
+                onClick={() => handleClassClick(item)}
                 key={item.id}
                 end
                 className={({ isActive }) => `

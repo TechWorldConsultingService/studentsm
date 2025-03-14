@@ -89,12 +89,8 @@ const userSlice = createSlice({
     setSelectedSubject(state,action) {
         state.selectedSubject = action.payload
     },
-    setSelectedClassId (state,action) {
-      const {classId} = action.payload
-      return{
-        ...state,
-        selectedClassID: classId
-      }
+    setSelectedClassId:  (state,action) => {
+        state.selectedClassID =action.payload
     }
     
   },
