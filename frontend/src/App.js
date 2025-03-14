@@ -46,12 +46,13 @@ import SuccessPayment from "./pages/accountant/SuccessPayment";
 import MyLeaves from "./pages/leave/MyLeaves";
 import ManageAllLeaves from "./pages/leave/ManageAllLeaves";
 import SubjectNotes from "./pages/LMS/subjectNotes";
-import AssignmentPage from "./pages/LMS/homework/AssignmentPage";
 import SubjectSyllabus from "./pages/LMS/subjectSyllabus";
 import ClassSyllabus from "./pages/TMS/syllabus/classSyllabus";
-import ClassHomework from "./pages/TMS/teacherHomework/classHomework";
+import TeacherHomeworkDashboard from "./pages/TMS/teacherHomework/TeacherHomeworkDashboard";
 import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
 import QuizComponent from "./pages/Quiz/QuizComponent";
+import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSubmissionsPage";
+import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -102,11 +103,12 @@ function App() {
     { path: "/successPayment", element: <SuccessPayment /> },
     { path: "/my-leaves", element: <MyLeaves /> },
     { path: "/manage-leaves", element: <ManageAllLeaves /> },
-    { path: "/lms/:subjectName/homework", element: <AssignmentPage /> },
+    { path: "/lms/:subjectName/homework", element: <StudentAssignmentsPage/> },
     { path: "/lms/:subjectName/notes", element: <SubjectNotes /> },
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
     {path: "/tms/:classId/syllabus", element: <ClassSyllabus />},
-    {path: "/tms/:classId/homework", element: <ClassHomework />},
+    {path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard />},
+    {path:"/tms/assignments/:assignmentId/submissions", element : <AssignmentSubmissionsPage/>},
     {path: "/tms/:classId/notes", element: <ClassNotes />},
     {
       path: "/selectClassForAttendence",
