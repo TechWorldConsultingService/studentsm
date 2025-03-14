@@ -56,10 +56,7 @@ const ClassSyllabus = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // We’ll track if the server specifically said “No Syllabus Found”
   const [noSyllabusFound, setNoSyllabusFound] = useState(false);
-
-  // -- Modals: Add/Edit, Delete --
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSyllabusForEdit, setSelectedSyllabusForEdit] = useState(null);
 

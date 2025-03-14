@@ -77,7 +77,6 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
       fetchOptionalSubjects();
       fetchSections();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access]);
 
   const fetchOptionalSubjects = async () => {

@@ -98,6 +98,7 @@ urlpatterns = [
     path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'), # Get assignments for students / to see all the assginments given by teacher
     path('api/submit-assignment/', SubmitStudentAssignmentView.as_view(), name='assignment-list'), # Submit assignment by the student
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'), # Review assignments by the teacher
+    path('api/assignments/subject/', AssignmentsBySubjectView.as_view(), name='assignments-by-subject'), # get assignments with subject id
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
     # delete submited assignment of student by student if not reviewed yet
