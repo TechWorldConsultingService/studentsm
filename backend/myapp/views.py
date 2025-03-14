@@ -1564,6 +1564,41 @@ class ReviewAssignmentSubmissionView(APIView):
             {"message": "Review submitted successfully."},
             status=status.HTTP_200_OK
         )
+    
+# get/fetch all assignment with subject id
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from .models import Assignment
+from .serializers import AssignmentSerializer
+
+class AssignmentsBySubjectView(APIView):
+    """
+    API view to fetch all assignments filtered by subject id.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        subject_id = request.query_params.get('subject_id')
+        if not subject_id:
+            return Response(
+                {"error": "Subject ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter assignments by subject id
+        assignments = Assignment.objects.filter(subject_id=subject_id)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for this subject."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
         
 @method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
@@ -1635,6 +1670,23 @@ class SyllabusView(APIView):
 
         serializer = SyllabusSerializer(syllabus)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        """ Allows teachers to delete a syllabus """
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can delete a syllabus."}, status=status.HTTP_403_FORBIDDEN)
+
+        teacher = request.user.teacher
+        syllabus_id = kwargs.get("pk")  # Get the syllabus ID from URL
+
+        try:
+            syllabus = Syllabus.objects.get(id=syllabus_id, teacher=teacher)
+        except Syllabus.DoesNotExist:
+            return Response({"error": "You do not have permission to delete this syllabus."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        syllabus.delete()  # Delete the syllabus
+        return Response({"message": "Syllabus deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 # syllabus get / filter by subject id
 class SyllabusFilterView(APIView):

@@ -601,16 +601,39 @@ import nepali_datetime
 from rest_framework import serializers
 from .models import Assignment, Teacher, Class, Subject
 
+from rest_framework import serializers
+from .models import Assignment, Subject, Class, Teacher
+import nepali_datetime
+
 class AssignmentSerializer(serializers.ModelSerializer):
+    # For output, display teacher's username instead of its id.
+    teacher = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='user.username'
+    )
+    # For subject, on write we still need to accept an ID or name, but on read we display subject_name.
+    subject = serializers.SlugRelatedField(
+        queryset=Subject.objects.all(),
+        slug_field='subject_name'
+    )
     class_assigned = serializers.SlugRelatedField(
-        queryset=Class.objects.all(),  # Fetch class based on `class_name`
-        slug_field='class_name'        # Use `class_name` for representation and lookup
+        queryset=Class.objects.all(),
+        slug_field='class_name'
     )
 
     class Meta:
         model = Assignment
-        fields = ['id', 'teacher', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
-        read_only_fields = ['teacher']  # Make `teacher` read-only
+        fields = [
+            'id',
+            'teacher',
+            'subject',
+            'class_assigned',
+            'assignment_name',
+            'description',
+            'due_date',
+            'assigned_on'
+        ]
+        read_only_fields = ['teacher']
 
     def convert_bs_to_ad(self, bs_date):
         """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
@@ -618,16 +641,16 @@ class AssignmentSerializer(serializers.ModelSerializer):
             try:
                 bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                ad_date_obj = bs_date_obj.to_datetime_date()  # Convert to AD date
+                return ad_date_obj.strftime('%Y-%m-%d')
             except ValueError:
                 raise serializers.ValidationError({"due_date": "Invalid BS date format. Use YYYY/MM/DD."})
-        return bs_date  # If it's already in AD, return as is
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess due_date before default validation"""
         if 'due_date' in data and isinstance(data['due_date'], str):
-            data['due_date'] = self.convert_bs_to_ad(data['due_date'])  # Convert BS to AD before validation
+            data['due_date'] = self.convert_bs_to_ad(data['due_date'])
         return super().to_internal_value(data)
 
     def create(self, validated_data):

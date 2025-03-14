@@ -3,6 +3,7 @@ import * as Yup from "yup";
 import { useFormik } from "formik";
 import axios from "axios";
 import toast from "react-hot-toast";
+import ModalLayout from "../../../layout/ModalLayout";
 
 const newAssignmentSchema = Yup.object({
   subject: Yup.string().required("Subject is required"),
@@ -51,8 +52,9 @@ const NewAssignment = ({
   });
 
   return (
-    <div className="bg-purple-50 p-6">
-      <form onSubmit={formik.handleSubmit} className="space-y-4">
+    <ModalLayout >
+      <h1 className="font-bold text-2xl text-purple-700">Add New Homework</h1>
+      <form onSubmit={formik.handleSubmit} className="space-y-4 pt-5">
         {/* Class input (read-only or editable) */}
         <div className="flex flex-col">
           <label className="text-purple-700 font-semibold">Class</label>
@@ -101,7 +103,7 @@ const NewAssignment = ({
 
         {/* Assignment Name input */}
         <div className="flex flex-col">
-          <label className="text-purple-700 font-semibold">Assignment Name</label>
+          <label className="text-purple-700 font-semibold">Homework Name</label>
           <input
             type="text"
             id="assignment_name"
@@ -153,16 +155,23 @@ const NewAssignment = ({
         </div>
 
         {/* Submit Button */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-x-4">
           <button
             type="submit"
             className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 focus:outline-none"
           >
-            Create Assignment
+            Create
           </button>
+          <button
+              type="button"
+              onClick={closeModal}
+              className="bg-gray-500 text-white px-6 py-2  rounded-lg hover:bg-gray-600"
+            >
+              Cancel
+            </button>
         </div>
       </form>
-    </div>
+    </ModalLayout>
   );
 };
 

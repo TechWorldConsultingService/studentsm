@@ -210,6 +210,7 @@ class AssignmentSubmission(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
+from django.db.models import Count, Q
 class Syllabus(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus")
@@ -218,6 +219,25 @@ class Syllabus(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
+
+    def get_completion_percentage(self):
+        total_topics = self.chapters.aggregate(total=Count("topics"))["total"] or 0
+        total_subtopics = self.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+
+        completed_topics = self.chapters.aggregate(
+            completed=Count("topics", filter=Q(topics__is_completed=True))
+        )["completed"] or 0
+
+        completed_subtopics = self.chapters.aggregate(
+            completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+        )["completed"] or 0
+
+        total_completed = completed_topics + completed_subtopics
+        total_items = total_topics + total_subtopics
+
+        if total_items == 0:
+            return 0
+        return (total_completed / total_items) * 100
 
 class Chapter(models.Model):
     syllabus = models.ForeignKey(Syllabus, on_delete=models.CASCADE, related_name="chapters")
