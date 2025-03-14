@@ -144,7 +144,10 @@ urlpatterns = [
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
     path("api/syllabus/filter/", SyllabusFilterView.as_view(), name="syllabus-filter"), 
+    path('api/syllabus/completion/', SyllabusCompletionPercentageAPIView.as_view(), name='syllabus-completion-percentage'),
+    # path('api/syllabus/completed/', CompletedSyllabusBySubjectAPIView.as_view(), name='completed-syllabus-by-subject'),
     # /api/syllabus/filter/?subject_id=2  to get syllabus as per subject id
+   
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
     
     path('api/notes/', NotesCreateView.as_view(), name='notes-list-create'),
