@@ -185,12 +185,12 @@ const AccountantDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Total Fees Collected</span>
-            <span className="text-2xl font-bold text-blue-700">${financeData?.total_fees_collected}</span>
+            <span className="text-2xl font-bold text-blue-700">Rs. {financeData?.total_fees_collected}</span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Total Outstanding</span>
-            <span className="text-2xl font-bold text-red-700">${financeData?.total_outstanding_amount}</span>
+            <span className="text-2xl font-bold text-red-700">Rs. {financeData?.total_outstanding_amount}</span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">

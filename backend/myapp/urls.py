@@ -101,6 +101,7 @@ urlpatterns = [
     path('api/assignments/subject/', AssignmentsBySubjectView.as_view(), name='assignments-by-subject'), # get assignments with subject id
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
+    path('api/check-submission/<int:assignment_id>/', CheckSubmissionStatusView.as_view(), name='check-submission-status'),
     # delete submited assignment of student by student if not reviewed yet
     path('api/delete-submission/<int:submission_id>/', DeleteStudentSubmissionView.as_view(), name='delete-submission'),
 
