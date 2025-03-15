@@ -24,11 +24,10 @@ from collections import defaultdict
 from django.db.models import Count, Q
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+# from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
-from .serializers import FinanceSummarySerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -1570,8 +1569,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Assignment
-from .serializers import AssignmentSerializer
 
 class AssignmentsBySubjectView(APIView):
     """
@@ -1598,7 +1595,6 @@ class AssignmentsBySubjectView(APIView):
 
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
         
 @method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
@@ -2287,7 +2283,6 @@ from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Student, Class
 
 class BulkUpdateRollNumbersAPIView(APIView):
     def put(self, request, class_id, *args, **kwargs):
@@ -2812,8 +2807,6 @@ class SubjectWiseStudentListAPIView(APIView):
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import FeeCategoryName
-from .serializers import FeeCategoryNameSerializer
 from rest_framework.permissions import IsAuthenticated
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -2921,8 +2914,6 @@ class FeeCategoryDetailAPIView(APIView):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import TransportationFee
-from .serializers import TransportationFeeSerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TransportationFeeListCreateAPIView(APIView):
@@ -3634,9 +3625,6 @@ class UserSearchAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# from .models import Quiz, Question, UserScore
-from .models import Quiz, QuizQuestion, QuizScore
-from .serializers import QuizSerializer, QuizQuestionSerializer, QuizScoreSerializer
 
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
