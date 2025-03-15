@@ -29,6 +29,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
 from .serializers import FinanceSummarySerializer
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 5  # Default page size
+    page_size_query_param = 'page_size'  # Allow dynamic page size in request
+    max_page_size = 100  # Limit max items per page
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -3398,49 +3405,40 @@ class FeeDashboardAPIView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentSearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination()  # Instantiate pagination
 
     def post(self, request, *args, **kwargs):
-        # Get start and end dates from the request body
         start_date = request.data.get('start_date')
         end_date = request.data.get('end_date')
 
-        # Validate that both dates are provided
         if not start_date or not end_date:
             return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Check if the date is in BS format (YYYY/MM/DD) or AD format (YYYY-MM-DD)
             if '/' in start_date and '/' in end_date:
-                # Convert BS to AD
                 start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
                 end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
-                
                 start_date_ad = start_date_bs_obj.to_datetime_date()
                 end_date_ad = end_date_bs_obj.to_datetime_date()
             else:
-                # Parse as AD date (YYYY-MM-DD)
                 start_date_ad = parse_date(start_date)
                 end_date_ad = parse_date(end_date)
-
                 if not start_date_ad or not end_date_ad:
-                    raise ValueError  # If parsing fails
-
+                    raise ValueError
                 if start_date_ad > end_date_ad:
                     return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
 
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch payments within the date range (converted to AD)
         payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
 
-        # Calculate total amount directly using aggregation (efficient)
         total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
 
-        # Serialize payment data
         payment_data = []
         for payment in payments:
             student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
@@ -3455,10 +3453,12 @@ class PaymentSearchAPIView(APIView):
                 "created_by": created_by
             })
 
-        return Response({
-            "payments": payment_data,
+        # Apply pagination
+        paginated_data = self.pagination_class.paginate_queryset(payment_data, request)
+        return self.pagination_class.get_paginated_response({
+            "payments": paginated_data,
             "total_payment_amount": total_amount
-        }, status=status.HTTP_200_OK)
+        })
 
 
 # API to create a new message
