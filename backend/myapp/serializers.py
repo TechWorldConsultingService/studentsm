@@ -174,10 +174,24 @@ class ClassSerializer(serializers.ModelSerializer):
 
 class ClassDetailSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
+    subject_details = serializers.SerializerMethodField()
+    optional_subject_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name', 'sections']
+        fields = ['id', 'class_code', 'class_name', 'subject_details', 'optional_subject_details', 'sections']
+
+    def get_subject_details(self, obj):
+        """Fetch subjects that are in the `subjects` field but not in `optional_subjects`."""
+        compulsory_subjects = obj.subjects.exclude(id__in=obj.optional_subjects.values_list('id', flat=True))
+        return SubjectSerializer(compulsory_subjects, many=True).data
+
+    def get_optional_subject_details(self, obj):
+        """Fetch subjects that are explicitly marked as optional for this class."""
+        optional_subjects = obj.optional_subjects.all()
+        return SubjectSerializer(optional_subjects, many=True).data
+
+
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
