@@ -3634,11 +3634,11 @@ class QuizViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-
 class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = QuizQuestion.objects.all()
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):
@@ -3647,4 +3647,19 @@ class QuizScoreViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        quiz = serializer.validated_data['quiz']
+        new_score = serializer.validated_data['score']
+
+        # Check if the user already has a score for this quiz
+        existing_score = QuizScore.objects.filter(user=user, quiz=quiz).first()
+
+        if existing_score:
+            # Update the existing score only if the new one is higher
+            if new_score > existing_score.score:
+                existing_score.score = new_score
+                existing_score.save()
+                quiz.update_highest_score(user, new_score)  # Update highest score if necessary
+        else:
+            # Create a new score entry if no previous score exists
+            serializer.save(user=user)
