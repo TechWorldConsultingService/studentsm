@@ -1090,11 +1090,21 @@ class ClassDetailView(APIView):
 class SectionListCreateAPIView(APIView):
     def get(self, request, class_id, format=None):
         """
-        Retrieve all sections for a specific class.
+        Retrieve class details along with its sections.
         """
-        sections = Section.objects.filter(school_class_id=class_id)
-        serializer = SectionSerializer(sections, many=True)
-        return Response({"status": "success", "sections": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            school_class = Class.objects.prefetch_related("sections").get(id=class_id)
+        except Class.DoesNotExist:
+            return Response({"status": "error", "message": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        class_data = {
+            "id": school_class.id,
+            "class_code": school_class.class_code,
+            "class_name": school_class.class_name,
+            "sections": SectionSerializer(school_class.sections.all(), many=True).data
+        }
+
+        return Response({"status": "success", "class": class_data}, status=status.HTTP_200_OK)
 
     def post(self, request, class_id, format=None):
         """
