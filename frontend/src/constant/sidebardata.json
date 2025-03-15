@@ -1,6 +1,5 @@
 {
   "student": [
-    
     {
       "id": 1,
       "title": "Dashboard",
@@ -116,7 +115,6 @@
       "subSidebar": [
         { "id": 1, "title": "Manage", "link": "/manage-leaves" },
         { "id": 2, "title": "My Leave", "link": "/my-leaves" }
-
       ]
     },
     {
@@ -141,7 +139,6 @@
     }
   ],
   "principal": [
-    
     {
       "id": 2,
       "title": "Dashboard",
@@ -181,9 +178,9 @@
       "icon": "MdCoPresent",
       "link": "/manage-leaves"
     },
-    
+
     {
-      "id": 5,
+      "id": 9,
       "title": "My Students",
       "icon": "SlPeople",
       "subSidebar": [
@@ -200,7 +197,7 @@
       ]
     },
     {
-      "id": 5,
+      "id": 11,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -227,7 +224,7 @@
         { "id": 3, "title": "Accountent", "link": "/accountantList" }
       ]
     },
- 
+
     {
       "id": 10,
       "title": "All Buses",
@@ -284,7 +281,6 @@
         { "id": 1, "title": "Category", "link": "/addCategory" },
         { "id": 2, "title": "Fee Amount", "link": "/addFeeAmount" },
         { "id": 3, "title": "Transportation", "link": "/addTransportationFee" }
-
       ]
     }
   ],
