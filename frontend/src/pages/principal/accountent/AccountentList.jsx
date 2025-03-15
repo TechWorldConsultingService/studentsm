@@ -113,12 +113,12 @@ const AccountentList = () => {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <h1 className="text-3xl font-extrabold text-purple-800">Accountants</h1>
+          <h1 className="text-3xl  font-extrabold text-purple-800">Accountants</h1>
 
-          <div className="mt-6">
+          <div className="mt-6 flex justify-self-end">
             <button
               onClick={handleShowAddModal}
-              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
+              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 "
             >
               Add Accountant
             </button>

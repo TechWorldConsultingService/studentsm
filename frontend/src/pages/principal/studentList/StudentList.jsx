@@ -13,6 +13,7 @@ const StudentList = () => {
 
   const [studentList, setStudentList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -24,6 +25,7 @@ const StudentList = () => {
   // Fetch all students
   const fetchAllStudents = async () => {
     if (!access) {
+      setError("User is not authenticated. Please log in.");
       toast.error("User is not authenticated. Please log in.");
       return;
     }
@@ -36,11 +38,14 @@ const StudentList = () => {
         },
       });
       setStudentList(data);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
+      setError(null);
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching students:", error.message || error);
+        const errMsg = "Error fetching students: " + (err.message || err);
+        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -50,13 +55,14 @@ const StudentList = () => {
   // Fetch class-wise students
   const fetchClassWiseStudents = async () => {
     if (!access) {
+      setError("User is not authenticated. Please log in.");
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     setLoading(true);
     try {
       const { data } = await axios.get(
-        `http://localhost:8000/api/myStudents?class_id=${selectedClassId}`,
+        `http://localhost:8000/api/students/class/${selectedClassId}/`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -65,11 +71,14 @@ const StudentList = () => {
         }
       );
       setStudentList(data);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
+      setError(null);
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching students:", error.message || error);
+        const errMsg = "Error fetching students: " + (err.message || err);
+        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -82,7 +91,6 @@ const StudentList = () => {
     } else {
       fetchClassWiseStudents();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access, navigate, selectedClassId]);
 
   // Fetch classes
@@ -99,8 +107,8 @@ const StudentList = () => {
         },
       });
       setClassList(data);
-    } catch (error) {
-      toast.error("Error fetching class:", error.message || error);
+    } catch (err) {
+      toast.error("Error fetching class: " + (err.message || err));
     }
   };
 
@@ -164,10 +172,10 @@ const StudentList = () => {
 
       toast.success("Student deleted successfully.");
       setShowDeleteModal(false);
-    } catch (error) {
+    } catch (err) {
       toast.error(
-        "Error deleting student:",
-        error.response?.data?.detail || error.message
+        "Error deleting student: " +
+          (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -202,7 +210,10 @@ const StudentList = () => {
             </div>
 
             <div className="mt-4 flex space-x-2 items-center">
-              <label className="block text-lg font-semibold text-purple-700 mb-2">
+              <label
+                htmlFor="selectClass"
+                className="block text-lg font-semibold text-purple-700 mb-2"
+              >
                 Select Class:
               </label>
               <select
@@ -222,8 +233,11 @@ const StudentList = () => {
             </div>
           </div>
 
+          {/* Display loading, error, or student list */}
           {loading ? (
             <div className="mt-6 text-center text-gray-600">Loading...</div>
+          ) : error ? (
+            <div className="mt-6 text-center text-red-600">{error}</div>
           ) : (
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -311,7 +325,8 @@ const StudentList = () => {
                   <strong>Address:</strong> {selectedStudent.address}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Date of Birth:</strong> {selectedStudent.date_of_birth}
+                  <strong>Date of Birth:</strong>{" "}
+                  {selectedStudent.date_of_birth}
                 </p>
                 <p className="text-gray-700">
                   <strong>Parent's Name:</strong> {selectedStudent.parents}
@@ -323,8 +338,11 @@ const StudentList = () => {
                   <strong>Class:</strong>{" "}
                   {selectedStudent.class_details?.class_name}
                 </p>
+                <p className="text-gray-700">
+                  <strong>Roll Number:</strong>{" "}
+                  {selectedStudent.roll_no}
+                </p>
 
-                {/* Optional Subjects */}
                 <p className="text-gray-700">
                   <strong>Optional Subjects:</strong>{" "}
                   {selectedStudent.optional_subjects &&
@@ -334,8 +352,6 @@ const StudentList = () => {
                         .join(", ")
                     : "N/A"}
                 </p>
-
-                {/* Class Section */}
                 <p className="text-gray-700">
                   <strong>Class Section:</strong>{" "}
                   {selectedStudent.class_code_section || "N/A"}
