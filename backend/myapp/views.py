@@ -3692,16 +3692,15 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
-    @action(detail=False, methods=['get'], url_path='by-quiz/(?P<quiz_id>\\d+)')
-    def get_questions_by_quiz(self, request, quiz_id=None):
-        """
-        API to fetch questions for a specific quiz ID
-        """
+    @action(detail=False, methods=['get'], url_path='by-quiz')
+    def get_questions_by_quiz(self, request):
+        quiz_id = request.query_params.get('quiz_id')  # Fetch from query params
+        if not quiz_id:
+            return Response({"error": "quiz_id is required"}, status=400)
+        
         questions = QuizQuestion.objects.filter(quiz_id=quiz_id)
         serializer = self.get_serializer(questions, many=True)
         return Response(serializer.data)
-
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):
