@@ -24,11 +24,17 @@ from collections import defaultdict
 from django.db.models import Count, Q
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+# from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
 from .serializers import FinanceSummarySerializer
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 5  # Default page size
+    page_size_query_param = 'page_size'  # Allow dynamic page size in request
+    max_page_size = 100  # Limit max items per page
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -1580,8 +1586,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Assignment
-from .serializers import AssignmentSerializer
 
 class AssignmentsBySubjectView(APIView):
     """
@@ -1608,7 +1612,6 @@ class AssignmentsBySubjectView(APIView):
 
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
         
 @method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
@@ -2297,7 +2300,6 @@ from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Student, Class
 
 class BulkUpdateRollNumbersAPIView(APIView):
     def put(self, request, class_id, *args, **kwargs):
@@ -2822,8 +2824,6 @@ class SubjectWiseStudentListAPIView(APIView):
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import FeeCategoryName
-from .serializers import FeeCategoryNameSerializer
 from rest_framework.permissions import IsAuthenticated
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -2931,8 +2931,6 @@ class FeeCategoryDetailAPIView(APIView):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import TransportationFee
-from .serializers import TransportationFeeSerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TransportationFeeListCreateAPIView(APIView):
@@ -3398,51 +3396,45 @@ class FeeDashboardAPIView(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
+
 @method_decorator(csrf_exempt, name='dispatch')
-class PaymentSearchAPIView(APIView):
+class PaymentSearchAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination  # Pagination class should not be instantiated
+    serializer_class = None  # We will return custom JSON
 
-    def post(self, request, *args, **kwargs):
-        # Get start and end dates from the request body
-        start_date = request.data.get('start_date')
-        end_date = request.data.get('end_date')
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
 
-        # Validate that both dates are provided
         if not start_date or not end_date:
-            return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()  # Return empty queryset
 
         try:
-            # Check if the date is in BS format (YYYY/MM/DD) or AD format (YYYY-MM-DD)
             if '/' in start_date and '/' in end_date:
-                # Convert BS to AD
                 start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
                 end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
-                
                 start_date_ad = start_date_bs_obj.to_datetime_date()
                 end_date_ad = end_date_bs_obj.to_datetime_date()
             else:
-                # Parse as AD date (YYYY-MM-DD)
                 start_date_ad = parse_date(start_date)
                 end_date_ad = parse_date(end_date)
-
                 if not start_date_ad or not end_date_ad:
-                    raise ValueError  # If parsing fails
-
+                    raise ValueError
                 if start_date_ad > end_date_ad:
-                    return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
+                    return StudentPayment.objects.none()
 
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()
 
-        # Fetch payments within the date range (converted to AD)
-        payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
+        return StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
 
-        # Calculate total amount directly using aggregation (efficient)
-        total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        total_amount = queryset.aggregate(total=Sum('amount_paid'))['total'] or 0
 
-        # Serialize payment data
         payment_data = []
-        for payment in payments:
+        for payment in queryset:
             student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
             class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
             created_by = payment.created_by.username if payment.created_by else "Unknown"
@@ -3455,10 +3447,18 @@ class PaymentSearchAPIView(APIView):
                 "created_by": created_by
             })
 
+        # Apply pagination
+        page = self.paginate_queryset(payment_data)
+        if page is not None:
+            return self.get_paginated_response({
+                "payments": page,
+                "total_payment_amount": total_amount
+            })
+
         return Response({
             "payments": payment_data,
             "total_payment_amount": total_amount
-        }, status=status.HTTP_200_OK)
+        })
 
 
 # API to create a new message
@@ -3644,9 +3644,6 @@ class UserSearchAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# from .models import Quiz, Question, UserScore
-from .models import Quiz, QuizQuestion, QuizScore
-from .serializers import QuizSerializer, QuizQuestionSerializer, QuizScoreSerializer
 
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
@@ -3656,11 +3653,11 @@ class QuizViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-
 class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = QuizQuestion.objects.all()
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):
@@ -3669,4 +3666,19 @@ class QuizScoreViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        quiz = serializer.validated_data['quiz']
+        new_score = serializer.validated_data['score']
+
+        # Check if the user already has a score for this quiz
+        existing_score = QuizScore.objects.filter(user=user, quiz=quiz).first()
+
+        if existing_score:
+            # Update the existing score only if the new one is higher
+            if new_score > existing_score.score:
+                existing_score.score = new_score
+                existing_score.save()
+                quiz.update_highest_score(user, new_score)  # Update highest score if necessary
+        else:
+            # Create a new score entry if no previous score exists
+            serializer.save(user=user)
