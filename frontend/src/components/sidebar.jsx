@@ -65,7 +65,7 @@ const Sidebar = () => {
       <div
         className={`
           fixed md:static top-0 left-0 z-50
-          h-screen
+          min-h-screen
           border-r border-purple-200 shadow-lg
           flex flex-col
           bg-gradient-to-b from-purple-200 to-white
