@@ -79,7 +79,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
@@ -121,7 +121,9 @@
       "id": 10,
       "title": "Add",
       "icon": "MdCoPresent",
-      "subSidebar": [{ "id": 1, "title": "Roll Number", "link": "/addRollNumber" }]
+      "subSidebar": [
+        { "id": 1, "title": "Roll Number", "link": "/addRollNumber" }
+      ]
     }
   ],
   "principal": [
@@ -154,7 +156,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
@@ -230,7 +232,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
