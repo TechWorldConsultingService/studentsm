@@ -24,8 +24,8 @@ from collections import defaultdict
 from django.db.models import Count, Q
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+# from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
 from .serializers import FinanceSummarySerializer
@@ -35,7 +35,6 @@ class CustomPagination(PageNumberPagination):
     page_size = 5  # Default page size
     page_size_query_param = 'page_size'  # Allow dynamic page size in request
     max_page_size = 100  # Limit max items per page
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -1587,8 +1586,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Assignment
-from .serializers import AssignmentSerializer
 
 class AssignmentsBySubjectView(APIView):
     """
@@ -1615,7 +1612,6 @@ class AssignmentsBySubjectView(APIView):
 
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
         
 @method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
@@ -2304,7 +2300,6 @@ from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Student, Class
 
 class BulkUpdateRollNumbersAPIView(APIView):
     def put(self, request, class_id, *args, **kwargs):
@@ -2829,8 +2824,6 @@ class SubjectWiseStudentListAPIView(APIView):
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import FeeCategoryName
-from .serializers import FeeCategoryNameSerializer
 from rest_framework.permissions import IsAuthenticated
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -2938,8 +2931,6 @@ class FeeCategoryDetailAPIView(APIView):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import TransportationFee
-from .serializers import TransportationFeeSerializer
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TransportationFeeListCreateAPIView(APIView):
@@ -3653,9 +3644,6 @@ class UserSearchAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# from .models import Quiz, Question, UserScore
-from .models import Quiz, QuizQuestion, QuizScore
-from .serializers import QuizSerializer, QuizQuestionSerializer, QuizScoreSerializer
 
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
@@ -3665,11 +3653,11 @@ class QuizViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-
 class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = QuizQuestion.objects.all()
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):
@@ -3678,4 +3666,19 @@ class QuizScoreViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        quiz = serializer.validated_data['quiz']
+        new_score = serializer.validated_data['score']
+
+        # Check if the user already has a score for this quiz
+        existing_score = QuizScore.objects.filter(user=user, quiz=quiz).first()
+
+        if existing_score:
+            # Update the existing score only if the new one is higher
+            if new_score > existing_score.score:
+                existing_score.score = new_score
+                existing_score.save()
+                quiz.update_highest_score(user, new_score)  # Update highest score if necessary
+        else:
+            # Create a new score entry if no previous score exists
+            serializer.save(user=user)

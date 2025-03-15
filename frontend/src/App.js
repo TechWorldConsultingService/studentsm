@@ -6,7 +6,7 @@ import SelectClassForAttendance from "./pages/attendance/SelectClassForAttendenc
 import Attendance from "./pages/attendance/attendence";
 import AttendancePrincipal from "./pages/attendance/AttendancePrincipal";
 import StudentReports from "./pages/reports/StudentReports";
-import MyBus from "./pages/mybus";
+// import MyBus from "./pages/mybus";
 import MyRequest from "./pages/myrequest";
 import AllRequest from "./pages/allrequest";
 import StudentHomePage from "./pages/studentdashboard";
@@ -71,8 +71,8 @@ function App() {
     { path: "/calendar", element: <AcademicCalendar /> },
     { path: "/studentResult", element: <StudentReports /> },
     { path: "/myrequest", element: <MyRequest /> },
-    { path: "/allrequest", element: <AllRequest /> },
-    { path: "/mybus", element: <MyBus /> },
+    { path: "/allrequest", element: <AllRequest /> }, 
+    // { path: "/mybus", element: <MyBus /> },
     { path: "/profile", element: <Profile /> },
     { path: "/myStudents", element: <MyStudents /> },
     { path: "/lms", element: <LearningManagemanetSystem /> },

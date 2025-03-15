@@ -44,12 +44,6 @@
       ]
     },
     {
-      "id": 7,
-      "title": "My Bus",
-      "icon": "IoBusOutline",
-      "link": "/mybus"
-    },
-    {
       "id": 8,
       "title": "Leave",
       "icon": "MdCoPresent",
@@ -124,12 +118,6 @@
       "title": "Attendance",
       "icon": "LuFileSpreadsheet",
       "link": "/selectClassForAttendence"
-    },
-    {
-      "id": 9,
-      "title": "My Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
     },
     {
       "id": 10,
@@ -226,13 +214,6 @@
         { "id": 2, "title": "Student", "link": "/studentList" },
         { "id": 3, "title": "Accountent", "link": "/accountantList" }
       ]
-    },
- 
-    {
-      "id": 10,
-      "title": "All Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
     }
   ],
   "accountant": [
@@ -313,12 +294,6 @@
       "title": "Attendence",
       "icon": "LuFileSpreadsheet",
       "link": "/attendence"
-    },
-    {
-      "id": 4,
-      "title": "All Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
     }
   ]
 }
