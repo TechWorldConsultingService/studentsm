@@ -28,8 +28,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
-<<<<<<< HEAD
-=======
 from .serializers import FinanceSummarySerializer
 from rest_framework.pagination import PageNumberPagination
 
@@ -37,8 +35,6 @@ class CustomPagination(PageNumberPagination):
     page_size = 5  # Default page size
     page_size_query_param = 'page_size'  # Allow dynamic page size in request
     max_page_size = 100  # Limit max items per page
-
->>>>>>> 563062e65d99a7b43097d6d0f268561e683f8d88
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
