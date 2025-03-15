@@ -192,7 +192,6 @@ class ClassDetailSerializer(serializers.ModelSerializer):
         return SubjectSerializer(optional_subjects, many=True).data
 
 
-
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
@@ -339,12 +338,15 @@ class GetTeacherSerializer(serializers.ModelSerializer):
         return None
 
     def get_classes_section_details(self, obj):
-        if obj.classes_section:
-            return {
-                "id": obj.classes_section.id,
-                "section_name": obj.classes_section.section_name
+    # Ensure obj.classes_section is iterable and extract details for each section
+        return [
+            {
+                "id": section.id,
+                "section_name": section.section_name
             }
-        return None
+            for section in obj.classes_section.all()
+        ]
+
 
 
 
