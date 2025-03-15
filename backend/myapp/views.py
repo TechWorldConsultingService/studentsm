@@ -3407,16 +3407,17 @@ class FeeDashboardAPIView(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class PaymentSearchAPIView(APIView):
+class PaymentSearchAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomPagination()  # Instantiate pagination
+    pagination_class = CustomPagination  # Pagination class should not be instantiated
+    serializer_class = None  # We will return custom JSON
 
-    def post(self, request, *args, **kwargs):
-        start_date = request.data.get('start_date')
-        end_date = request.data.get('end_date')
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
 
         if not start_date or not end_date:
-            return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()  # Return empty queryset
 
         try:
             if '/' in start_date and '/' in end_date:
@@ -3430,17 +3431,19 @@ class PaymentSearchAPIView(APIView):
                 if not start_date_ad or not end_date_ad:
                     raise ValueError
                 if start_date_ad > end_date_ad:
-                    return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
+                    return StudentPayment.objects.none()
 
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()
 
-        payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
+        return StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
 
-        total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        total_amount = queryset.aggregate(total=Sum('amount_paid'))['total'] or 0
 
         payment_data = []
-        for payment in payments:
+        for payment in queryset:
             student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
             class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
             created_by = payment.created_by.username if payment.created_by else "Unknown"
@@ -3454,9 +3457,15 @@ class PaymentSearchAPIView(APIView):
             })
 
         # Apply pagination
-        paginated_data = self.pagination_class.paginate_queryset(payment_data, request)
-        return self.pagination_class.get_paginated_response({
-            "payments": paginated_data,
+        page = self.paginate_queryset(payment_data)
+        if page is not None:
+            return self.get_paginated_response({
+                "payments": page,
+                "total_payment_amount": total_amount
+            })
+
+        return Response({
+            "payments": payment_data,
             "total_payment_amount": total_amount
         })
 
