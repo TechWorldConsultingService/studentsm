@@ -56,6 +56,7 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
+import SchoolSettings from "./pages/SchoolSetting";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -112,6 +113,7 @@ function App() {
     { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
     {path:"/myStudent", element: <MyStudentDetails />},
+    {path:"/schoolSetting", element: <SchoolSettings />},
     {
       path: "/tms/assignments/:assignmentId/submissions",
       element: <AssignmentSubmissionsPage />,
