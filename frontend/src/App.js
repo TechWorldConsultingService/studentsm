@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
 import Login from "./login/login";
@@ -56,6 +55,7 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
+import PaymentStatements from "./pages/statements";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -98,6 +98,7 @@ function App() {
     { path: "/feePayment", element: <FeePayment /> },
     { path: "/payment/:studentId", element: <PaymentPage /> },
     { path: "/invoicing", element: <Invoicing /> },
+    { path: "/statements", element: <PaymentStatements /> },
     { path: "/addCategory", element: <CategoryList /> },
     { path: "/addFeeAmount", element: <AddFeeAmount /> },
     { path: "/addTransportationFee", element: <AddTransportationFee /> },
@@ -111,7 +112,7 @@ function App() {
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
     { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
-    {path:"/myStudent", element: <MyStudentDetails />},
+    { path: "/myStudent", element: <MyStudentDetails /> },
     {
       path: "/tms/assignments/:assignmentId/submissions",
       element: <AssignmentSubmissionsPage />,
