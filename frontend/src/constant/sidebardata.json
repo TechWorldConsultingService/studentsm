@@ -1,6 +1,5 @@
 {
   "student": [
-    
     {
       "id": 1,
       "title": "Dashboard",
@@ -80,7 +79,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
@@ -110,7 +109,6 @@
       "subSidebar": [
         { "id": 1, "title": "Manage", "link": "/manage-leaves" },
         { "id": 2, "title": "My Leave", "link": "/my-leaves" }
-
       ]
     },
     {
@@ -129,7 +127,6 @@
     }
   ],
   "principal": [
-    
     {
       "id": 2,
       "title": "Dashboard",
@@ -159,7 +156,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
@@ -169,26 +166,15 @@
       "icon": "MdCoPresent",
       "link": "/manage-leaves"
     },
-    
+
     {
-      "id": 5,
+      "id": 9,
       "title": "My Students",
       "icon": "SlPeople",
-      "subSidebar": [
-        { "id": 1, "title": "Class One", "link": "/myStudents?class_id=1" },
-        { "id": 2, "title": "Class Two", "link": "/myStudents?class_id=2" },
-        { "id": 3, "title": "Class Three", "link": "/myStudents?class_id=3" },
-        { "id": 4, "title": "Class Foue", "link": "/myStudents?class_id=4" },
-        { "id": 5, "title": "Class Five", "link": "/myStudents?class_id=5" },
-        { "id": 6, "title": "Class Six", "link": "/myStudents?class_id=6" },
-        { "id": 7, "title": "Class Seven", "link": "/myStudents?class_id=7" },
-        { "id": 8, "title": "Class Eight", "link": "/myStudents?class_id=8" },
-        { "id": 9, "title": "Class Nine", "link": "/myStudents?class_id=9" },
-        { "id": 10, "title": "Class Ten", "link": "/myStudents?class_id=10" }
-      ]
+      "link":"/myStudent"
     },
     {
-      "id": 5,
+      "id": 11,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -235,7 +221,7 @@
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
@@ -265,7 +251,6 @@
         { "id": 1, "title": "Category", "link": "/addCategory" },
         { "id": 2, "title": "Fee Amount", "link": "/addFeeAmount" },
         { "id": 3, "title": "Transportation", "link": "/addTransportationFee" }
-
       ]
     }
   ],

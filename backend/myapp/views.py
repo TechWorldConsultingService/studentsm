@@ -1413,7 +1413,6 @@ class SubmitStudentAssignmentView(APIView):
         """
         try:
             student = request.user.student  # Ensure the user is linked to a Student instance
-
         except Student.DoesNotExist:
             return Response(
                 {"error": "Only students can submit assignments."},
@@ -1435,6 +1434,7 @@ class SubmitStudentAssignmentView(APIView):
                 {"error": "Either a submission file or written submission is required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
+
         # Retrieve the assignment
         assignment = get_object_or_404(Assignment, id=assignment_id)
         
@@ -1446,7 +1446,7 @@ class SubmitStudentAssignmentView(APIView):
 
         # Check if the student has already submitted
         if AssignmentSubmission.objects.filter(
-            assignment=assignment,student=request.user
+            assignment_id=assignment_id,student=student
             ).exists():
             return Response(
                 {"error": "You have already submitted this assignment."}, 
@@ -1455,14 +1455,48 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=request.user,  # # Pass the CustomUser instance
+            # student=request.user,  # # Pass the CustomUser instance
+            student=student,  # # Pass the CustomUser instance
             submission_file=submission_file,
             written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data,{"message": "Assignment submitted successfully."}, status=status.HTTP_201_CREATED)
     
+class CheckSubmissionStatusView(APIView):
+    """
+    Check if a student has already submitted a specific assignment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, assignment_id, format=None):
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can check submission status."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Debugging: Print student instance to confirm
+        print(f"Student instance: {student}") 
+        
+        # Ensure that the student variable contains a Student instance
+        if not isinstance(student, Student):
+            return Response(
+                {"error": "Invalid student reference."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if the student has submitted this assignment
+        submission_exists = AssignmentSubmission.objects.filter(
+            assignment_id=assignment_id, student=student.user
+        ).exists()
+
+        return Response({"submitted": submission_exists}, status=status.HTTP_200_OK)
+
+
+
 # delete submitted assignment of student by student if not reviewed yet:
 class DeleteStudentSubmissionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -3658,6 +3692,15 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=False, methods=['get'], url_path='by-quiz')
+    def get_questions_by_quiz(self, request):
+        quiz_id = request.query_params.get('quiz_id')  # Fetch from query params
+        if not quiz_id:
+            return Response({"error": "quiz_id is required"}, status=400)
+        
+        questions = QuizQuestion.objects.filter(quiz_id=quiz_id)
+        serializer = self.get_serializer(questions, many=True)
+        return Response(serializer.data)
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):

@@ -486,7 +486,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
                     className="mr-2"
                   />
                   <label htmlFor={`subject-${subject.id}`}>
-                    {subject.subject_name}
+                    {subject.subject_name}({subject.subject_code})
                   </label>
                 </div>
               ))

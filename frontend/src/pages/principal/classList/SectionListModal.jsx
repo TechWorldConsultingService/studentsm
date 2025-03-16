@@ -28,7 +28,7 @@ const SectionListModal = ({ classId, handleCloseSectionListModal }) => {
           },
         }
       );
-      setSections(data.sections || []);
+      setSections(data?.class?.sections || []);
     } catch (error) {
       toast.error("Error fetching sections: " + (error.message || error));
     } finally {

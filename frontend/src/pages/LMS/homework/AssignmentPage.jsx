@@ -12,7 +12,7 @@ import SubjectLayout from "../../../layout/SubjectLayout";
    
      const [runningAssignments, setRunningAssignments] = useState([]);
      const [previousAssignments, setPreviousAssignments] = useState([]);
-        const [showSubmitModal, setShowSubmitModal] = useState(false);
+     const [showSubmitModal, setShowSubmitModal] = useState(false);
      const [showViewModal, setShowViewModal] = useState(false);
      const [selectedAssignment, setSelectedAssignment] = useState(null);
    
@@ -43,6 +43,9 @@ import SubjectLayout from "../../../layout/SubjectLayout";
            due >= today ? running.push(hw) : previous.push(hw);
          }
        });
+       
+         // Sort running assignments by due_date in ascending order
+        running.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
    
        setRunningAssignments(running);
        setPreviousAssignments(previous);

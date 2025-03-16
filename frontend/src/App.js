@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
 import Login from "./login/login";
@@ -53,16 +54,18 @@ import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
 import QuizComponent from "./pages/Quiz/QuizComponent";
 import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSubmissionsPage";
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
+import AddQuiz from "./pages/Quiz/AddQuiz";
+import MyStudentDetails from "./pages/principal/MyStudentDetails";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
     useState("");
 
   const router = createBrowserRouter([
-
     { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
     { path: "/homepage", element: <HomePage /> },
+    { path: "/addquiz", element: <AddQuiz /> },
     { path: "/playquiz", element: <QuizComponent /> },
     { path: "/studentdashboard", element: <StudentHomePage /> },
     { path: "/masterdashboard", element: <MasterHomePage /> },
@@ -71,7 +74,7 @@ function App() {
     { path: "/calendar", element: <AcademicCalendar /> },
     { path: "/studentResult", element: <StudentReports /> },
     { path: "/myrequest", element: <MyRequest /> },
-    { path: "/allrequest", element: <AllRequest /> }, 
+    { path: "/allrequest", element: <AllRequest /> },
     // { path: "/mybus", element: <MyBus /> },
     { path: "/profile", element: <Profile /> },
     { path: "/myStudents", element: <MyStudents /> },
@@ -103,13 +106,17 @@ function App() {
     { path: "/successPayment", element: <SuccessPayment /> },
     { path: "/my-leaves", element: <MyLeaves /> },
     { path: "/manage-leaves", element: <ManageAllLeaves /> },
-    { path: "/lms/:subjectName/homework", element: <StudentAssignmentsPage/> },
+    { path: "/lms/:subjectName/homework", element: <StudentAssignmentsPage /> },
     { path: "/lms/:subjectName/notes", element: <SubjectNotes /> },
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
-    {path: "/tms/:classId/syllabus", element: <ClassSyllabus />},
-    {path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard />},
-    {path:"/tms/assignments/:assignmentId/submissions", element : <AssignmentSubmissionsPage/>},
-    {path: "/tms/:classId/notes", element: <ClassNotes />},
+    { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
+    { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
+    {path:"/myStudent", element: <MyStudentDetails />},
+    {
+      path: "/tms/assignments/:assignmentId/submissions",
+      element: <AssignmentSubmissionsPage />,
+    },
+    { path: "/tms/:classId/notes", element: <ClassNotes /> },
     {
       path: "/selectClassForAttendence",
       element: (
