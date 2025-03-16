@@ -85,8 +85,7 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
   };
 
   // Initialize Formik.
-  // For subjects, we store an array of subject codes.
-  // For classes, teacherInfo may have an array of IDs.
+  // For subjects, we now store an array of subject IDs (numbers)
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -101,9 +100,9 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       address: teacherInfo?.address || "",
       date_of_joining: teacherInfo?.date_of_joining || "",
       gender: teacherInfo?.gender || "",
-      // Convert subject objects to array of subject codes
+      // Map subjects to their IDs rather than subject_code
       subjects: teacherInfo?.subjects
-        ? teacherInfo.subjects.map((sub) => sub.subject_code)
+        ? teacherInfo.subjects.map((sub) => sub.id)
         : [],
       // Assume teacherInfo.classes is an array of IDs (or map teacherInfo.class_details)
       classes: teacherInfo?.classes || (teacherInfo?.class_details?.map((cls) => cls.id) || []),
@@ -138,13 +137,9 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       address: Yup.string().min(2).max(100),
       date_of_joining: Yup.string(),
       gender: Yup.string().oneOf(["male", "female", "other", ""]),
+      // Modified validation: subjects now expects an array of numbers.
       subjects: Yup.array()
-        .of(
-          Yup.object().shape({
-            subject_code: Yup.string().required("Subject code is required."),
-            subject_name: Yup.string().required("Subject name is required."),
-          })
-        )
+        .of(Yup.number().required("Subject is required."))
         .min(1, "At least one subject is required."),
       classes: Yup.array().of(Yup.number()),
       classes_section: Yup.array().of(Yup.number()),
@@ -152,14 +147,8 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       class_teacher_section: Yup.number().nullable(),
     }),
     onSubmit: async (values) => {
-      // Map selected subject codes back to objects using subjectList
-      const selectedSubjects = subjectList
-        .filter((sub) => values.subjects.includes(sub.subject_code))
-        .map((sub) => ({
-          subject_code: sub.subject_code,
-          subject_name: sub.subject_name,
-        }));
-      const payload = { ...values, subjects: selectedSubjects };
+      // For subjects, no mapping is needed since we are storing an array of IDs
+      const payload = { ...values };
 
       // If username/password editing is not enabled, remove them
       if (!isUsernameEditable) {
@@ -223,8 +212,9 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
   };
 
   // Handler for subjects using Antd multiple select.
-  const handleSubjectsChange = (selectedSubjectCodes) => {
-    formik.setFieldValue("subjects", selectedSubjectCodes);
+  // Convert selected values to numbers.
+  const handleSubjectsChange = (selectedSubjectIds) => {
+    formik.setFieldValue("subjects", selectedSubjectIds.map(Number));
   };
 
   // Update teacher API call.
@@ -483,8 +473,8 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
             >
               {subjectList.map((sub) => (
                 <Select.Option
-                  key={sub.subject_code}
-                  value={sub.subject_code}
+                  key={sub.id}
+                  value={sub.id}
                   label={`${sub.subject_name} (${sub.subject_code})`}
                 >
                   {sub.subject_name} ({sub.subject_code})
@@ -497,7 +487,7 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
               </div>
             )}
           </div>
-          {/* Classes (Checkboxes via Antd multiple select could be used, but here we use checkboxes) */}
+          {/* Classes (Checkboxes) */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold">Field: Classes</label>
             {classList.map((cls) => (
