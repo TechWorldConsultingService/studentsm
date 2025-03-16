@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
 import Login from "./login/login";
@@ -56,7 +55,11 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
+<<<<<<< HEAD
 import SchoolSettings from "./pages/SchoolSetting";
+=======
+import PaymentStatements from "./pages/statements";
+>>>>>>> ba8ee8f13137c550506d35e2da8b3d21a660d64a
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -99,6 +102,7 @@ function App() {
     { path: "/feePayment", element: <FeePayment /> },
     { path: "/payment/:studentId", element: <PaymentPage /> },
     { path: "/invoicing", element: <Invoicing /> },
+    { path: "/statements", element: <PaymentStatements /> },
     { path: "/addCategory", element: <CategoryList /> },
     { path: "/addFeeAmount", element: <AddFeeAmount /> },
     { path: "/addTransportationFee", element: <AddTransportationFee /> },
