@@ -1412,7 +1412,11 @@ class SubmitStudentAssignmentView(APIView):
         Submit an assignment for a student.
         """
         try:
-            student = request.user.student  # Ensure the user is linked to a Student instance
+            # student = request.user  # Ensure the user is linked to a Student instance
+            # student = request.user.student  # Ensure the user is linked to a Student instance
+                    # Ensure the user is linked to a Student instance
+            student = get_object_or_404(Student, user=request.user)  
+
         except Student.DoesNotExist:
             return Response(
                 {"error": "Only students can submit assignments."},
@@ -1434,7 +1438,6 @@ class SubmitStudentAssignmentView(APIView):
                 {"error": "Either a submission file or written submission is required."},
                 status=status.HTTP_400_BAD_REQUEST)
 
-
         # Retrieve the assignment
         assignment = get_object_or_404(Assignment, id=assignment_id)
         
@@ -1446,7 +1449,7 @@ class SubmitStudentAssignmentView(APIView):
 
         # Check if the student has already submitted
         if AssignmentSubmission.objects.filter(
-            assignment_id=assignment_id,student=student
+            assignment=assignment,student=request.user
             ).exists():
             return Response(
                 {"error": "You have already submitted this assignment."}, 
@@ -1456,7 +1459,7 @@ class SubmitStudentAssignmentView(APIView):
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
             # student=request.user,  # # Pass the CustomUser instance
-            student=student,  # # Pass the CustomUser instance
+            student=student.user,  # # Pass the CustomUser instance
             submission_file=submission_file,
             written_submission=written_submission,
         )
