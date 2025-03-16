@@ -47,7 +47,6 @@ const MyStudentDetails = () => {
     }
   };
 
-  // Fetch class-wise students
   const fetchClassWiseStudents = async () => {
     if (!access) {
       setError("User is not authenticated. Please log in.");
@@ -88,7 +87,6 @@ const MyStudentDetails = () => {
     }
   }, [access, navigate, selectedClassId]);
 
-  // Fetch classes for the filter dropdown
   const fetchClasses = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -111,13 +109,11 @@ const MyStudentDetails = () => {
     fetchClasses();
   }, [access, navigate]);
 
-  // Search filtering (by first name and last name)
   const filteredStudents = studentList.filter((student) => {
     const fullName = `${student.user.first_name} ${student.user.last_name}`.toLowerCase();
     return fullName.includes(searchTerm.toLowerCase());
   });
 
-  // View student details
   const handleViewDetails = (studentInfo) => {
     setSelectedStudent(studentInfo);
   };

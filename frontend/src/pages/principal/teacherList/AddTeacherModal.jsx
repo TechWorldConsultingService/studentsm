@@ -52,7 +52,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
     }
   };
 
-
   const fetchSectionsForClass = async (classId) => {
     try {
       const { data } = await axios.get(
@@ -112,11 +111,11 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       address: "",
       date_of_joining: "",
       gender: "",
-      subjects: [], 
+      subjects: [],   // subjects now expected as an array of subject IDs (numbers)
       classes: [],
-      classes_section: [], 
-      class_teacher: "", 
-      class_teacher_section: "", 
+      classes_section: [],
+      class_teacher: "",
+      class_teacher_section: "",
     },
     validationSchema: Yup.object().shape({
       user: Yup.object().shape({
@@ -154,13 +153,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
         .max(100, "Address can't exceed 100 characters."),
       date_of_joining: Yup.string().required("Date of joining is required."),
       gender: Yup.string().required("Gender is required."),
+      // Modified Subjects validation: expects an array of numbers (subject IDs)
       subjects: Yup.array()
-        .of(
-          Yup.object().shape({
-            subject_code: Yup.string().required("Subject code is required."),
-            subject_name: Yup.string().required("Subject name is required."),
-          })
-        )
+        .of(Yup.number().required("Subject is required."))
         .min(1, "At least one subject is required."),
       classes: Yup.array()
         .of(Yup.number().required())
@@ -172,13 +167,8 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       class_teacher_section: Yup.number().nullable(),
     }),
     onSubmit: async (values) => {
-      const selectedSubjects = subjectList
-        .filter((sub) => values.subjects.includes(sub.subject_code))
-        .map((sub) => ({
-          subject_code: sub.subject_code,
-          subject_name: sub.subject_name,
-        }));
-      const payload = { ...values, subjects: selectedSubjects };
+      // No mapping needed – subjects are already an array of IDs
+      const payload = { ...values };
       await addTeacher(payload);
     },
   });
@@ -228,8 +218,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
     formik.setFieldValue("classes_section", updatedSections);
   };
 
-  const handleSubjectsChange = (selectedSubjectCodes) => {
-    formik.setFieldValue("subjects", selectedSubjectCodes);
+  // Modified Subjects change handler (ensure IDs are numbers)
+  const handleSubjectsChange = (selectedSubjectIds) => {
+    formik.setFieldValue("subjects", selectedSubjectIds.map(Number));
   };
 
   return (
@@ -414,8 +405,8 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
             >
               {subjectList.map((sub) => (
                 <Select.Option
-                  key={sub.subject_code}
-                  value={sub.subject_code}
+                  key={sub.id}
+                  value={sub.id}
                   label={`${sub.subject_name} (${sub.subject_code})`}
                 >
                   {sub.subject_name} ({sub.subject_code})
