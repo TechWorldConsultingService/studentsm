@@ -195,7 +195,7 @@ class ClassDetailSerializer(serializers.ModelSerializer):
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    subjects = serializers.ListField(child=serializers.DictField(), write_only=True)
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True, write_only=True)
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
 
     classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
@@ -206,28 +206,32 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = [ 'id', 'user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'subject_details', 'classes', 'classes_section', 'class_teacher', 'class_teacher_section']
-    
+        fields = [
+            'id', 'user', 'phone', 'address', 'date_of_joining', 'gender', 
+            'subjects', 'subject_details', 'classes', 'classes_section', 
+            'class_teacher', 'class_teacher_section'
+        ]
+
     def convert_bs_to_ad(self, bs_date):
         """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
         if isinstance(bs_date, str) and '/' in bs_date:
             try:
                 bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                return bs_date_obj.to_datetime_date()  # Return as a datetime.date object
+                return bs_date_obj.to_datetime_date()
             except ValueError:
                 raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY/MM/DD."})
-        return bs_date  # If it's already in AD, return as is
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess date_of_joining before default validation"""
         if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
-            data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])  # Convert BS to AD before validation
+            data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
         return super().to_internal_value(data)
-    
+
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        subjects_data = validated_data.pop('subjects', [])
+        subjects = validated_data.pop('subjects', [])
         classes = validated_data.pop('classes', [])
         classes_section = validated_data.pop('classes_section', [])
         class_teacher = validated_data.pop('class_teacher', None)
@@ -248,18 +252,9 @@ class TeacherSerializer(serializers.ModelSerializer):
                 **validated_data
             )
             
+            teacher.subjects.set(subjects)
             teacher.classes.set(classes)
             teacher.classes_section.set(classes_section)
-
-            subject_instances = []
-            for subject_data in subjects_data:
-                subject, _ = Subject.objects.get_or_create(
-                    subject_code=subject_data['subject_code'],
-                    defaults={'subject_name': subject_data['subject_name']}
-                )
-                subject_instances.append(subject)
-
-            teacher.subjects.set(subject_instances)
             teacher.save()
             return teacher
         else:
@@ -267,7 +262,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
-        subjects_data = validated_data.pop('subjects', [])
+        subjects = validated_data.pop('subjects', [])
         classes = validated_data.pop('classes', [])
         classes_section = validated_data.pop('classes_section', [])
         class_teacher = validated_data.pop('class_teacher', None)
@@ -281,17 +276,9 @@ class TeacherSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
+        instance.subjects.set(subjects)
         instance.classes.set(classes)
         instance.classes_section.set(classes_section)
-
-        subject_instances = []
-        for subject_data in subjects_data:
-            subject, _ = Subject.objects.get_or_create(
-                subject_code=subject_data['subject_code'],
-                defaults={'subject_name': subject_data['subject_name']}
-            )
-            subject_instances.append(subject)
-        instance.subjects.set(subject_instances)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -303,6 +290,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
 
 class GetTeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
