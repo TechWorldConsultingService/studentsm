@@ -171,7 +171,7 @@
       "id": 9,
       "title": "My Students",
       "icon": "SlPeople",
-      "link":"/myStudent"
+      "link": "/myStudent"
     },
     {
       "id": 11,
@@ -192,7 +192,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 12,
       "title": "Add Learner",
       "icon": "IoMdPersonAdd",
       "subSidebar": [
@@ -200,6 +200,12 @@
         { "id": 2, "title": "Student", "link": "/studentList" },
         { "id": 3, "title": "Accountent", "link": "/accountantList" }
       ]
+    },
+    {
+      "id": 8,
+      "title": "Statements",
+      "icon": "MdReceiptLong",
+      "link": "/statements"
     }
   ],
   "accountant": [
@@ -232,10 +238,16 @@
       "link": "/principal-calendar"
     },
     {
-      "id": 4,
-      "title": "Legder",
+      "id": 7,
+      "title": "Ledger",
       "icon": "FaFileInvoiceDollar",
       "link": "/invoicing"
+    },
+    {
+      "id": 8,
+      "title": "Statements",
+      "icon": "MdReceiptLong",
+      "link": "/statements"
     },
     {
       "id": 5,
