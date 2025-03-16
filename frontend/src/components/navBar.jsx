@@ -23,7 +23,7 @@ const NavBar = () => {
       key: "profile",
     },
     {
-      label: <Link to="/setting">Setting</Link>,
+      label: <Link to="/schoolSetting">Setting</Link>,
       key: "settings",
     },
     {
