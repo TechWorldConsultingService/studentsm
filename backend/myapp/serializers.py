@@ -3,8 +3,7 @@ from django.contrib.auth.models import User
 from .models import *
 from datetime import datetime
 from django.shortcuts import get_object_or_404
-import nepali_datetime
-from django.db.models import Count, Q
+
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
@@ -205,8 +204,6 @@ class TeacherSerializer(serializers.ModelSerializer):
     class_teacher = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True, required=False)
     class_teacher_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
 
-    date_of_joining = serializers.CharField(write_only=True)
-
     class Meta:
         model = Teacher
         fields = [
@@ -221,53 +218,22 @@ class TeacherSerializer(serializers.ModelSerializer):
             try:
                 bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                return bs_date_obj.to_datetime_date().strftime('%Y-%m-%d')  # Ensure AD format (YYYY-MM-DD)
+                return bs_date_obj.to_datetime_date()
             except ValueError:
                 raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY-MM-DD."})
         return bs_date
 
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Ensure BS format (YYYY-MM-DD)
-            except ValueError:
-                raise serializers.ValidationError({"date_of_joining": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date
-
     def to_internal_value(self, data):
         """Preprocess date_of_joining before default validation"""
-        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
-            # Get the current date format setting (AD or BS)
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, store the AD date as is
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
-
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        """Convert saved date_of_joining to correct format for output"""
-        # Get the current date format setting (AD or BS)
+        # Get the current date setting (AD or BS)
         date_setting = DateSetting.get_instance()
 
-        date_of_joining = instance.date_of_joining
-
-        if date_of_joining:
-            if date_setting.is_ad:
-                # If AD format is set, return AD format
-                return date_of_joining.strftime('%Y-%m-%d')  # AD format (YYYY-MM-DD)
-            else:
-                # If BS format is set, return BS format
-                return nepali_datetime.date.from_datetime_date(date_of_joining).strftime('%Y/%m/%d')  # BS format (YYYY/MM/DD)
-
-        return None  # Return None if no date is available
+        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
+        
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -330,7 +296,6 @@ class TeacherSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
 
 
 class GetTeacherSerializer(serializers.ModelSerializer):
@@ -426,12 +391,13 @@ class PrincipalSerializer(serializers.ModelSerializer):
 
     
 # Serializer for the Student model
+import nepali_datetime
 
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     class_code = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all())
     class_code_section = serializers.PrimaryKeyRelatedField(queryset=Section.objects.all(), allow_null=True, required=False)
-    optional_subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.filter(is_optional=True), many=True, required=False)
+    optional_subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.filter(is_optional=True), many=True, required=False)  # ✅ Add optional subjects
 
     class Meta:
         model = Student
@@ -444,53 +410,23 @@ class StudentSerializer(serializers.ModelSerializer):
                 bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
                 ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format (AD format)
+                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to AD string format (YYYY-MM-DD)
             except ValueError:
                 raise serializers.ValidationError({"date_of_birth": "Invalid BS date format. Use YYYY-MM-DD."})
         return bs_date  # If it's already in AD, return as is
 
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Convert to BS format (YYYY-MM-DD)
-            except ValueError:
-                raise serializers.ValidationError({"date_of_birth": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date  # If it's already in BS, return as is
-
     def to_internal_value(self, data):
         """Preprocess date_of_birth before default validation"""
-        if 'date_of_birth' in data and isinstance(data['date_of_birth'], str):
-            # Get the current date format setting (AD or BS)
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, no conversion needed, return as is
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['date_of_birth'] = self.convert_bs_to_ad(data['date_of_birth'])
-
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        """Convert saved date_of_birth to correct format for output"""
-        # Get the current date format setting (AD or BS)
+        # Get the current date setting (AD or BS)
         date_setting = DateSetting.get_instance()
 
-        date_of_birth = instance.date_of_birth
+        if 'date_of_birth' in data and isinstance(data['date_of_birth'], str):
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_birth'] = self.convert_bs_to_ad(data['date_of_birth'])
+        
+        return super().to_internal_value(data)
 
-        if date_of_birth:
-            if date_setting.is_ad:
-                # If AD format is set, return AD format (YYYY-MM-DD)
-                return date_of_birth.strftime('%Y-%m-%d')
-            else:
-                # If BS format is set, return BS format (YYYY-MM-DD)
-                return nepali_datetime.date.from_datetime_date(date_of_birth).strftime('%Y-%m-%d')  # BS format
-
-        return None  # Return None if no date is available
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -504,7 +440,7 @@ class StudentSerializer(serializers.ModelSerializer):
         if user_serializer.is_valid():
             user = user_serializer.save()
             student = Student.objects.create(user=user, class_code=class_instance, class_code_section=section_instance, **validated_data)
-            student.optional_subjects.set(optional_subjects)  # Assign optional subjects
+            student.optional_subjects.set(optional_subjects)  # ✅ Assign optional subjects
             return student
         else:
             raise serializers.ValidationError(user_serializer.errors)
@@ -532,7 +468,7 @@ class StudentSerializer(serializers.ModelSerializer):
         if section_instance:
             instance.class_code_section = section_instance
         if optional_subjects is not None:
-            instance.optional_subjects.set(optional_subjects)  # Update optional subjects
+            instance.optional_subjects.set(optional_subjects)  # ✅ Update optional subjects
 
         return instance
 
@@ -574,54 +510,22 @@ class AccountantSerializer(serializers.ModelSerializer):
             try:
                 bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format (AD format)
+                return bs_date_obj.to_datetime_date()
             except ValueError:
                 raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY-MM-DD."})
-        return bs_date  # If it's already in AD, return as is
-
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Convert to BS format (YYYY-MM-DD)
-            except ValueError:
-                raise serializers.ValidationError({"date_of_joining": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date  # If it's already in BS, return as is
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess date_of_joining before default validation"""
-        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
-            # Get the current date format setting (AD or BS)
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, no conversion needed, return as is
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
-
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        """Convert saved date_of_joining to correct format for output"""
-        # Get the current date format setting (AD or BS)
+        # Get the current date setting (AD or BS)
         date_setting = DateSetting.get_instance()
 
-        date_of_joining = instance.date_of_joining
-
-        if date_of_joining:
-            if date_setting.is_ad:
-                # If AD format is set, return AD format (YYYY-MM-DD)
-                return date_of_joining.strftime('%Y-%m-%d')
-            else:
-                # If BS format is set, return BS format (YYYY-MM-DD)
-                return nepali_datetime.date.from_datetime_date(date_of_joining).strftime('%Y-%m-%d')  # BS format
-
-        return None  # Return None if no date is available
+        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
+        
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')  # Extract user data
@@ -655,6 +559,7 @@ class AccountantSerializer(serializers.ModelSerializer):
         return instance
 
 
+
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
@@ -662,6 +567,7 @@ class PostSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'creator', 'created_at']
 
 # Serializer for the leave application model
+
 class LeaveApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
@@ -675,56 +581,25 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
                 bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
                 ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format (AD format)
+                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to AD string format (YYYY-MM-DD)
             except ValueError:
                 raise serializers.ValidationError({"leave_date": "Invalid BS date format. Use YYYY-MM-DD."})
         return bs_date  # If it's already in AD, return as is
 
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Convert to BS format (YYYY-MM-DD)
-            except ValueError:
-                raise serializers.ValidationError({"leave_date": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date  # If it's already in BS, return as is
-
     def to_internal_value(self, data):
         """Preprocess leave_date before default validation"""
-        if 'leave_date' in data and isinstance(data['leave_date'], str):
-            # Get the current date format setting (AD or BS)
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, no conversion needed, return as is
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['leave_date'] = self.convert_bs_to_ad(data['leave_date'])
-
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        """Convert saved leave_date to correct format for output"""
-        # Get the current date format setting (AD or BS)
+        # Get the current date setting (AD or BS)
         date_setting = DateSetting.get_instance()
 
-        leave_date = instance.leave_date
+        if 'leave_date' in data and isinstance(data['leave_date'], str):
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['leave_date'] = self.convert_bs_to_ad(data['leave_date'])
+        
+        return super().to_internal_value(data)
 
-        if leave_date:
-            if date_setting.is_ad:
-                # If AD format is set, return AD format (YYYY-MM-DD)
-                return leave_date.strftime('%Y-%m-%d')
-            else:
-                # If BS format is set, return BS format (YYYY-MM-DD)
-                return nepali_datetime.date.from_datetime_date(leave_date).strftime('%Y-%m-%d')  # BS format
-
-        return None  # Return None if no leave_date is available
 
     def validate_leave_date(self, value):
-        """Ensure leave date is not in the past"""
         if value < timezone.now().date():
             raise serializers.ValidationError("Leave date cannot be in the past.")
         return value
@@ -738,6 +613,9 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
         return LeaveApplication.objects.create(**validated_data)
 
 
+
+from .models import Event
+
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
@@ -746,6 +624,15 @@ class EventSerializer(serializers.ModelSerializer):
             "created_by": {"read_only": True}  # ✅ This prevents it from being required in POST
         }
 
+from .models import Assignment, AssignmentSubmission
+
+import nepali_datetime
+from rest_framework import serializers
+from .models import Assignment, Teacher, Class, Subject
+
+from rest_framework import serializers
+from .models import Assignment, Subject, Class, Teacher
+import nepali_datetime
 
 class AssignmentSerializer(serializers.ModelSerializer):
     # For output, display teacher's username instead of its id.
@@ -778,66 +665,35 @@ class AssignmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['teacher']
 
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '-' in bs_date:
+        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '/' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
+                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
                 ad_date_obj = bs_date_obj.to_datetime_date()  # Convert to AD date
-                return ad_date_obj.strftime('%Y-%m-%d')  # Return AD date in the format YYYY-MM-DD
+                return ad_date_obj.strftime('%Y-%m-%d')  # Return in AD format (YYYY-MM-DD)
             except ValueError:
-                raise serializers.ValidationError({"due_date": "Invalid BS date format. Use YYYY-MM-DD."})
+                raise serializers.ValidationError({"due_date": "Invalid BS date format. Use YYYY/MM/DD."})
         return bs_date  # If it's already in AD, return as is
-
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Convert to BS format
-            except ValueError:
-                raise serializers.ValidationError({"due_date": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date  # If it's already in BS, return as is
 
     def to_internal_value(self, data):
         """Preprocess due_date before default validation"""
-        if 'due_date' in data and isinstance(data['due_date'], str):
-            # Get the current date format setting (AD or BS)
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, no conversion needed, return as is
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['due_date'] = self.convert_bs_to_ad(data['due_date'])
-
-        return super().to_internal_value(data)
-
-    def to_representation(self, instance):
-        """Convert saved due_date to correct format for output"""
-        # Get the current date format setting (AD or BS)
+        # Get the current date setting (AD or BS)
         date_setting = DateSetting.get_instance()
 
-        due_date = instance.due_date
+        if 'due_date' in data and isinstance(data['due_date'], str):
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['due_date'] = self.convert_bs_to_ad(data['due_date'])
+        
+        return super().to_internal_value(data)
 
-        if due_date:
-            if date_setting.is_ad:
-                # If AD format is set, return AD format (YYYY-MM-DD)
-                return due_date.strftime('%Y-%m-%d')
-            else:
-                # If BS format is set, return BS format (YYYY-MM-DD)
-                return nepali_datetime.date.from_datetime_date(due_date).strftime('%Y-%m-%d')  # BS format
-
-        return None  # Return None if no due_date is available
 
     def create(self, validated_data):
         teacher = self.context.get('teacher')
         if not teacher:
             raise serializers.ValidationError("Teacher is required for creating an assignment.")
         return Assignment.objects.create(teacher=teacher, **validated_data)
-
 
 
 class AssignmentSubmissionSerializer(serializers.ModelSerializer):
@@ -899,7 +755,7 @@ class ChapterSerializer(serializers.ModelSerializer):
 
         return chapter
 
-
+from django.db.models import Count, Q
 class SyllabusSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, required=False)
     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
@@ -968,6 +824,9 @@ class ExamSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_timetable_published', 'is_result_published']
 
 
+
+import nepali_datetime
+
 class ExamDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -977,78 +836,59 @@ class ExamDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['class_assigned', 'created_by']
 
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '-' in bs_date:
+        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '/' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
+                # Split the BS date into year, month, and day
+                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                
+                # Convert to Nepali datetime object
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
+                
+                # Convert BS date to AD date
                 ad_date_obj = bs_date_obj.to_datetime_date()
+                
+                # Return the AD date in the correct format (YYYY-MM-DD)
                 return ad_date_obj.strftime('%Y-%m-%d')
             except ValueError:
-                raise serializers.ValidationError({"exam_date": "Invalid BS date format. Use YYYY-MM-DD."})
-        return bs_date  # If it's already in AD, return as is
-
-    def convert_ad_to_bs(self, ad_date):
-        """Convert AD date (YYYY-MM-DD) to BS date (YYYY-MM-DD)"""
-        if isinstance(ad_date, str) and '-' in ad_date:
-            try:
-                ad_year, ad_month, ad_day = map(int, ad_date.split('-'))
-                ad_date_obj = nepali_datetime.date(ad_year, ad_month, ad_day)
-                return ad_date_obj.to_nepali().strftime('%Y-%m-%d')  # Convert to BS format
-            except ValueError:
-                raise serializers.ValidationError({"exam_date": "Invalid AD date format. Use YYYY-MM-DD."})
-        return ad_date  # If it's already in BS, return as is
+                # Raise error if the BS date format is incorrect
+                raise serializers.ValidationError({"exam_date": "Invalid BS date format. Use YYYY/MM/DD."})
+        
+        # If it's already in AD, return as is
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess exam_date before default validation"""
+        # Check if the 'exam_date' is provided in the data and is a string
         if 'exam_date' in data and isinstance(data['exam_date'], str):
-            # Get the system's date format setting
-            date_setting = DateSetting.get_instance()
-
-            if date_setting.is_ad:
-                # If AD format is set, no conversion needed
-                pass
-            else:
-                # If BS format is set, convert the BS date to AD before saving
-                data['exam_date'] = self.convert_bs_to_ad(data['exam_date'])
-
+            # Convert BS date to AD date before validation
+            data['exam_date'] = self.convert_bs_to_ad(data['exam_date'])
+        
+        # Call the parent method to perform default validation
         return super().to_internal_value(data)
 
-    def to_representation(self, instance):
-        """Convert saved exam_date to the correct format for output"""
-        date_setting = DateSetting.get_instance()
-        exam_date = instance.exam_date
-
-        if exam_date:
-            if date_setting.is_ad:
-                return exam_date.strftime('%Y-%m-%d')  # AD format
-            else:
-                return nepali_datetime.date.from_datetime_date(exam_date).strftime('%Y-%m-%d')  # BS format
-
-        return None  # Return None if no exam_date is available
 
     def validate(self, data):
-        """Ensure class_assigned is correctly set based on the subject"""
+        # Check if class_assigned needs to be automatically filled based on the subject
         if not data.get('class_assigned'):
             subject = data.get('subject')
             associated_classes = subject.classes.all()
-
             if associated_classes.count() == 1:
                 data['class_assigned'] = associated_classes.first()
             elif associated_classes.count() > 1:
                 raise serializers.ValidationError(f"The subject '{subject.subject_name}' is associated with multiple classes. Please specify the class explicitly.")
             else:
                 raise serializers.ValidationError(f"The subject '{subject.subject_name}' is not associated with any class.")
-                
         return data
 
     def update(self, instance, validated_data):
-        """Set created_by on update if the request is available"""
+        # Check if the request context is passed and set the 'created_by' accordingly
         request = self.context.get('request')
         if request and request.user:
             instance.created_by = request.user
-
+        # Call the parent `update` method to save the validated data
         return super().update(instance, validated_data)
+
 
 
 class GetExamDetailSerializer(serializers.ModelSerializer):
