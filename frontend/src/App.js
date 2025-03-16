@@ -55,7 +55,11 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
+<<<<<<< HEAD
+import SchoolSettings from "./pages/SchoolSetting";
+=======
 import PaymentStatements from "./pages/statements";
+>>>>>>> ba8ee8f13137c550506d35e2da8b3d21a660d64a
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -112,7 +116,8 @@ function App() {
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
     { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
-    { path: "/myStudent", element: <MyStudentDetails /> },
+    {path:"/myStudent", element: <MyStudentDetails />},
+    {path:"/schoolSetting", element: <SchoolSettings />},
     {
       path: "/tms/assignments/:assignmentId/submissions",
       element: <AssignmentSubmissionsPage />,
