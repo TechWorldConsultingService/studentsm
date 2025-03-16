@@ -8,11 +8,9 @@ const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  if (!assignment) return null;
 
   useEffect(() => {
     const checkSubmissionStatus = async () => {
-      if (!assignment) return null;
       try {
         const response = await axios.get(
           `http://localhost:8000/api/check-submission/${assignment.id}/`,
@@ -22,7 +20,7 @@ const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
             },
           }
         );
-        setHasSubmitted(response.data.submitted); // Set the submission status
+        setHasSubmitted(response.data.submitted); 
       } catch (error) {
         toast.error("Failed to check submission status.");
       }
@@ -33,8 +31,8 @@ const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.size > 5 * 1024 * 1024) {
-      toast.error("File size exceeds 5MB limit.");
+    if (file && file.size > 1 * 1024 * 1024) {
+      toast.error("File size exceeds 1MB limit.");
       e.target.value = null;
       return;
     }
@@ -91,7 +89,15 @@ const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
         </div>
 
         {hasSubmitted ? (
-          <div className="text-green-500">You have already submitted this assignment.</div>
+          <>
+          <div className="text-purple-800 ">You have already submitted this assignment.</div>
+          <button
+          onClick={onClose}
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded flex justify-self-center mt-5"
+        >
+          Cancel
+        </button>
+        </>
         ) : (
           <>
             {/* Written text area */}
@@ -128,16 +134,15 @@ const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
               >
                 {loading ? "Submitting..." : "Submit"}
               </button>
-            </div>
-          </>
-        )}
-
-        <button
+              <button
           onClick={onClose}
-          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded mt-4"
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded "
         >
           Cancel
         </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
