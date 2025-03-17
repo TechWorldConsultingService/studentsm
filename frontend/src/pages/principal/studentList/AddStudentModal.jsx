@@ -6,9 +6,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
 
 const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [optionalSubjects, setOptionalSubjects] = useState([]);
   const [sectionsList, setSectionsList] = useState([]);
@@ -96,14 +98,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
         .min(5, "Address must be at least 5 characters long.")
         .max(50, "Address can't exceed 50 characters."),
       date_of_birth: Yup.date()
-        .required("Date of birth is required.")
-        .max(new Date(), "Date of birth cannot be in the future.")
-        .test(
-          "age",
-          "Student must be at least 3 years old.",
-          (value) =>
-            new Date().getFullYear() - new Date(value).getFullYear() >= 3
-        ),
+        .required("Date of birth is required."),
       parents: Yup.string()
         .required("Parent's name is required.")
         .min(2, "Parent's name must be at least 2 characters long.")
@@ -153,16 +148,12 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
       return;
     }
     try {
-      await axios.post(
-        "http://localhost:8000/api/register/student/",
-        values,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`,
-          },
-        }
-      );
+      await axios.post("http://localhost:8000/api/register/student/", values, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
+      });
       toast.success("Student Added Successfully.");
       fetchStudents();
       handleCloseModal();
@@ -183,10 +174,10 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
         optional_subjects.filter((id) => id !== subjectId)
       );
     } else {
-      formik.setFieldValue(
-        "optional_subjects",
-        [...optional_subjects, subjectId]
-      );
+      formik.setFieldValue("optional_subjects", [
+        ...optional_subjects,
+        subjectId,
+      ]);
     }
   };
 
@@ -238,9 +229,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Email:
-            </label>
+            <label className="block text-gray-700 font-semibold">Email:</label>
             <input
               type="email"
               className="border border-gray-300 p-2 rounded w-full"
@@ -303,9 +292,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
 
           {/* Phone */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Phone:
-            </label>
+            <label className="block text-gray-700 font-semibold">Phone:</label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -348,14 +335,27 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
             <label className="block text-gray-700 font-semibold">
               Date Of Birth:
             </label>
-            <input
-              type="date"
-              className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_birth"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_birth}
-            />
+            {is_ad ? (
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded w-full"
+                name="date_of_birth"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_birth}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_birth}
+                onChange={(date) => formik.setFieldValue("date_of_birth", date)}
+                onBlur={() => formik.setFieldTouched("date_of_birth", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Birth (e.g. 2081/11/12)"
+              />
+            )}
+
             {formik.touched.date_of_birth && formik.errors.date_of_birth && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
                 {formik.errors.date_of_birth}
@@ -386,9 +386,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
 
           {/* Gender */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Gender:
-            </label>
+            <label className="block text-gray-700 font-semibold">Gender:</label>
             <select
               name="gender"
               className="border border-gray-300 p-2 rounded w-full"
@@ -410,9 +408,7 @@ const AddStudentModal = ({ handleCloseModal, fetchStudents, classList }) => {
 
           {/* Class Code */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Class:
-            </label>
+            <label className="block text-gray-700 font-semibold">Class:</label>
             <select
               name="class_code"
               className="border border-gray-300 p-2 rounded w-full"

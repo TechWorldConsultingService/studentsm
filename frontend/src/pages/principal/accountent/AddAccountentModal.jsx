@@ -6,10 +6,18 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
+import { ADToBS } from "bikram-sambat-js";
 
 const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
+
+  const todayAd = new Date();
+  const formattedAd = todayAd.toISOString().split("T")[0];
+  const formattedBs = ADToBS(formattedAd, "YYYY-MM-DD");
+  const defaultJoiningDate = is_ad ? formattedAd : formattedBs;
 
   useEffect(() => {
     if (!access) {
@@ -51,9 +59,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
       .min(5, "Address must be at least 5 characters long.")
       .max(50, "Address can't exceed 50 characters."),
     gender: Yup.string().required("Gender is required."),
-    date_of_joining: Yup.date()
-      .required("Date of joining is required.")
-      .max(new Date(), "Date of joining cannot be in the future."),
+    date_of_joining: Yup.date().required("Date of joining is required."),
   });
 
   const formik = useFormik({
@@ -68,7 +74,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
       phone: "",
       address: "",
       gender: "",
-      date_of_joining: "",
+      date_of_joining: defaultJoiningDate,
     },
     validationSchema: addAccountentSchema,
     onSubmit: async (values) => {
@@ -112,7 +118,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
         <form onSubmit={formik.handleSubmit} className="mt-4">
           {/* Username */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               Username:
             </label>
             <input
@@ -133,9 +139,9 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Password */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               Password:
-              </label>
+            </label>
             <Password
               placeholder="Password"
               name="user.password"
@@ -153,9 +159,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Email */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
-              Email:
-              </label>
+            <label className="block text-gray-700 font-semibold">Email:</label>
             <input
               type="email"
               className="border border-gray-300 p-2 rounded w-full"
@@ -174,9 +178,9 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* First Name */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               First Name:
-              </label>
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -196,9 +200,9 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Last Name */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               Last Name:
-              </label>
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -218,9 +222,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Phone */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
-              Phone:
-              </label>
+            <label className="block text-gray-700 font-semibold">Phone:</label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -239,9 +241,9 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Address */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               Address:
-              </label>
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -260,9 +262,7 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Gender */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
-              Gender:
-              </label>
+            <label className="block text-gray-700 font-semibold">Gender:</label>
             <select
               name="gender"
               className="border border-gray-300 p-2 rounded w-full"
@@ -284,17 +284,32 @@ const AddAccountentModal = ({ handleCloseModal, fetchAccountents }) => {
 
           {/* Date of Joining */}
           <div className="mb-4">
-          <label className="block text-gray-700 font-semibold" >
+            <label className="block text-gray-700 font-semibold">
               Date Of Joining:
-              </label>
-            <input
-              type="date"
-              className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_joining"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_joining}
-            />
+            </label>
+            {is_ad ? (
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded w-full"
+                name="date_of_joining"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_joining}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_joining}
+                onChange={(date) =>
+                  formik.setFieldValue("date_of_joining", date)
+                }
+                onBlur={() => formik.setFieldTouched("date_of_joining", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Joining (e.g. 2081/11/12)"
+              />
+            )}
+
             {formik.touched.date_of_joining &&
               formik.errors.date_of_joining && (
                 <div className="p-1 px-2 text-red-500 text-sm mt-1">

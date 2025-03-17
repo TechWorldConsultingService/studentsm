@@ -7,20 +7,19 @@ import { useNavigate } from "react-router-dom";
 import Password from "antd/es/input/Password";
 import { Select } from "antd";
 import * as Yup from "yup";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
 
 const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
-  // Toggles for username/password editing
   const [isUsernameEditable, setIsUsernameEditable] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
-
-  // State for dynamic data
   const [classList, setClassList] = useState([]);
-  const [sectionsByClass, setSectionsByClass] = useState({}); // { classId: [section, ...] }
+  const [sectionsByClass, setSectionsByClass] = useState({});
   const [subjectList, setSubjectList] = useState([]);
-  const [teacherSections, setTeacherSections] = useState([]); // Sections for teacher's primary class
+  const [teacherSections, setTeacherSections] = useState([]);
 
   // Fetch classes and subjects on mount (and when access is available)
   useEffect(() => {
@@ -60,9 +59,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     }
   };
 
-  // Function to fetch sections for a given class ID.
-  // It expects the response to be in the format:
-  // { status: "success", class: { id, class_code, class_name, sections: [ { id, section_name }, ... ] } }
   const fetchSectionsForClass = async (classId) => {
     try {
       const { data } = await axios.get(
@@ -84,8 +80,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     }
   };
 
-  // Initialize Formik.
-  // For subjects, we now store an array of subject IDs (numbers)
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -100,12 +94,13 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       address: teacherInfo?.address || "",
       date_of_joining: teacherInfo?.date_of_joining || "",
       gender: teacherInfo?.gender || "",
-      // Map subjects to their IDs rather than subject_code
       subjects: teacherInfo?.subjects
         ? teacherInfo.subjects.map((sub) => sub.id)
         : [],
-      // Assume teacherInfo.classes is an array of IDs (or map teacherInfo.class_details)
-      classes: teacherInfo?.classes || (teacherInfo?.class_details?.map((cls) => cls.id) || []),
+      classes:
+        teacherInfo?.classes ||
+        teacherInfo?.class_details?.map((cls) => cls.id) ||
+        [],
       classes_section: teacherInfo?.classes_section || [],
       class_teacher: teacherInfo?.class_teacher || "",
       class_teacher_section: teacherInfo?.class_teacher_section || "",
@@ -137,7 +132,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       address: Yup.string().min(2).max(100),
       date_of_joining: Yup.string(),
       gender: Yup.string().oneOf(["male", "female", "other", ""]),
-      // Modified validation: subjects now expects an array of numbers.
       subjects: Yup.array()
         .of(Yup.number().required("Subject is required."))
         .min(1, "At least one subject is required."),
@@ -147,10 +141,8 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       class_teacher_section: Yup.number().nullable(),
     }),
     onSubmit: async (values) => {
-      // For subjects, no mapping is needed since we are storing an array of IDs
       const payload = { ...values };
 
-      // If username/password editing is not enabled, remove them
       if (!isUsernameEditable) {
         delete payload.user.username;
       }
@@ -161,7 +153,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     },
   });
 
-  // When teacher selects a primary class for teacher role, fetch its sections.
   useEffect(() => {
     const classId = formik.values.class_teacher;
     if (classId) {
@@ -173,14 +164,12 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     }
   }, [formik.values.class_teacher]);
 
-  // Handler for class checkboxes for each class the teacher teaches.
   const handleClassCheckboxChange = async (e) => {
     const classId = Number(e.target.value);
     let updatedClasses = [...formik.values.classes];
     if (e.target.checked) {
       if (!updatedClasses.includes(classId)) {
         updatedClasses.push(classId);
-        // Fetch sections for this class if not already fetched.
         if (!sectionsByClass[classId]) {
           const sections = await fetchSectionsForClass(classId);
           setSectionsByClass((prev) => ({ ...prev, [classId]: sections }));
@@ -188,8 +177,8 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
       }
     } else {
       updatedClasses = updatedClasses.filter((id) => id !== classId);
-      // Remove sections belonging to this class from selected sections.
-      const sectionsForClass = sectionsByClass[classId]?.map((sec) => sec.id) || [];
+      const sectionsForClass =
+        sectionsByClass[classId]?.map((sec) => sec.id) || [];
       const updatedSections = formik.values.classes_section.filter(
         (secId) => !sectionsForClass.includes(secId)
       );
@@ -198,7 +187,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     formik.setFieldValue("classes", updatedClasses);
   };
 
-  // Handler for section checkboxes for each selected class.
   const handleSectionCheckboxChange = (classId, sectionId, checked) => {
     let updatedSections = [...formik.values.classes_section];
     if (checked) {
@@ -211,8 +199,6 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
     formik.setFieldValue("classes_section", updatedSections);
   };
 
-  // Handler for subjects using Antd multiple select.
-  // Convert selected values to numbers.
   const handleSubjectsChange = (selectedSubjectIds) => {
     formik.setFieldValue("subjects", selectedSubjectIds.map(Number));
   };
@@ -250,7 +236,9 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-1/3 max-h-full overflow-auto">
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">Edit Teacher</h2>
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">
+          Edit Teacher
+        </h2>
         <form onSubmit={formik.handleSubmit} className="mt-4">
           {/* Username */}
           <div className="mb-4">
@@ -351,11 +339,12 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.first_name}
             />
-            {formik.touched.user?.first_name && formik.errors.user?.first_name && (
-              <div className="text-red-500 text-sm mt-1">
-                {formik.errors.user.first_name}
-              </div>
-            )}
+            {formik.touched.user?.first_name &&
+              formik.errors.user?.first_name && (
+                <div className="text-red-500 text-sm mt-1">
+                  {formik.errors.user.first_name}
+                </div>
+              )}
           </div>
           {/* Last Name */}
           <div className="mb-4">
@@ -371,11 +360,12 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.last_name}
             />
-            {formik.touched.user?.last_name && formik.errors.user?.last_name && (
-              <div className="text-red-500 text-sm mt-1">
-                {formik.errors.user.last_name}
-              </div>
-            )}
+            {formik.touched.user?.last_name &&
+              formik.errors.user?.last_name && (
+                <div className="text-red-500 text-sm mt-1">
+                  {formik.errors.user.last_name}
+                </div>
+              )}
           </div>
           {/* Phone */}
           <div className="mb-4">
@@ -422,20 +412,36 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
             <label className="block text-gray-700 font-semibold">
               Field: Date of Joining
             </label>
-            <input
-              type="text"
-              className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_joining"
-              placeholder="Date of Joining (e.g. 2081/11/12)"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_joining}
-            />
-            {formik.touched.date_of_joining && formik.errors.date_of_joining && (
-              <div className="text-red-500 text-sm mt-1">
-                {formik.errors.date_of_joining}
-              </div>
+            {is_ad ? (
+              <input
+                type="text"
+                className="border border-gray-300 p-2 rounded w-full"
+                name="date_of_joining"
+                placeholder="Date of Joining"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_joining}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_joining}
+                onChange={(date) =>
+                  formik.setFieldValue("date_of_joining", date)
+                }
+                onBlur={() => formik.setFieldTouched("date_of_joining", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Joining "
+              />
             )}
+
+            {formik.touched.date_of_joining &&
+              formik.errors.date_of_joining && (
+                <div className="text-red-500 text-sm mt-1">
+                  {formik.errors.date_of_joining}
+                </div>
+              )}
           </div>
           {/* Gender */}
           <div className="mb-4">
@@ -489,7 +495,9 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
           </div>
           {/* Classes (Checkboxes) */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Field: Classes</label>
+            <label className="block text-gray-700 font-semibold">
+              Field: Classes
+            </label>
             {classList.map((cls) => (
               <div key={cls.id} className="flex items-center">
                 <input
@@ -513,7 +521,8 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
           {/* For each selected class, display its sections as checkboxes */}
           {formik.values.classes.map((classId) => {
             const sections = sectionsByClass[classId] || [];
-            const className = classList.find((cls) => cls.id === classId)?.class_name || "";
+            const className =
+              classList.find((cls) => cls.id === classId)?.class_name || "";
             return (
               <div key={classId} className="mb-4 border p-2 rounded">
                 <label className="block text-gray-700 font-semibold">
@@ -524,9 +533,15 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
                     <input
                       type="checkbox"
                       value={section.id}
-                      checked={formik.values.classes_section.includes(section.id)}
+                      checked={formik.values.classes_section.includes(
+                        section.id
+                      )}
                       onChange={(e) =>
-                        handleSectionCheckboxChange(classId, section.id, e.target.checked)
+                        handleSectionCheckboxChange(
+                          classId,
+                          section.id,
+                          e.target.checked
+                        )
                       }
                       className="mr-2"
                     />
@@ -578,7 +593,7 @@ const EditTeacherModal = ({ handleCloseModal, fetchTeachers, teacherInfo }) => {
               <option value="">Select Section</option>
               {teacherSections.map((section) => (
                 <option key={section.id} value={section.id}>
-                  {section.section_name} 
+                  {section.section_name}
                 </option>
               ))}
             </select>

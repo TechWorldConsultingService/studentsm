@@ -6,19 +6,18 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Password from "antd/es/input/Password";
 import * as Yup from "yup";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
 
 const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const [classList, setClassList] = useState([]);
   const [sectionsList, setSectionsList] = useState([]);
   const [optionalSubjects, setOptionalSubjects] = useState([]);
-
-  // Toggles for username/password editing
   const [isUsernameEditable, setIsUsernameEditable] = useState(false);
   const [isPasswordEditable, setIsPasswordEditable] = useState(false);
 
-  // Build validation schema (section field required only when sections are available)
   const validationSchema = useMemo(() => {
     return Yup.object().shape({
       user: Yup.object().shape({
@@ -47,10 +46,8 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
       address: Yup.string()
         .min(5, "Address must be at least 5 characters long.")
         .max(50, "Address can't exceed 50 characters."),
-      date_of_birth: Yup.date().max(
-        new Date(),
-        "Date of birth cannot be in the future."
-      ),
+        date_of_birth: Yup.date()
+        .required("Date of birth is required."),
       parents: Yup.string()
         .min(2, "Parent's name must be at least 2 characters long.")
         .max(25, "Parent's name can't exceed 25 characters."),
@@ -216,10 +213,10 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
         optional_subjects.filter((id) => id !== subjectId)
       );
     } else {
-      formik.setFieldValue(
-        "optional_subjects",
-        [...optional_subjects, subjectId]
-      );
+      formik.setFieldValue("optional_subjects", [
+        ...optional_subjects,
+        subjectId,
+      ]);
     }
   };
 
@@ -299,9 +296,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
 
           {/* Email */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Email:
-            </label>
+            <label className="block text-gray-700 font-semibold">Email:</label>
             <input
               type="email"
               className="border border-gray-300 p-2 rounded w-full"
@@ -364,9 +359,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
 
           {/* Phone */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Phone:
-            </label>
+            <label className="block text-gray-700 font-semibold">Phone:</label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -409,14 +402,27 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
             <label className="block text-gray-700 font-semibold">
               Date Of Birth:
             </label>
-            <input
-              type="date"
-              className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_birth"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_birth}
-            />
+            {is_ad ? (
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded w-full"
+                name="date_of_birth"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_birth}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_birth}
+                onChange={(date) => formik.setFieldValue("date_of_birth", date)}
+                onBlur={() => formik.setFieldTouched("date_of_birth", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Birth"
+              />
+            )}
+
             {formik.touched.date_of_birth && formik.errors.date_of_birth && (
               <div className="p-1 px-2 text-red-500 text-sm mt-1">
                 {formik.errors.date_of_birth}
@@ -447,9 +453,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
 
           {/* Gender */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Gender:
-            </label>
+            <label className="block text-gray-700 font-semibold">Gender:</label>
             <select
               className="border border-gray-300 p-2 rounded w-full"
               name="gender"
@@ -471,9 +475,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
 
           {/* Class Code */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">
-              Class:
-            </label>
+            <label className="block text-gray-700 font-semibold">Class:</label>
             <select
               className="border border-gray-300 p-2 rounded w-full"
               name="class_code"
@@ -536,7 +538,9 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
                     type="checkbox"
                     id={`subject-${subject.id}`}
                     value={subject.id}
-                    checked={formik.values.optional_subjects.includes(subject.id)}
+                    checked={formik.values.optional_subjects.includes(
+                      subject.id
+                    )}
                     onChange={() => handleOptionalSubjectsChange(subject.id)}
                     className="mr-2"
                   />

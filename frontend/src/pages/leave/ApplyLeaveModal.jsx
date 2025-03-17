@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import { DatePicker } from "antd";
 import moment from "moment";
 import toast from "react-hot-toast";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
+import { useSelector } from "react-redux";
 
 const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
+  const { is_ad } = useSelector((state) => state.user);
+
   const [leaveDate, setLeaveDate] = useState("");
   const [message, setMessage] = useState("");
 
-  // If the modal closes, reset local state:
   const handleClose = () => {
     setLeaveDate("");
     setMessage("");
@@ -20,9 +24,8 @@ const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
       toast.error("Please fill all fields.");
       return;
     }
-    // Call parent function to actually do the API request
     onApplyLeave(leaveDate, message);
-    handleClose(); // close modal
+    handleClose();
   };
 
   if (!isOpen) return null;
@@ -30,18 +33,32 @@ const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
       <div className="bg-white w-11/12 md:w-1/2 p-6 rounded shadow-lg relative">
-
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">Apply for Leave</h2>
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">
+          Apply for Leave
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-purple-800 mb-1">Leave Date:</label>
-            <DatePicker
-              format="YYYY-MM-DD"
-              onChange={(date, dateString) => setLeaveDate(dateString)}
-              disabledDate={(current) => current && current < moment().startOf("day")}
-              className="w-full"
-            />
+            {is_ad ? (
+              <DatePicker
+                format="YYYY-MM-DD"
+                onChange={(date, dateString) => setLeaveDate(dateString)}
+                disabledDate={(current) =>
+                  current && current < moment().startOf("day")
+                }
+                className="w-full"
+              />
+            ) : (
+              <NepaliDatePicker
+                value={leaveDate}
+                onChange={(date) => setLeaveDate(date)}
+                inputClassName="p-2 border border-purple-300 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Select Date"
+              />
+            )}
           </div>
 
           <div>
@@ -63,11 +80,11 @@ const ApplyLeaveModal = ({ isOpen, onClose, onApplyLeave }) => {
               Submit
             </button>
             <button
-          onClick={handleClose}
-          className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
-        >
-          Cancel
-        </button>
+              onClick={handleClose}
+              className="bg-gray-400 text-white px-6 py-2 rounded-lg hover:bg-gray-500"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>
