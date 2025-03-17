@@ -55,11 +55,10 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
-<<<<<<< HEAD
 import SchoolSettings from "./pages/SchoolSetting";
-=======
 import PaymentStatements from "./pages/statements";
->>>>>>> ba8ee8f13137c550506d35e2da8b3d21a660d64a
+import TaskList from "./pages/TasksMS/TaskList";
+import TodoListPage from "./pages/TasksMS/TodoListPage";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -68,6 +67,9 @@ function App() {
   const router = createBrowserRouter([
     { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
+    { path: "/tasklist", element: <TaskList /> },
+    { path: "/todo", element: <TodoListPage /> },
+    
     { path: "/homepage", element: <HomePage /> },
     { path: "/addquiz", element: <AddQuiz /> },
     { path: "/playquiz", element: <QuizComponent /> },

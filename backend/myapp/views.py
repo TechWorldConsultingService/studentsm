@@ -3668,3 +3668,21 @@ class QuizScoreViewSet(viewsets.ModelViewSet):
         else:
             # Create a new score entry if no previous score exists
             serializer.save(user=user)
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .models import Task
+from .serializers import TaskSerializer
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by("order")  # Order tasks properly
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+

@@ -627,3 +627,25 @@ class QuizScore(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.score} in {self.quiz.title}"
+    
+
+class Task(models.Model):
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    due_date = models.DateField()
+    is_completed = models.BooleanField(default=False)
+    completion_percentage = models.IntegerField(default=0)  # 0 to 100
+    order = models.IntegerField(default=0)  # For drag-and-drop ordering
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

@@ -26,6 +26,12 @@
     },
     {
       "id": 5,
+      "title": "Task List", 
+      "icon": "FaTasks",
+      "link": "/tasklist" 
+    },
+    {
+      "id": 6,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -34,7 +40,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 7,
       "title": "Request",
       "icon": "IoIosGitPullRequest",
       "subSidebar": [
@@ -85,6 +91,12 @@
     },
     {
       "id": 5,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"
+    },
+    {
+      "id": 6,
       "title": "Exam",
       "icon": "TbReportSearch",
       "link": "/examTeacher",
@@ -94,7 +106,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 7,
       "title": "Request",
       "icon": "IoIosGitPullRequest",
       "subSidebar": [
@@ -103,7 +115,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 8,
       "title": "Leave",
       "icon": "MdCoPresent",
       "subSidebar": [
@@ -112,7 +124,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 9,
       "title": "Attendance",
       "icon": "LuFileSpreadsheet",
       "link": "/selectClassForAttendence"
@@ -153,6 +165,12 @@
     },
     {
       "id": 5,
+      "title": "Task List",  
+      "icon": "FaTasks",
+      "link": "/tasklist" 
+    },
+    {
+      "id": 6,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
@@ -161,20 +179,20 @@
       ]
     },
     {
-      "id": 8,
+      "id": 7,
       "title": "All Leaves",
       "icon": "MdCoPresent",
       "link": "/manage-leaves"
     },
 
     {
-      "id": 9,
+      "id": 8,
       "title": "My Students",
       "icon": "SlPeople",
       "link": "/myStudent"
     },
     {
-      "id": 11,
+      "id": 9,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -183,7 +201,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 10,
       "title": "Add Curriculum",
       "icon": "IoMdPersonAdd",
       "subSidebar": [
@@ -192,7 +210,7 @@
       ]
     },
     {
-      "id": 12,
+      "id": 11,
       "title": "Add Learner",
       "icon": "IoMdPersonAdd",
       "subSidebar": [
@@ -202,7 +220,7 @@
       ]
     },
     {
-      "id": 8,
+      "id": 12,
       "title": "Statements",
       "icon": "MdReceiptLong",
       "link": "/statements"
@@ -223,6 +241,12 @@
       "link": "/accountantdashboard"
     },
     {
+      "id": 3,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"  
+    },
+    {
       "id": 4,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
@@ -232,31 +256,31 @@
       ]
     },
     {
-      "id": 3,
+      "id": 5,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
     },
     {
-      "id": 7,
+      "id": 6,
       "title": "Ledger",
       "icon": "FaFileInvoiceDollar",
       "link": "/invoicing"
     },
     {
-      "id": 8,
+      "id": 7,
       "title": "Statements",
       "icon": "MdReceiptLong",
       "link": "/statements"
     },
     {
-      "id": 5,
+      "id": 8,
       "title": "Fee Payment",
       "icon": "MdPayments",
       "link": "/feePayment"
     },
     {
-      "id": 6,
+      "id": 9,
       "title": "Fee Management",
       "icon": "MdOutlineManageHistory",
       "subSidebar": [

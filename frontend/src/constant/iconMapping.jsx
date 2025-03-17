@@ -14,6 +14,7 @@ import { SlPeople } from "react-icons/sl";
 import { IoMdPersonAdd } from "react-icons/io";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { MdReceiptLong } from "react-icons/md";
+import { FaTasks } from "react-icons/fa";
 
 const iconMapping = {
   MdOutlineSpaceDashboard,
@@ -31,6 +32,7 @@ const iconMapping = {
   FaFileInvoiceDollar,
   MdOutlineManageHistory,
   MdReceiptLong,
+  FaTasks,
 };
 
 export default iconMapping;
