@@ -1419,7 +1419,7 @@ class GetStudentPaymentSerializer(DateFormatMixin, serializers.ModelSerializer):
     def get_post_balance(self, obj):
         return self.get_pre_balance(obj) - obj.amount_paid
 
-class StudentTransactionSerializer(serializers.ModelSerializer):
+class StudentTransactionSerializer(DateFormatMixin, serializers.ModelSerializer):
     bill = serializers.SerializerMethodField()
     bill_number = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
@@ -1494,7 +1494,7 @@ class CommunicationSerializer(serializers.ModelSerializer):
         validated_data["sender"] = self.context["request"].user
         return super().create(validated_data)
 
-class GetCommunicationSerializer(serializers.ModelSerializer):
+class GetCommunicationSerializer(DateFormatMixin, serializers.ModelSerializer):
     """Serializer to get full details of sender & receiver instead of just IDs"""
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True, allow_null=True)
