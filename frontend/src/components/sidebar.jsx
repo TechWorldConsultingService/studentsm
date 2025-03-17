@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import {
-  FaAngleDown,
-  FaBars,
-  FaAngleLeft,
-  FaAngleRight,
-} from "react-icons/fa6";
+import { FaAngleDown, FaBars, FaAngleLeft, FaAngleRight, FaMoon, FaSun } from "react-icons/fa6";
 import { useSelector } from "react-redux";
 
 import sidebarData from "../constant/sidebardata.json";
@@ -17,25 +12,22 @@ const Sidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("darkMode") === "true"
+  );
 
+  useEffect(() => {
+    document.body.classList.toggle("dark", isDarkMode);
+    localStorage.setItem("darkMode", isDarkMode);
+  }, [isDarkMode]);
 
-  const handleMobileToggle = () => {
-    setIsMobileOpen((prev) => !prev);
-  };
-
-
-  const handleCollapseToggle = () => {
-    setIsCollapsed((prev) => !prev);
-  };
-
-  const handleSubMenu = (id) => {
-    setOpenSubMenuId(openSubMenuId === id ? null : id);
-  };
-
+  const handleMobileToggle = () => setIsMobileOpen((prev) => !prev);
+  const handleCollapseToggle = () => setIsCollapsed((prev) => !prev);
+  const handleSubMenu = (id) => setOpenSubMenuId(openSubMenuId === id ? null : id);
+  const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
 
   useEffect(() => {
     if (!sidebarData[role]) return;
-
     sidebarData[role].forEach((item) => {
       if (item.subSidebar) {
         const isAnySubActive = item.subSidebar.some((sub) =>
@@ -50,12 +42,9 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Top bar (only on small screens) */}
+      {/* Mobile Top bar */}
       <div className="md:hidden flex items-center justify-between bg-purple-800 text-white px-3 py-2">
-        <button
-          onClick={handleMobileToggle}
-          className="text-xl hover:text-purple-200 transition-colors"
-        >
+        <button onClick={handleMobileToggle} className="text-xl hover:text-purple-200 transition-colors">
           <FaBars />
         </button>
         <div className="text-base font-bold">Menu</div>
@@ -64,51 +53,25 @@ const Sidebar = () => {
       {/* Sidebar Container */}
       <div
         className={`
-          fixed md:static top-0 left-0 z-50
-          min-h-screen
-          border-r border-purple-200 shadow-lg
-          flex flex-col
-          bg-gradient-to-b from-purple-200 to-white
-          backdrop-blur-sm
+          fixed md:static top-0 left-0 z-50 min-h-screen border-r shadow-lg flex flex-col
           transition-all duration-300 ease-in-out
-          ${
-            isCollapsed
-              ? "w-16"
-              : "w-64" 
-          }
-          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
+          ${isCollapsed ? "w-16" : "w-64"}
+          ${isDarkMode ? "bg-[#000040] text-white" : "bg-gradient-to-b from-purple-200 to-white text-black"}
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
         `}
       >
-        {/* Sidebar Header (Logo & Name) */}
-        <div
-          className={`flex items-center justify-between p-3 ${
-            isCollapsed ? "justify-center" : ""
-          }`}
-        >
-          {/* Logo */}
+        {/* Sidebar Header */}
+        <div className={`flex items-center justify-between p-3 ${isCollapsed ? "justify-center" : ""}`}>
           <div className="flex items-center">
-            <img
-              src="/logo.jpeg"
-              alt="Logo"
-              className="h-[42px] w-[90px] object-contain"
-            />
+            <img src="/logo.jpeg" alt="Logo" className="h-[42px] w-[90px] object-contain" />
             {!isCollapsed && (
-              <span className="ml-2 hidden md:block font-semibold text-purple-900">
+              <span className="ml-2 hidden md:block font-semibold">
                 Satyam Xavier's
               </span>
             )}
           </div>
-
-          <button
-            onClick={handleCollapseToggle}
-            className="hidden md:block text-purple-700 hover:text-purple-900"
-          >
-            {isCollapsed ? (
-              <FaAngleRight className="text-xl" />
-            ) : (
-              <FaAngleLeft className="text-xl" />
-            )}
+          <button onClick={handleCollapseToggle} className="hidden md:block text-purple-700 hover:text-purple-900">
+            {isCollapsed ? <FaAngleRight className="text-xl" /> : <FaAngleLeft className="text-xl" />}
           </button>
         </div>
 
@@ -120,39 +83,25 @@ const Sidebar = () => {
             if (item.subSidebar) {
               return (
                 <div key={item.id}>
-                  {/* Parent Button */}
                   <button
                     onClick={() => handleSubMenu(item.id)}
-                    className={`
-                      w-full text-left px-4 py-3 flex items-center justify-between
-                      text-purple-900
-                      transition-colors rounded-md
-                      hover:bg-purple-300 hover:text-purple-900
-                      ${
-                        isCollapsed ? "justify-center" : ""
-                      }
+                    className={`w-full text-left px-4 py-3 flex items-center justify-between
+                      transition-colors rounded-md hover:bg-purple-300
+                      ${isCollapsed ? "justify-center" : ""}
+                      ${isDarkMode ? "text-white hover:bg-gray-700" : "text-purple-900"}
                     `}
                   >
-                    {/* Icon + Title */}
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`${
-                          isCollapsed ? "text-3xl" : "text-2xl"
-                        } transition-all duration-300`}
-                      >
+                      <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
                         {React.createElement(Icon)}
                       </span>
                       {!isCollapsed && (
-                        <span className="font-medium text-sm tracking-wide">
-                          {item.title}
-                        </span>
+                        <span className="font-medium text-sm tracking-wide">{item.title}</span>
                       )}
                     </div>
                     {!isCollapsed && (
                       <FaAngleDown
-                        className={`ml-2 transform transition-transform ${
-                          openSubMenuId === item.id ? "rotate-180" : ""
-                        }`}
+                        className={`ml-2 transform transition-transform ${openSubMenuId === item.id ? "rotate-180" : ""}`}
                       />
                     )}
                   </button>
@@ -165,16 +114,9 @@ const Sidebar = () => {
                           to={subItem.link}
                           key={subItem.id}
                           end
-                          className={({
-                            isActive,
-                          }) => `
-                            py-2 pl-4 my-1 rounded-r-md
-                            text-sm transition-colors
-                            ${
-                              isActive
-                                ? "bg-purple-400 text-white font-semibold"
-                                : "text-purple-900 hover:bg-purple-200"
-                            }
+                          className={({ isActive }) => `
+                            py-2 pl-4 my-1 rounded-r-md text-sm transition-colors
+                            ${isActive ? "bg-purple-400 text-white font-semibold" : "hover:bg-purple-200"}
                           `}
                         >
                           {subItem.title}
@@ -191,45 +133,41 @@ const Sidebar = () => {
                   key={item.id}
                   end
                   className={({ isActive }) => `
-                    px-4 py-3 flex items-center gap-2 rounded-md
-                    transition-colors
-                    ${
-                      isActive
-                        ? "bg-purple-400 text-white font-semibold"
-                        : "text-purple-900 hover:bg-purple-300"
-                    }
+                    px-4 py-3 flex items-center gap-2 rounded-md transition-colors
+                    ${isActive ? "bg-purple-400 text-white font-semibold" : "hover:bg-purple-300"}
+                    ${isDarkMode ? "text-white hover:bg-gray-700" : "text-purple-900"}
                     ${isCollapsed ? "justify-center" : ""}
                   `}
                 >
-                  <span
-                    className={`${
-                      isCollapsed ? "text-3xl" : "text-2xl"
-                    } transition-all duration-300`}
-                  >
+                  <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
                     {React.createElement(Icon)}
                   </span>
-                  {/* Show text only if not collapsed */}
-                  {!isCollapsed && (
-                    <span className="font-medium text-sm tracking-wide">
-                      {item.title}
-                    </span>
-                  )}
+                  {!isCollapsed && <span className="font-medium text-sm tracking-wide">{item.title}</span>}
                 </NavLink>
               );
             }
           })}
         </div>
+
+        {/* Dark Mode Toggle */}
+        <div className="p-4 mt-auto">
+          <button
+            onClick={toggleDarkMode}
+            className="w-full flex items-center justify-center p-2 rounded-lg transition-all duration-300
+            transform scale-75 shadow-md
+            bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700"
+          >
+            {isDarkMode ? <FaSun className="text-yellow-400 text-2xl" /> : <FaMoon className="text-gray-900 text-2xl" />}
+            <span className="ml-2 text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Overlay for mobile */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 md:hidden"
-          onClick={handleMobileToggle}
-        />
-      )}
+      {isMobileOpen && <div className="fixed inset-0 bg-black bg-opacity-30 md:hidden" onClick={handleMobileToggle} />}
     </>
   );
 };
 
 export default Sidebar;
+ 
