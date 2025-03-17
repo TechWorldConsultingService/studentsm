@@ -121,9 +121,9 @@ const AddAttendanceModal = ({
   ).length;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-2/3 max-h-full overflow-auto">
-        <h2 className="text-3xl font-bold text-purple-800">Add Attendance</h2>
+<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[9999]">
+  <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-2/3 max-h-full overflow-auto relative z-[10000]">
+    <h2 className="text-3xl font-bold text-purple-800">Add Attendance</h2>
 
         <div className="grid grid-cols-2 gap-4 mt-16">
           {/* Attendance Summary */}

@@ -7,15 +7,23 @@ import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
 import { Select } from "antd";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
+import { ADToBS } from "bikram-sambat-js";
 
 const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [classList, setClassList] = useState([]);
-  const [sectionsByClass, setSectionsByClass] = useState({}); 
+  const [sectionsByClass, setSectionsByClass] = useState({});
   const [subjectList, setSubjectList] = useState([]);
-  const [teacherSections, setTeacherSections] = useState([]); 
+  const [teacherSections, setTeacherSections] = useState([]);
+
+  const todayAd = new Date();
+  const formattedAd = todayAd.toISOString().split("T")[0];
+  const formattedBs = ADToBS(formattedAd, "YYYY-MM-DD");
+  const defaultJoiningDate = is_ad ? formattedAd : formattedBs;
 
   useEffect(() => {
     if (access) {
@@ -109,9 +117,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       },
       phone: "",
       address: "",
-      date_of_joining: "",
+      date_of_joining: defaultJoiningDate,
       gender: "",
-      subjects: [],   // subjects now expected as an array of subject IDs (numbers)
+      subjects: [],
       classes: [],
       classes_section: [],
       class_teacher: "",
@@ -153,7 +161,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
         .max(100, "Address can't exceed 100 characters."),
       date_of_joining: Yup.string().required("Date of joining is required."),
       gender: Yup.string().required("Gender is required."),
-      // Modified Subjects validation: expects an array of numbers (subject IDs)
       subjects: Yup.array()
         .of(Yup.number().required("Subject is required."))
         .min(1, "At least one subject is required."),
@@ -167,7 +174,6 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       class_teacher_section: Yup.number().nullable(),
     }),
     onSubmit: async (values) => {
-      // No mapping needed – subjects are already an array of IDs
       const payload = { ...values };
       await addTeacher(payload);
     },
@@ -197,7 +203,8 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
       }
     } else {
       updatedClasses = updatedClasses.filter((id) => id !== classId);
-      const sectionsForClass = sectionsByClass[classId]?.map((sec) => sec.id) || [];
+      const sectionsForClass =
+        sectionsByClass[classId]?.map((sec) => sec.id) || [];
       const updatedSections = formik.values.classes_section.filter(
         (secId) => !sectionsForClass.includes(secId)
       );
@@ -230,7 +237,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
         <form onSubmit={formik.handleSubmit} className="mt-4">
           {/* Username */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Username</label>
+            <label className="block text-gray-700 font-semibold">
+              Username
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -248,7 +257,10 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           </div>
           {/* Password */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold"> Password</label>
+            <label className="block text-gray-700 font-semibold">
+              {" "}
+              Password
+            </label>
             <Password
               placeholder="Password"
               name="user.password"
@@ -283,7 +295,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           </div>
           {/* First Name */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">First Name</label>
+            <label className="block text-gray-700 font-semibold">
+              First Name
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -293,15 +307,18 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.first_name}
             />
-            {formik.touched.user?.first_name && formik.errors.user?.first_name && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.first_name}
-              </div>
-            )}
+            {formik.touched.user?.first_name &&
+              formik.errors.user?.first_name && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.user.first_name}
+                </div>
+              )}
           </div>
           {/* Last Name */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Last Name</label>
+            <label className="block text-gray-700 font-semibold">
+              Last Name
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -311,11 +328,12 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               onBlur={formik.handleBlur}
               value={formik.values.user.last_name}
             />
-            {formik.touched.user?.last_name && formik.errors.user?.last_name && (
-              <div className="p-1 px-2 text-red-500 text-sm mt-1">
-                {formik.errors.user.last_name}
-              </div>
-            )}
+            {formik.touched.user?.last_name &&
+              formik.errors.user?.last_name && (
+                <div className="p-1 px-2 text-red-500 text-sm mt-1">
+                  {formik.errors.user.last_name}
+                </div>
+              )}
           </div>
           {/* Phone */}
           <div className="mb-4">
@@ -355,21 +373,39 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           </div>
           {/* Date of Joining */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Date of Joining</label>
-            <input
-              type="date"
-              className="border border-gray-300 p-2 rounded w-full"
-              placeholder="Date of Joining (e.g. 2081/11/12)"
-              name="date_of_joining"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_joining}
-            />
-            {formik.touched.date_of_joining && formik.errors.date_of_joining && (
-              <div className="p-1 text-red-500 text-sm mt-1">
-                {formik.errors.date_of_joining}
-              </div>
+            <label className="block text-gray-700 font-semibold">
+              Date of Joining
+            </label>
+            {is_ad ? (
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded w-full"
+                placeholder="Date of Joining (e.g. 2081/11/12)"
+                name="date_of_joining"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_joining}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_joining}
+                onChange={(date) =>
+                  formik.setFieldValue("date_of_joining", date)
+                }
+                onBlur={() => formik.setFieldTouched("date_of_joining", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Joining (e.g. 2081/11/12)"
+              />
             )}
+
+            {formik.touched.date_of_joining &&
+              formik.errors.date_of_joining && (
+                <div className="p-1 text-red-500 text-sm mt-1">
+                  {formik.errors.date_of_joining}
+                </div>
+              )}
           </div>
           {/* Gender */}
           <div className="mb-4">
@@ -394,7 +430,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           </div>
           {/* Subjects */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Subjects</label>
+            <label className="block text-gray-700 font-semibold">
+              Subjects
+            </label>
             <Select
               mode="multiple"
               placeholder="Select all subjects"
@@ -445,7 +483,8 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           {/* For each selected class, display its sections as checkboxes */}
           {formik.values.classes.map((classId) => {
             const sections = sectionsByClass[classId] || [];
-            const className = classList.find((cls) => cls.id === classId)?.class_name || "";
+            const className =
+              classList.find((cls) => cls.id === classId)?.class_name || "";
             return (
               <div key={classId} className="mb-4 border p-2 rounded">
                 <label className="block text-gray-700 font-semibold">
@@ -456,15 +495,19 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
                     <input
                       type="checkbox"
                       value={section.id}
-                      checked={formik.values.classes_section.includes(section.id)}
+                      checked={formik.values.classes_section.includes(
+                        section.id
+                      )}
                       onChange={(e) =>
-                        handleSectionCheckboxChange(classId, section.id, e.target.checked)
+                        handleSectionCheckboxChange(
+                          classId,
+                          section.id,
+                          e.target.checked
+                        )
                       }
                       className="mr-2"
                     />
-                    <label>
-                      {section.section_name} 
-                    </label>
+                    <label>{section.section_name}</label>
                   </div>
                 ))}
               </div>
@@ -472,7 +515,9 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           })}
           {/* Class Teacher  */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold">Class Teacher of</label>
+            <label className="block text-gray-700 font-semibold">
+              Class Teacher of
+            </label>
             <select
               name="class_teacher"
               className="border border-gray-300 p-2 rounded w-full"
@@ -495,7 +540,10 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
           </div>
           {/* Class Teacher Section  */}
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold"> Class Teacher Section</label>
+            <label className="block text-gray-700 font-semibold">
+              {" "}
+              Class Teacher Section
+            </label>
             <select
               name="class_teacher_section"
               className="border border-gray-300 p-2 rounded w-full"
@@ -506,15 +554,16 @@ const AddTeacherModal = ({ handleCloseModal, fetchTeachers }) => {
               <option value="">Select Section</option>
               {teacherSections.map((section) => (
                 <option key={section.id} value={section.id}>
-                  {section.section_name} 
+                  {section.section_name}
                 </option>
               ))}
             </select>
-            {formik.touched.class_teacher_section && formik.errors.class_teacher_section && (
-              <div className="p-1 text-red-500 text-sm mt-1">
-                {formik.errors.class_teacher_section}
-              </div>
-            )}
+            {formik.touched.class_teacher_section &&
+              formik.errors.class_teacher_section && (
+                <div className="p-1 text-red-500 text-sm mt-1">
+                  {formik.errors.class_teacher_section}
+                </div>
+              )}
           </div>
           {/* Submit & Cancel Buttons */}
           <div className="flex justify-center space-x-4 mt-6">
