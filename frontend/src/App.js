@@ -57,6 +57,8 @@ import AddQuiz from "./pages/Quiz/AddQuiz";
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
 import SchoolSettings from "./pages/SchoolSetting";
 import PaymentStatements from "./pages/statements";
+import TaskList from "./pages/TasksMS/TaskList";
+import TodoListPage from "./pages/TasksMS/TodoListPage";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -65,6 +67,9 @@ function App() {
   const router = createBrowserRouter([
     { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
+    { path: "/tasklist", element: <TaskList /> },
+    { path: "/todo", element: <TodoListPage /> },
+    
     { path: "/homepage", element: <HomePage /> },
     { path: "/addquiz", element: <AddQuiz /> },
     { path: "/playquiz", element: <QuizComponent /> },

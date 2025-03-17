@@ -1539,3 +1539,9 @@ class QuizScoreSerializer(serializers.ModelSerializer):
         fields = ['id', 'quiz', 'user', 'score']
         read_only_fields = ['user']
         
+from .models import Task
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = '__all__'
+        read_only_fields = ('user',)

@@ -9,9 +9,11 @@ from rest_framework import viewsets, permissions
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import QuizViewSet, QuizQuestionViewSet, QuizScoreViewSet
+from .models import *
 
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
+router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'events', EventViewSet, basename='event')
 router.register(r'chapters', ChapterViewSet)
 router.register(r'topics', TopicViewSet)
