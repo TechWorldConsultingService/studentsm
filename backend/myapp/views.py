@@ -2031,10 +2031,18 @@ class ExamDetailsByExamView(APIView):
         try:
             # Fetch the exam
             exam = Exam.objects.get(id=exam_id)      
-
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            
             # Fetch the related exam details
             exam_details = []
             for detail in exam.exam_details.all():
+                exam_date = detail.exam_date
+
+                # Convert exam_date to BS if needed
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
                 exam_details.append({
                     "id": detail.id,
                     "class_details": {
@@ -2049,7 +2057,7 @@ class ExamDetailsByExamView(APIView):
                     },
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
                 })
 
@@ -2062,10 +2070,12 @@ class ExamDetailsByExamView(APIView):
                 "exam_details": exam_details,
             }
             return Response(response_data, status=status.HTTP_200_OK)
+
         except Exam.DoesNotExist:
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class SubjectWiseExamResultsView(APIView):
@@ -2087,8 +2097,17 @@ class SubjectWiseExamResultsView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Prepare exam and subject details
+            # Get the first exam detail
             exam_detail = results[0].exam_detail
+
+            # Convert exam_date to BS if needed
+            exam_date = exam_detail.exam_date
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
+            # Prepare exam and subject details
             exam_details = {
                 "exam_id": exam_detail.exam.id,
                 "exam_name": exam_detail.exam.name,
@@ -2098,7 +2117,7 @@ class SubjectWiseExamResultsView(APIView):
                 "subject_name": exam_detail.subject.subject_name,
                 "full_marks": exam_detail.full_marks,
                 "pass_marks": exam_detail.pass_marks,
-                "exam_date": exam_detail.exam_date,
+                "exam_date": exam_date,  # Converted if necessary
             }
 
             # Prepare results data for all students
@@ -2141,7 +2160,6 @@ class SubjectWiseExamResultsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class ExamDetailsByTeacherView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
 
@@ -2164,15 +2182,24 @@ class ExamDetailsByTeacherView(APIView):
         if not exam_details.exists():
             return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
 
+        # Check date format setting (BS or AD)
+        date_setting = DateSetting.get_instance()
+
         # Prepare the response with the desired structure
         response_data = []
         for detail in exam_details:
+            # Convert exam_date to BS if needed
+            exam_date = detail.exam_date
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
             response_data.append({
                 "exam_details": {
                     "id": detail.id,  # Exam detail ID
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,
+                    "exam_date": exam_date,  # Converted if necessary
                 },
                 "exam": {
                     "id": detail.exam.id,
@@ -2192,6 +2219,7 @@ class ExamDetailsByTeacherView(APIView):
         return Response(response_data, status=200)
 
 
+
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, class_id, *args, **kwargs):
         try:
@@ -2204,9 +2232,19 @@ class ExamTimetableView(APIView):
             if not exam_details.exists():
                 return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Prepare response data without full_marks and pass_marks
-            exam_details_data = [
-                {
+            # Check date format setting (BS or AD)
+            date_setting = DateSetting.get_instance()
+
+            # Prepare response data with date conversion
+            exam_details_data = []
+            for detail in exam_details:
+                # Convert exam_date to BS if needed
+                exam_date = detail.exam_date
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
+                exam_details_data.append({
                     "id": detail.id,
                     "class_details": {
                         "id": detail.class_assigned.id,
@@ -2218,11 +2256,9 @@ class ExamTimetableView(APIView):
                         "subject_code": detail.subject.subject_code,
                         "subject_name": detail.subject.subject_name,
                     },
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
-                }
-                for detail in exam_details
-            ]
+                })
 
             response_data = {
                 "id": exam.id,
@@ -2272,11 +2308,6 @@ class ExamsByClassView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from django.db import transaction
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 
 class BulkUpdateRollNumbersAPIView(APIView):
     def put(self, request, class_id, *args, **kwargs):
@@ -3114,12 +3145,14 @@ class StudentPaymentDetailAPIView(APIView):
             return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class StudentTransactionsAPIView(APIView):
-
     def get(self, request, student_id):
         # Get all transactions for the student
         transactions = StudentTransaction.objects.filter(student_id=student_id)
         if not transactions.exists():
             return Response({"message": "No transactions found"}, status=404)
+
+        # Get the date setting (BS or AD)
+        date_setting = DateSetting.get_instance()
 
         # Serialize transactions
         transaction_serializer = StudentTransactionSerializer(transactions, many=True)
@@ -3127,20 +3160,35 @@ class StudentTransactionsAPIView(APIView):
 
         # Extract student details from the first transaction manually
         first_transaction = transactions.first()
+        student = first_transaction.student
+
+        # Convert date_of_birth to BS if needed
+        date_of_birth = student.date_of_birth
+        if date_of_birth and not date_setting.is_ad:
+            bs_dob = nepali_datetime.date.from_datetime_date(date_of_birth)
+            date_of_birth = bs_dob.strftime('%Y-%m-%d')
+
         student_data = {
-            "id": first_transaction.student.id,
-            "name": first_transaction.student.user.username,
-            "parents": first_transaction.student.parents,
-            "roll_no": first_transaction.student.roll_no,
-            "phone": first_transaction.student.phone,
-            "address": first_transaction.student.address,
-            "date_of_birth": first_transaction.student.date_of_birth,
-            "gender": first_transaction.student.gender,
-            "class_name": first_transaction.student.class_code.class_name if first_transaction.student.class_code else None
+            "id": student.id,
+            "name": student.user.username,
+            "parents": student.parents,
+            "roll_no": student.roll_no,
+            "phone": student.phone,
+            "address": student.address,
+            "date_of_birth": date_of_birth,  # Converted if necessary
+            "gender": student.gender,
+            "class_name": student.class_code.class_name if student.class_code else None
         }
 
-        # Remove student data from each transaction
+        # Convert transaction dates to BS if needed
         for transaction in transaction_data:
+            transaction_date = transaction.get("transaction_date")
+            if transaction_date and not date_setting.is_ad:
+                ad_date = datetime.strptime(transaction_date, "%Y-%m-%d")  # Assuming AD format in DB
+                bs_date = nepali_datetime.date.from_datetime_date(ad_date)
+                transaction["transaction_date"] = bs_date.strftime('%Y-%m-%d')
+
+            # Remove student data from each transaction
             transaction.pop("student", None)
 
         # Return response with student details only once
@@ -3148,6 +3196,7 @@ class StudentTransactionsAPIView(APIView):
             "student": student_data,  # Extracted manually
             "transactions": transaction_data  # Transactions without duplicate student data
         })
+
 
 
 class DashboardAPIView(APIView):

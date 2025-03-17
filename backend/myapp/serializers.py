@@ -996,6 +996,15 @@ class GetStudentResultSerializer(DateFormatMixin, serializers.ModelSerializer):
 
     def get_student_details(self, obj):
         student = obj.student
+        date_setting = DateSetting.get_instance()
+        date_of_birth = student.date_of_birth
+
+        if date_setting.is_ad:
+            formatted_dob = date_of_birth.strftime('%Y-%m-%d') if date_of_birth else None
+        else:
+            bs_date = nepali_datetime.date.from_datetime_date(date_of_birth)
+            formatted_dob = bs_date.strftime('%Y-%m-%d') if bs_date else None
+
         return {
             "id": student.id,
             "username": student.user.username,
@@ -1004,11 +1013,20 @@ class GetStudentResultSerializer(DateFormatMixin, serializers.ModelSerializer):
             "gender": student.gender,
             "address": student.address,
             "phone": student.phone,
-            "date_of_birth": student.date_of_birth
+            "date_of_birth": formatted_dob
         }
 
     def get_exam_detail(self, obj):
         exam_detail = obj.exam_detail
+        date_setting = DateSetting.get_instance()
+        exam_date = exam_detail.exam_date
+
+        if date_setting.is_ad:
+            formatted_exam_date = exam_date.strftime('%Y-%m-%d') if exam_date else None
+        else:
+            bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+            formatted_exam_date = bs_date.strftime('%Y-%m-%d') if bs_date else None
+
         return {
             "id": exam_detail.id,
             "exam": {
@@ -1027,8 +1045,9 @@ class GetStudentResultSerializer(DateFormatMixin, serializers.ModelSerializer):
             },
             "full_marks": exam_detail.full_marks,
             "pass_marks": exam_detail.pass_marks,
-            "exam_date": exam_detail.exam_date
+            "exam_date": formatted_exam_date
         }
+
 
 from .models import Message
 class MessageSerializer(serializers.ModelSerializer):
@@ -1116,7 +1135,7 @@ class AttendanceDetailSerializer(DateFormatMixin, serializers.ModelSerializer):
         fields = ['student', 'status', 'date']
 
 
-class StudentListAttendanceSerializer(serializers.ModelSerializer):
+class StudentListAttendanceSerializer(DateFormatMixin, serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     class_details = serializers.SerializerMethodField()
     pre_balance = serializers.SerializerMethodField()  # New field for balance
