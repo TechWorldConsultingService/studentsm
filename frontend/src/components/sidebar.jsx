@@ -13,7 +13,7 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(
-    localStorage.getItem("darkMode") === "true"
+    localStorage.getItem("darkMode") !== "false" // Default to Dark Mode
   );
 
   useEffect(() => {
