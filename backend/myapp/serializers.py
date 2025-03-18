@@ -813,7 +813,7 @@ class DiscussionPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscussionPost
-        fields = ['id', 'topic', 'content', 'created_by', 'created_at']
+        fields = ['id', 'topic', 'content', 'created_by', 'created_at', 'updated_at']
 
 
 class DiscussionCommentSerializer(serializers.ModelSerializer):
@@ -822,11 +822,24 @@ class DiscussionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscussionComment
-        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'replies']
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
 
     def get_replies(self, obj):
         replies = DiscussionComment.objects.filter(parent=obj)
         return DiscussionCommentSerializer(replies, many=True).data
+
+class GetDiscussionCommentSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source='created_by.username')
+    replies = serializers.SerializerMethodField()
+    post = DiscussionPostSerializer(read_only=True)  # Full post details
+
+    class Meta:
+        model = DiscussionComment
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
+
+    def get_replies(self, obj):
+        replies = DiscussionComment.objects.filter(parent=obj)
+        return GetDiscussionCommentSerializer(replies, many=True).data
 
 
 class ExamSerializer(serializers.ModelSerializer):
