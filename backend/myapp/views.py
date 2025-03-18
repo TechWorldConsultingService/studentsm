@@ -1736,7 +1736,7 @@ class DiscussionPostAPIView(APIView):
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
-        serializer = DiscussionPostSerializer(posts, many=True)
+        serializer = GetDiscussionPostSerializer(posts, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -1782,7 +1782,7 @@ class DiscussionPostDetailAPIView(APIView):
         except DiscussionPost.DoesNotExist:
             return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = DiscussionPostSerializer(post)
+        serializer = GetDiscussionPostSerializer(post)
         return Response(serializer.data)
 
     def put(self, request, post_id):
