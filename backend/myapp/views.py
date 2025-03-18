@@ -3545,6 +3545,11 @@ class PaymentSearchAPIView(ListAPIView):
 class CreateMessageAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def post(self, request):
         serializer = CommunicationSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
