@@ -140,15 +140,12 @@ class SubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ['id', 'subject_code', 'subject_name', 'is_credit', 'credit_hours', 'is_optional']
 
-
 class ClassSerializer(serializers.ModelSerializer):
-    subjects = serializers.ListField(
-        child=serializers.DictField(),  # Accepts a list of dictionaries for subjects
-        write_only=True
+    subjects = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), many=True, write_only=True
     )
-    optional_subjects = serializers.ListField(
-        child=serializers.DictField(),  # Accepts a list of dictionaries for optional subjects
-        write_only=True, required=False  # Optional field
+    optional_subjects = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), many=True, write_only=True, required=False
     )
 
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
@@ -159,59 +156,31 @@ class ClassSerializer(serializers.ModelSerializer):
         fields = ['id', 'class_code', 'class_name', 'subjects', 'optional_subjects', 'subject_details', 'optional_subject_details']
 
     def create(self, validated_data):
-        subjects_data = validated_data.pop('subjects', [])
-        optional_subjects_data = validated_data.pop('optional_subjects', [])
+        subjects = validated_data.pop('subjects', [])
+        optional_subjects = validated_data.pop('optional_subjects', [])
 
-        # Create the class instance
         class_instance = Class.objects.create(**validated_data)
-
-        # Handle subjects
-        for subject_data in subjects_data:
-            subject, _ = Subject.objects.get_or_create(
-                subject_code=subject_data['subject_code'],
-                defaults={'subject_name': subject_data['subject_name']}
-            )
-            class_instance.subjects.add(subject)
-
-        # Handle optional subjects
-        for optional_subject_data in optional_subjects_data:
-            optional_subject, _ = Subject.objects.get_or_create(
-                subject_code=optional_subject_data['subject_code'],
-                defaults={'subject_name': optional_subject_data['subject_name']}
-            )
-            class_instance.optional_subjects.add(optional_subject)
-
+        class_instance.subjects.set(subjects)
+        class_instance.optional_subjects.set(optional_subjects)
+        
         return class_instance
 
     def update(self, instance, validated_data):
-        subjects_data = validated_data.pop('subjects', None)
-        optional_subjects_data = validated_data.pop('optional_subjects', None)
+        subjects = validated_data.pop('subjects', None)
+        optional_subjects = validated_data.pop('optional_subjects', None)
 
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
 
-        # Update subjects if provided
-        if subjects_data is not None:
-            instance.subjects.clear()
-            for subject_data in subjects_data:
-                subject, _ = Subject.objects.get_or_create(
-                    subject_code=subject_data['subject_code'],
-                    defaults={'subject_name': subject_data['subject_name']}
-                )
-                instance.subjects.add(subject)
-
-        # Update optional subjects if provided
-        if optional_subjects_data is not None:
-            instance.optional_subjects.clear()
-            for optional_subject_data in optional_subjects_data:
-                optional_subject, _ = Subject.objects.get_or_create(
-                    subject_code=optional_subject_data['subject_code'],
-                    defaults={'subject_name': optional_subject_data['subject_name']}
-                )
-                instance.optional_subjects.add(optional_subject)
-
+        if subjects is not None:
+            instance.subjects.set(subjects)
+        
+        if optional_subjects is not None:
+            instance.optional_subjects.set(optional_subjects)
+        
         return instance
+
 
 
 class ClassDetailSerializer(serializers.ModelSerializer):
