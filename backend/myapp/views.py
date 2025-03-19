@@ -3653,6 +3653,23 @@ class CommunicationDetailAPIView(APIView):
         
         # Return 200 OK with the success message
         return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)
+    
+
+class PersonalMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=False)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RoleBasedMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=True)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class FinanceSummaryAPIView(APIView):
     permission_classes = [IsAuthenticated]  # Optional, restrict access
