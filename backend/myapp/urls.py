@@ -111,12 +111,10 @@ urlpatterns = [
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
     path('api/forum/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
-    
     # API endpoints for deleting discussion forums
-    path('api/forum/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
-    path('api/forum/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
+    path('api/forum/posts/<int:post_id>/', DiscussionPostDetailAPIView.as_view(), name='discussion-post-details'),
+    path('api/forum/comments/<int:comment_id>/', DiscussionCommentDetailAPIView.as_view(), name='discussion-comment-details'),
 
- 
      # API endpoints for exams management
     path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),  # Endpoint to list all exams and create new exams.
     path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),  # Endpoint to retrieve, update, or delete a specific exam by its ID (`exam_id`).

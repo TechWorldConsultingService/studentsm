@@ -264,6 +264,7 @@ class DiscussionPost(models.Model):
     content = models.TextField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"Post by {self.created_by.username} in {self.topic}"
@@ -274,6 +275,7 @@ class DiscussionComment(models.Model):
     content = models.TextField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.post.content[:20]}"

@@ -32,3 +32,16 @@
     transform: rotate(360deg);
   }
 }
+
+.sms-custom-dropdown .ant-btn-compact-first-item {
+  display: none;
+}
+.sms-custom-dropdown .ant-btn-compact-last-item:hover {
+  background-color: rgb(218, 217, 217) !important;
+  border-radius: 5px;
+}
+
+.sms-custom-discussion-tree .ant-tree-treenode,
+.sms-custom-discussion-tree .ant-tree-treenode .ant-tree-node-content-wrapper {
+  width: 100% !important;
+}

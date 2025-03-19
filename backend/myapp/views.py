@@ -1736,7 +1736,7 @@ class DiscussionPostAPIView(APIView):
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
-        serializer = DiscussionPostSerializer(posts, many=True)
+        serializer = GetDiscussionPostSerializer(posts, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -1756,7 +1756,7 @@ class DiscussionCommentAPIView(APIView):
     """
     def get(self, request, post_id):
         comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
-        serializer = DiscussionCommentSerializer(comments, many=True)
+        serializer = GetDiscussionCommentSerializer(comments, many=True)
         return Response(serializer.data)
 
     def post(self, request, post_id):
@@ -1767,12 +1767,38 @@ class DiscussionCommentAPIView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class DiscussionPostDeleteAPIView(APIView):
+    
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionPostDetailAPIView(APIView):
     """
-    API View to delete a discussion post.
+    API View to retrieve, update, and delete a discussion post.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionPostSerializer(post)
+        return Response(serializer.data)
+
+    def put(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this post.")
+
+        serializer = DiscussionPostSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, post_id):
         try:
@@ -1782,14 +1808,41 @@ class DiscussionPostDeleteAPIView(APIView):
 
         if post.created_by != request.user:
             raise PermissionDenied("You are not authorized to delete this post.")
+
         post.delete()
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-class DiscussionCommentDeleteAPIView(APIView):
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionCommentDetailAPIView(APIView):
     """
-    API View to delete a discussion comment.
+    API View to retrieve, update, and delete a discussion comment.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionCommentSerializer(comment)
+        return Response(serializer.data)
+
+    def put(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if comment.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this comment.")
+
+        serializer = DiscussionCommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, comment_id):
         try:
@@ -1802,6 +1855,7 @@ class DiscussionCommentDeleteAPIView(APIView):
 
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
     
 @method_decorator(csrf_exempt, name='dispatch')
 class ExamAPIView(APIView):
@@ -3490,6 +3544,11 @@ class PaymentSearchAPIView(ListAPIView):
 # API to create a new message
 class CreateMessageAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = CommunicationSerializer(data=request.data, context={"request": request})

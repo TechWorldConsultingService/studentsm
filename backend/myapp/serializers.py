@@ -55,6 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = (
+            'id',
             'username',
             'email',
             'password',
@@ -813,8 +814,21 @@ class DiscussionPostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscussionPost
-        fields = ['id', 'topic', 'content', 'created_by', 'created_at']
+        fields = ['id', 'topic', 'content', 'created_by', 'created_at', 'updated_at']
 
+class GetDiscussionPostSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DiscussionPost
+        fields = ['id', 'topic', 'content', 'created_by', 'created_at', 'updated_at']
+
+    def get_created_by(self, obj):
+        return {
+            "id": obj.created_by.id,
+            "username": obj.created_by.username,
+            "fullname": f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+        }
 
 class DiscussionCommentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
@@ -822,11 +836,32 @@ class DiscussionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscussionComment
-        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'replies']
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
 
     def get_replies(self, obj):
         replies = DiscussionComment.objects.filter(parent=obj)
         return DiscussionCommentSerializer(replies, many=True).data
+
+class GetDiscussionCommentSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+    post = DiscussionPostSerializer(read_only=True)  # Full post details
+
+    class Meta:
+        model = DiscussionComment
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
+
+    def get_created_by(self, obj):
+        return {
+            "id": obj.created_by.id,
+            "username": obj.created_by.username,
+            "fullname": f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+        }
+
+    def get_replies(self, obj):
+        replies = DiscussionComment.objects.filter(parent=obj)
+        return GetDiscussionCommentSerializer(replies, many=True).data
+
 
 
 class ExamSerializer(serializers.ModelSerializer):
