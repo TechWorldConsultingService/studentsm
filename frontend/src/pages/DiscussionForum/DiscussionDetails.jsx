@@ -196,12 +196,17 @@ export default function DiscussionForumDetails() {
     <MainLayout>
       <div className="bg-purple-50 p-6">
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
-          <Link
-            to="/discussion-forum"
-            className="w-8 h-8 bg-gray-300 hover:bg-slate-300 flex justify-center items-center rounded"
-          >
-            <FaArrowLeftLong />
-          </Link>
+          <div className="flex gap-8">
+            <Link
+              to="/discussion-forum"
+              className="w-8 h-8 bg-gray-300 hover:bg-slate-300 flex justify-center items-center rounded"
+            >
+              <FaArrowLeftLong />
+            </Link>
+            <h1 className="text-3xl font-extrabold text-purple-800">
+              Discussion Forum
+            </h1>
+          </div>
           {discussionFetching ? (
             <div className="mt-6 text-center text-gray-600">Loading...</div>
           ) : (

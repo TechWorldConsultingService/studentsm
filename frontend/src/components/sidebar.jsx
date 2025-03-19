@@ -45,6 +45,8 @@ const Sidebar = () => {
     setOpenSubMenuId(openSubMenuId === id ? null : id);
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
+  const isActiveSidebarOption = link => location.pathname.startsWith(link);
+
   useEffect(() => {
     if (!sidebarData[role]) return;
     sidebarData[role].forEach(item => {
@@ -197,7 +199,7 @@ const Sidebar = () => {
                   className={({ isActive }) => `
                     px-4 py-3 flex items-center gap-2 rounded-md transition-colors
                     ${
-                      isActive
+                      isActive || isActiveSidebarOption(item.link)
                         ? "bg-purple-400 text-white font-semibold"
                         : "hover:bg-purple-300"
                     }
