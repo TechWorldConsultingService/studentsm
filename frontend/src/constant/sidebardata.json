@@ -8,9 +8,9 @@
     },
     {
       "id": 2,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 3,
@@ -26,9 +26,9 @@
     },
     {
       "id": 5,
-      "title": "Task List", 
+      "title": "Task List",
       "icon": "FaTasks",
-      "link": "/tasklist" 
+      "link": "/tasklist"
     },
     {
       "id": 6,
@@ -64,9 +64,9 @@
   "teacher": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 2,
@@ -147,9 +147,9 @@
     },
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 3,
@@ -165,9 +165,9 @@
     },
     {
       "id": 5,
-      "title": "Task List",  
+      "title": "Task List",
       "icon": "FaTasks",
-      "link": "/tasklist" 
+      "link": "/tasklist"
     },
     {
       "id": 6,
@@ -229,9 +229,9 @@
   "accountant": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
 
     {
@@ -244,7 +244,7 @@
       "id": 3,
       "title": "Task List",
       "icon": "FaTasks",
-      "link": "/tasklist"  
+      "link": "/tasklist"
     },
     {
       "id": 4,
@@ -293,9 +293,9 @@
   "master": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
 
     {
