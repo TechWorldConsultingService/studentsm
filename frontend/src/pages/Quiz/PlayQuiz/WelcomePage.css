@@ -1,0 +1,112 @@
+/* Make sure the container takes up the full screen */
+.welcome-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;  /* Full viewport height */
+    background: linear-gradient(to right, #ff8c00, #ff007f, #8a2be2, #32cd32); /* Gradient */
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Container for the quote and text */
+  .quote-container {
+    margin-bottom: 20px;
+    z-index: 10;
+  }
+  
+  /* Quote Text */
+  .quote-text {
+    font-size: 3.5rem;  /* Increased font size */
+    font-weight: bold;
+    animation: fadeIn 2s ease-out;  /* Fade-in animation */
+    font-family: 'Arial', sans-serif;
+  }
+  
+  /* Quote Subtext */
+  .quote-subtext {
+    font-size: 1.8rem;
+    margin-top: 15px;
+    font-family: 'Arial', sans-serif;
+    color: #670606;
+  }
+  
+  /* Start Button Box */
+  .start-button-box {
+    margin-top: 30px;
+    z-index: 10;
+  }
+  
+  .start-button {
+    padding: 20px 50px;
+    font-size: 2rem;  /* Increased button size */
+    background-color: #ff6347; /* Tomato color for button */
+    color: rgb(4, 3, 3);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .start-button:hover {
+    background-color: #73c5eb;  /* Darker shade on hover */
+  }
+  
+  /* Fade-In Animation for Text */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* Icons Section */
+  .icons-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    position: absolute;
+    top: 10%;
+    left: 5%;
+    z-index: 5;
+    opacity: 0.5; /* Slightly faded to keep focus on text */
+  }
+  
+  .icon {
+    font-size: 5rem;  /* Icon size */
+    animation: iconAnimation 5s infinite alternate;  /* Animation for icons */
+  }
+  
+  .book-icon {
+    color: #4133e2;  /* Gold */
+  }
+  
+  .rocket-icon {
+    color: #0b1b21;  /* Sky Blue */
+  }
+  
+  .light-icon {
+    color: #f3f32d;  /* Yellow */
+  }
+  
+  .question-icon {
+    color: #d55633;  /* Lime Green */
+  }
+  
+  /* Icon Animation (Scaling effect) */
+  @keyframes iconAnimation {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }

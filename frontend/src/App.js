@@ -50,10 +50,15 @@ import SubjectSyllabus from "./pages/LMS/subjectSyllabus";
 import ClassSyllabus from "./pages/TMS/syllabus/classSyllabus";
 import TeacherHomeworkDashboard from "./pages/TMS/teacherHomework/TeacherHomeworkDashboard";
 import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
-import QuizComponent from "./pages/Quiz/QuizComponent";
+// import QuizComponent from "./pages/Quiz/QuizComponent";
 import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSubmissionsPage";
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
+
 import AddQuiz from "./pages/Quiz/AddQuiz";
+import WelcomePage from "./pages/Quiz/PlayQuiz/WelcomePage";
+import PlayQuiz from "./pages/Quiz/PlayQuiz/PlayQuiz";
+import Scoreboard from "./pages/Quiz/PlayQuiz/ScoreBoard";
+
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
 import SchoolSettings from "./pages/SchoolSetting";
 import PaymentStatements from "./pages/statements";
@@ -72,7 +77,13 @@ function App() {
     
     { path: "/homepage", element: <HomePage /> },
     { path: "/addquiz", element: <AddQuiz /> },
-    { path: "/playquiz", element: <QuizComponent /> },
+
+    { path: "/welcomequiz", element: <WelcomePage  /> },
+    { path: "/playquiz", element: <PlayQuiz /> },
+    { path: "/welcomequiz", element: <WelcomePage  /> },
+
+
+    
     { path: "/studentdashboard", element: <StudentHomePage /> },
     { path: "/masterdashboard", element: <MasterHomePage /> },
     { path: "/principaldashboard", element: <PrincipalHomePage /> },

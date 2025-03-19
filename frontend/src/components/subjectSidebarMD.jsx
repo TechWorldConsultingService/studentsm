@@ -42,7 +42,7 @@ const SubjectSidebarMD = ({ setToggleSubjectSidebar }) => {
                 }
               >
                 <IoBookOutline className="text-lg" />
-                <span className="ml-3 text-sm">{item.subject_name}</span>
+                <span className="ml-3 text-sm">{item.subject_name}/{item.subject_code}</span>
               </NavLink>
             </div>
           ))
