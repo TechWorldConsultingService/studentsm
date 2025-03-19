@@ -180,6 +180,15 @@
     },
     {
       "id": 7,
+      "title": "Notification",
+      "icon": "IoCalendarOutline",
+      "subSidebar": [
+        { "id": 1, "title": "Message", "link": "/principalAddMessage" },
+        { "id": 2, "title": "Notice", "link": "/principalAddNotice" }
+      ]
+    },
+    {
+      "id": 7,
       "title": "All Leaves",
       "icon": "MdCoPresent",
       "link": "/manage-leaves"

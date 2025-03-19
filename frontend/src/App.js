@@ -59,6 +59,8 @@ import SchoolSettings from "./pages/SchoolSetting";
 import PaymentStatements from "./pages/statements";
 import TaskList from "./pages/TasksMS/TaskList";
 import TodoListPage from "./pages/TasksMS/TodoListPage";
+import PrincipalMessage from "./pages/Notification/PrincipalMessage";
+import PrincipalNotice from "./pages/Notification/PrincipalNotice";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -120,6 +122,8 @@ function App() {
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
     {path:"/myStudent", element: <MyStudentDetails />},
     {path:"/schoolSetting", element: <SchoolSettings />},
+    {path:"/principalAddMessage" , element: <PrincipalMessage />},
+    {path:"/principalAddNotice", element: <PrincipalNotice />},
     {
       path: "/tms/assignments/:assignmentId/submissions",
       element: <AssignmentSubmissionsPage />,
