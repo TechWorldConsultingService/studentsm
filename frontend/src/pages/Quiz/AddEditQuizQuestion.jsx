@@ -7,6 +7,9 @@ import { Checkbox, Modal } from "antd";
 import { useSelector } from "react-redux";
 
 const quizeCategorySchema = Yup.object().shape({
+  quiz: Yup.number()
+    .required("Quiz id is required")
+    .typeError("Quiz id must be a number."),
   question_text: Yup.string()
     .required("Quiz question is required.")
     .typeError("Quiz question must be a string."),
@@ -40,6 +43,7 @@ export default function AddEditQuizQuestion({
 
   const formik = useFormik({
     initialValues: {
+      quiz: addQuizQuestionCategory?.id,
       question_text: addQuizQuestionCategory?.question_text || "",
       option1: addQuizQuestionCategory?.option1 || "",
       option2: addQuizQuestionCategory?.option2 || "",
@@ -58,7 +62,6 @@ export default function AddEditQuizQuestion({
       }
 
       values.correct_answer = values[correctAnswer];
-      return console.log({ values });
 
       try {
         await axios.post("http://localhost:8000/api/questions/", values, {
@@ -86,8 +89,6 @@ export default function AddEditQuizQuestion({
   const handleCorrectAnswer = optionKey => {
     setCorrectAnswer(optionKey);
   };
-
-  console.log({ formik });
 
   return (
     <Modal

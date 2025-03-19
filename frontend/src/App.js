@@ -59,6 +59,8 @@ import SchoolSettings from "./pages/SchoolSetting";
 import PaymentStatements from "./pages/statements";
 import TaskList from "./pages/TasksMS/TaskList";
 import TodoListPage from "./pages/TasksMS/TodoListPage";
+import DiscussionForum from "./pages/DiscussionForum";
+import DiscussionForumDetails from "./pages/DiscussionForum/DiscussionDetails";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -69,7 +71,7 @@ function App() {
     { path: "/", element: <Login /> },
     { path: "/tasklist", element: <TaskList /> },
     { path: "/todo", element: <TodoListPage /> },
-    
+
     { path: "/homepage", element: <HomePage /> },
     { path: "/addquiz", element: <AddQuiz /> },
     { path: "/playquiz", element: <QuizComponent /> },
@@ -118,8 +120,13 @@ function App() {
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
     { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
-    {path:"/myStudent", element: <MyStudentDetails />},
-    {path:"/schoolSetting", element: <SchoolSettings />},
+    { path: "/myStudent", element: <MyStudentDetails /> },
+    { path: "/schoolSetting", element: <SchoolSettings /> },
+    { path: "/discussion-forum", element: <DiscussionForum /> },
+    {
+      path: "/discussion-forum/details/:id",
+      element: <DiscussionForumDetails />,
+    },
     {
       path: "/tms/assignments/:assignmentId/submissions",
       element: <AssignmentSubmissionsPage />,
