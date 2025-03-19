@@ -9,7 +9,9 @@ export default function DeleteQuizCategory({
   quizCategory,
   refreshQuizCategory,
 }) {
-  const { access } = useSelector(state => state.user);
+  const { access } = useSelector((state) => state.user);
+
+  console.log(quizCategory, "quiz category");
 
   const handleDeleteQuizCategory = async () => {
     if (!access) {
@@ -18,7 +20,7 @@ export default function DeleteQuizCategory({
 
     try {
       await axios.delete(
-        `http://localhost:8000/api/quizzes/${quizCategory.id}`,
+        `http://localhost:8000/api/quizzes/${quizCategory.id}/`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -28,6 +30,7 @@ export default function DeleteQuizCategory({
       );
       toast.success("Quize category deleted successfully.");
       refreshQuizCategory();
+      onClose()
     } catch (error) {
       toast.error(
         "Error deleting quiz category: " +

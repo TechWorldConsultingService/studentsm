@@ -59,6 +59,8 @@ import SchoolSettings from "./pages/SchoolSetting";
 import PaymentStatements from "./pages/statements";
 import TaskList from "./pages/TasksMS/TaskList";
 import TodoListPage from "./pages/TasksMS/TodoListPage";
+import PrincipalMessage from "./pages/Notification/PrincipalMessage";
+import PrincipalNotice from "./pages/Notification/PrincipalNotice";
 import DiscussionForum from "./pages/DiscussionForum";
 import DiscussionForumDetails from "./pages/DiscussionForum/DiscussionDetails";
 
@@ -120,6 +122,10 @@ function App() {
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
     { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
     { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
+    {path:"/myStudent", element: <MyStudentDetails />},
+    {path:"/schoolSetting", element: <SchoolSettings />},
+    {path:"/principalAddMessage" , element: <PrincipalMessage />},
+    {path:"/principalAddNotice", element: <PrincipalNotice />},
     { path: "/myStudent", element: <MyStudentDetails /> },
     { path: "/schoolSetting", element: <SchoolSettings /> },
     { path: "/discussion-forum", element: <DiscussionForum /> },
