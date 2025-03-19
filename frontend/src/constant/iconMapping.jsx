@@ -13,7 +13,7 @@ import { LuFileSpreadsheet } from "react-icons/lu";
 import { SlPeople } from "react-icons/sl";
 import { IoMdPersonAdd } from "react-icons/io";
 import { FaFileInvoiceDollar } from "react-icons/fa";
-import { MdReceiptLong } from "react-icons/md";
+import { MdReceiptLong, MdForum } from "react-icons/md";
 import { FaTasks } from "react-icons/fa";
 
 const iconMapping = {
@@ -33,6 +33,7 @@ const iconMapping = {
   MdOutlineManageHistory,
   MdReceiptLong,
   FaTasks,
+  MdForum,
 };
 
 export default iconMapping;
