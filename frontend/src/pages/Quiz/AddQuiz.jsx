@@ -175,6 +175,8 @@ export default function AddQuiz() {
       <DeleteQuizCategory
         onClose={closeQuizzesModal}
         quizCategory={quizCategoryToDelete}
+        refreshQuizCategory={fetchQuizCategories}
+
       />
     </MainLayout>
   );

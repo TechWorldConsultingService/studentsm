@@ -103,6 +103,7 @@ export default function PaymentStatements() {
                         <th className="px-4 py-2 text-left">Student</th>
                         <th className="px-4 py-2 text-left">Paid Amount</th>
                         <th className="px-4 py-2 text-left">Paid Date</th>
+                        <th className="px-4 py-2 text-left">Received</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -118,7 +119,9 @@ export default function PaymentStatements() {
                             {payment.payment_amount}
                           </td>
                           <td className="px-4 py-2">{payment.payment_date}</td>
+                          <td className="px-4 py-2">{payment.created_by}</td>
                         </tr>
+                        
                       ))}
                     </tbody>
                   </table>

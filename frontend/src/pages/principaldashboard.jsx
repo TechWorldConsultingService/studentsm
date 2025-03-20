@@ -48,6 +48,15 @@ const staffDistributionData = [
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7f50"];
 
+// Quick Stats
+// const statsData = [
+//   { label: "Total Students", value: 1200 },
+//   { label: "Total Teachers", value: 45 },
+//   { label: "Total Subject", value: 30 },
+//   { label: "Total Class", value: 5 },
+//   { label: "pending_leaves", value: 2 },
+// ];
+
 const quickActions = [
   {
     title: "Manage Teachers",

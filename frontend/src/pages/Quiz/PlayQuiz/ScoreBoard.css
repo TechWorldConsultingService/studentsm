@@ -1,0 +1,59 @@
+.scoreboard-container {
+    text-align: center;
+    background: linear-gradient(to right, #ff9a9e, #fad0c4);
+    padding: 20px;
+    border-radius: 15px;
+    width: 80%;
+    min-height: 100vh;
+    margin: auto;
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.2);
+    font-family: "Poppins", sans-serif;
+    align-items: center;
+  justify-content: center;
+  }
+  
+  .scoreboard-title {
+    font-size: 30px;
+    font-weight: bold;
+    color: #ffffff;
+    background: #ff758c;
+    padding: 10px;
+    border-radius: 10px;
+    display: inline-block;
+  }
+  
+  .scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  
+  .scoreboard-table th {
+    background: linear-gradient(to right, #ff758c, #ff7eb3);
+    color: white;
+    font-size: 18px;
+    padding: 12px;
+    text-transform: uppercase;
+  }
+  
+  .scoreboard-table td {
+    padding: 12px;
+    font-size: 16px;
+    border-bottom: 2px solid #ddd;
+  }
+  
+  .scoreboard-table tr:nth-child(odd) {
+    background: #ffe0e5;
+  }
+  
+  .scoreboard-table tr:nth-child(even) {
+    background: #fff5f8;
+  }
+  
+  .scoreboard-table tr:hover {
+    background: #ffdde1;
+    transition: 0.3s ease-in-out;
+  }

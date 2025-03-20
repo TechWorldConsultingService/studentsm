@@ -345,6 +345,6 @@ class StudentTransactionAdmin(admin.ModelAdmin):
 # Communication admin customization
 @admin.register(Communication)
 class CommunicationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'class_field', 'sent_at')
+    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'sent_at')
     search_fields = ('sender__username', 'receiver__username', 'receiver_role')
-    list_filter = ('receiver_role', 'class_field', 'sent_at')
+    list_filter = ('receiver_role', 'sent_at')
