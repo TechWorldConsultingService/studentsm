@@ -1053,17 +1053,6 @@ class GetStudentResultSerializer(DateFormatMixin, serializers.ModelSerializer):
         }
 
 
-from .models import Message
-class MessageSerializer(serializers.ModelSerializer):
-    sender_username = serializers.CharField(source='sender.username', read_only=True)
-    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
-
-    class Meta:
-        model = Message
-        fields = ['id', 'sender', 'receiver', 'content', 'timestamp', 'is_read', 'sender_username', 'receiver_username']
-
-
-
 class NotesSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')  # Show teacher's username
     class_code = serializers.SerializerMethodField()  # Auto-fetch class name
@@ -1495,7 +1484,7 @@ class StudentTransactionSerializer(DateFormatMixin, serializers.ModelSerializer)
 class CommunicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Communication
-        fields = ["id", "sender", "receiver", "message","class_field", "receiver_role", "sent_at"]
+        fields = ["id", "sender", "receiver", "subject", "message", "class_field", "receiver_role", "sent_at"]
         read_only_fields = ["id", "sender", "sent_at"]
 
     def validate(self, data):
@@ -1517,15 +1506,17 @@ class CommunicationSerializer(serializers.ModelSerializer):
         validated_data["sender"] = self.context["request"].user
         return super().create(validated_data)
 
-class GetCommunicationSerializer(DateFormatMixin, serializers.ModelSerializer):
+
+class GetCommunicationSerializer(serializers.ModelSerializer):
     """Serializer to get full details of sender & receiver instead of just IDs"""
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True, allow_null=True)
-    class_field = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True)
-    
+    class_field = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+
     class Meta:
         model = Communication
-        fields = '__all__'  # Includes sender & receiver as full objects
+        fields = ["id", "sender", "receiver", "subject", "message", "class_field", "receiver_role", "sent_at"]
+
 
 
 class FinanceSummarySerializer(serializers.Serializer):

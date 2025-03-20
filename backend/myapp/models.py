@@ -573,6 +573,7 @@ class StudentTransaction(models.Model):
 class Communication(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_communications")
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="received_communications")
+    subject = models.CharField(max_length=255, null=True, blank=True)  
     message = models.TextField()
     receiver_role = models.CharField(max_length=255, choices=(
         ('teacher', 'Teacher'),
@@ -583,8 +584,8 @@ class Communication(models.Model):
         ('student_accountant', 'Student and Accountant'),
         ('all', 'All'),),null=True,blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
-    class_field = models.ForeignKey('Class', null=True, blank=True, on_delete=models.SET_NULL, related_name="communications")
-
+    class_field = models.ManyToManyField('Class', blank=True, related_name="communications")
+    
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username if self.receiver else self.receiver_role}"
 
