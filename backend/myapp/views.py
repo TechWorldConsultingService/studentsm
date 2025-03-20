@@ -2569,21 +2569,6 @@ class StudentRankingView(APIView):
             )
 
 
-class MessageListView(generics.ListAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
-
-class SendMessageView(generics.CreateAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class NotesCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
@@ -3583,30 +3568,30 @@ class RoleBasedMessagesAPIView(APIView):
         role_filters = []
         messages = Communication.objects.none()
 
-        # Logic for Teachers
+        # Role-based filters
         if user.is_teacher:
             role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
-
-        # Logic for Accountants
         if user.is_accountant:
             role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
 
         # Fetch general role-based messages
         messages = Communication.objects.filter(receiver_role__in=role_filters)
 
-        # Additional logic for Students
+        # Student-specific message filtering
         if user.is_student:
             student_instance = getattr(user, 'student', None)
             if student_instance:
-                student_class = student_instance.class_code
+                user_classes = student_instance.class_code.all()  # ✅ Fetch student's multiple classes
+
                 student_messages = Communication.objects.filter(
                     receiver_role__in=["student", "teacher_student", "student_accountant", "all"]
                 ).filter(
-                    Q(class_field__isnull=True) | Q(class_field=student_class)
+                    Q(class_field__isnull=True) | Q(class_field__in=user_classes)  # ✅ Check if student belongs to any of the message's classes
                 )
+
                 messages = messages.union(student_messages)
 
-        # Serialize the messages and send the response
+        # Serialize messages and send response
         serializer = GetCommunicationSerializer(messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
