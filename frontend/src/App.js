@@ -82,7 +82,6 @@ function App() {
 
     { path: "/welcomequiz", element: <WelcomePage  /> },
     { path: "/playquiz", element: <PlayQuiz /> },
-    { path: "/welcomequiz", element: <WelcomePage  /> },
 
 
     
