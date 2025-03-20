@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
 // Validation schema for editing subject
@@ -27,7 +27,7 @@ export const editSubjectSchema = Yup.object().shape({
 
 const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
   const { access } = useSelector((state) => state.user);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const formik = useFormik({
     initialValues: {

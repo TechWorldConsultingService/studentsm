@@ -3,11 +3,11 @@ import MainLayout from "../../layout/MainLayout";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 const ExamTeacher = () => {
   const { access, id: teacherId } = useSelector((state) => state.user);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // State variables
   const [exams, setExams] = useState([]);

@@ -86,10 +86,10 @@ const AddExamDetailsByPrincipal = () => {
     setIsViewModalOpen(true); 
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedDetail(null);
-  };
+  // const closeModal = () => {
+  //   setIsModalOpen(false);
+  //   setSelectedDetail(null);
+  // };
 
   // Handle delete functionality
   const handleDeleteDetail = async () => {
