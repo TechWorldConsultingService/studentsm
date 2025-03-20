@@ -77,7 +77,7 @@ const TeacherHomeworkDashboard = lazy(() =>
   import("./pages/TMS/teacherHomework/TeacherHomeworkDashboard")
 );
 const ClassNotes = lazy(() => import("./pages/TMS/teacherNotes/classNotes"));
-const QuizComponent = lazy(() => import("./pages/Quiz/QuizComponent"));
+const QuizComponent = lazy(() => import("./pages/Quiz/PlayQuiz/PlayQuiz"));
 const AssignmentSubmissionsPage = lazy(() =>
   import("./pages/TMS/teacherHomework/AssignmentSubmissionsPage")
 );
@@ -119,7 +119,7 @@ function App() {
 
     { path: "/homepage", element: LazyRoute(HomePage) },
     { path: "/addquiz", element: LazyRoute(AddQuiz) },
-    { path: "/playquiz", element: LazyRoute(QuizComponent) },
+    { path: "/welcomequiz", element: LazyRoute(QuizComponent) },
     { path: "/studentdashboard", element: LazyRoute(StudentHomePage) },
     { path: "/masterdashboard", element: LazyRoute(MasterHomePage) },
     { path: "/principaldashboard", element: LazyRoute(PrincipalHomePage) },
