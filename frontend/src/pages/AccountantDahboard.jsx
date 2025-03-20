@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";  
+import axios from "axios";
 import { useSelector } from "react-redux";
 
 import MainLayout from "../layout/MainLayout";
@@ -48,15 +48,6 @@ const feeBreakdownData = [
 ];
 
 const COLORS = ["#2B6CB0", "#2C7A7B", "#9B2C2C", "#718096"];
-
-// Quick Stats for Accountant Dashboard
-const statsData = [
-  { label: "Total Fees Collected", value: "$280,000" },
-  { label: "Total Outstanding", value: "$18,000" },
-  { label: "Transactions", value: 1500 },
-  { label: "Refunds Processed", value: 45 },
-  { label: "Pending Refunds", value: 5 },
-];
 
 // Financial Tools / Quick Actions
 const quickActions = [
@@ -125,12 +116,15 @@ const AccountantDashboard = () => {
   useEffect(() => {
     const fetchFinanceSummary = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/finance-summary/", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`,
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:8000/api/finance-summary/",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
         setFinanceData(response.data);
         setLoading(false);
       } catch (err) {
@@ -145,7 +139,11 @@ const AccountantDashboard = () => {
 
   // Loading state
   if (loading) {
-    return <div className="p-6 text-center text-gray-700">Loading financial data...</div>;
+    return (
+      <div className="p-6 text-center text-gray-700">
+        Loading financial data...
+      </div>
+    );
   }
 
   // Error state
@@ -162,8 +160,8 @@ const AccountantDashboard = () => {
             Welcome, Accountant!
           </h1>
           <p className="text-gray-600">
-            Your financial dashboard provides a snapshot of the school's revenue,
-            dues, and transactions.
+            Your financial dashboard provides a snapshot of the school's
+            revenue, dues, and transactions.
           </p>
         </div>
 
@@ -185,17 +183,23 @@ const AccountantDashboard = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Total Fees Collected</span>
-            <span className="text-2xl font-bold text-blue-700">Rs. {financeData?.total_fees_collected}</span>
+            <span className="text-2xl font-bold text-blue-700">
+              Rs. {financeData?.total_fees_collected}
+            </span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Total Outstanding</span>
-            <span className="text-2xl font-bold text-red-700">Rs. {financeData?.total_outstanding_amount}</span>
+            <span className="text-2xl font-bold text-red-700">
+              Rs. {financeData?.total_outstanding_amount}
+            </span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
             <span className="text-sm text-gray-500">Transactions</span>
-            <span className="text-2xl font-bold text-blue-700">{financeData?.total_transaction_count}</span>
+            <span className="text-2xl font-bold text-blue-700">
+              {financeData?.total_transaction_count}
+            </span>
           </div>
 
           <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center border-t-2 border-blue-600">
@@ -322,10 +326,7 @@ const AccountantDashboard = () => {
                 </thead>
                 <tbody>
                   {financialActivities.map((activity) => (
-                    <tr
-                      key={activity.id}
-                      className="border-b hover:bg-gray-50"
-                    >
+                    <tr key={activity.id} className="border-b hover:bg-gray-50">
                       <td className="p-3">{activity.title}</td>
                       <td className="p-3">{activity.date}</td>
                       <td className="p-3">{activity.description}</td>

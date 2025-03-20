@@ -1,8 +1,8 @@
-import React , { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import { useSelector } from "react-redux";
-import axios from "axios"; 
-import { Link } from 'react-router-dom';
+import axios from "axios";
+import { Link } from "react-router-dom";
 
 import {
   BarChart,
@@ -17,7 +17,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
 
 // Sample Data
@@ -122,12 +122,15 @@ const PrincipalHomePage = () => {
   useEffect(() => {
     const fetchPrincipalDashboardSummary = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/dashboard-stats/", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`,
-          },
-        });
+        const response = await axios.get(
+          "http://localhost:8000/api/dashboard-stats/",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
         setDashboardData(response.data);
         setLoading(false);
       } catch (err) {
@@ -158,52 +161,56 @@ const PrincipalHomePage = () => {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            
-            <Link 
-              to={`/studentList`}
-              className="text-purple-700  hover:no-underline">
-              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center group-hover:bg-gray-200">
-                <span className="text-sm text-gray-500">Total Students</span>
-                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_students}</span>
-              </div>
-            </Link>
+          <Link
+            to={`/studentList`}
+            className="text-purple-700  hover:no-underline"
+          >
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center group-hover:bg-gray-200">
+              <span className="text-sm text-gray-500">Total Students</span>
+              <span className="text-2xl font-bold text-purple-700">
+                {dashboardData?.total_students}
+              </span>
+            </div>
+          </Link>
 
-            <Link 
-              to={`/teacherList`}
-              className="text-purple-700 hover:underline">
+          <Link to={`/teacherList`} className="text-purple-700 hover:underline">
             <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
               <span className="text-sm text-gray-500">Total Teachers</span>
-              <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_teachers}</span>
+              <span className="text-2xl font-bold text-purple-700">
+                {dashboardData?.total_teachers}
+              </span>
             </div>
-            </Link>
+          </Link>
 
-            <Link 
-              to={`/subjectList`}
-              className="text-purple-700 hover:underline">
-              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-                <span className="text-sm text-gray-500">Total Subjects</span>
-                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_subjects}</span>
-              </div>
-            </Link>
+          <Link to={`/subjectList`} className="text-purple-700 hover:underline">
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Subjects</span>
+              <span className="text-2xl font-bold text-purple-700">
+                {dashboardData?.total_subjects}
+              </span>
+            </div>
+          </Link>
 
-            <Link 
-              to={`/classList`}
-              className="text-purple-700 hover:underline">
-              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-                <span className="text-sm text-gray-500">Total Classes</span>
-                <span className="text-2xl font-bold text-purple-700">{dashboardData?.total_classes}</span>
-              </div>  
-            </Link>
+          <Link to={`/classList`} className="text-purple-700 hover:underline">
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Total Classes</span>
+              <span className="text-2xl font-bold text-purple-700">
+                {dashboardData?.total_classes}
+              </span>
+            </div>
+          </Link>
 
-            <Link 
-              to={`/manage-leaves`}
-              className="text-purple-700 hover:underline">
-              <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
-                <span className="text-sm text-gray-500">Pending Leaves</span>
-                <span className="text-2xl font-bold text-purple-700">{dashboardData?.pending_leaves}</span>
-              </div>
-            </Link>
-           
+          <Link
+            to={`/manage-leaves`}
+            className="text-purple-700 hover:underline"
+          >
+            <div className="bg-white shadow rounded-lg p-4 flex flex-col items-center justify-center">
+              <span className="text-sm text-gray-500">Pending Leaves</span>
+              <span className="text-2xl font-bold text-purple-700">
+                {dashboardData?.pending_leaves}
+              </span>
+            </div>
+          </Link>
         </div>
 
         {/* Charts Container */}
@@ -266,7 +273,10 @@ const PrincipalHomePage = () => {
                   label
                 >
                   {staffDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -288,7 +298,9 @@ const PrincipalHomePage = () => {
                 className="bg-purple-50 hover:bg-purple-100 cursor-pointer border border-purple-100 rounded-lg p-4 text-center transition-all"
               >
                 <p className="font-bold text-purple-700">{action.title}</p>
-                <p className="text-sm text-gray-600 mt-1">{action.description}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {action.description}
+                </p>
               </div>
             ))}
           </div>

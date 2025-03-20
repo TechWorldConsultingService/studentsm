@@ -247,7 +247,9 @@ const ExamTeacher = () => {
 
           {/* Exam Selection */}
           <div className="mt-6">
-            <h2 className="text-xl font-semibold text-purple-700">Select Exam</h2>
+            <h2 className="text-xl font-semibold text-purple-700">
+              Select Exam
+            </h2>
             <select
               className="mt-2 w-full border border-purple-300 rounded-lg px-4 py-2 shadow-sm focus:ring-2 focus:ring-purple-300"
               onChange={(e) => handleExamSelect(e.target.value)}
@@ -370,9 +372,11 @@ const ExamTeacher = () => {
                           {/* Theory Marks */}
                           <td className="px-6 py-4">
                             {viewMode ? (
-                              result?.theory_marks !== null
-                                ? result?.theory_marks
-                                : "-"
+                              result?.theory_marks !== null ? (
+                                result?.theory_marks
+                              ) : (
+                                "-"
+                              )
                             ) : (
                               <input
                                 type="number"
@@ -398,9 +402,11 @@ const ExamTeacher = () => {
                           {/* Practical Marks */}
                           <td className="px-6 py-4">
                             {viewMode ? (
-                              result?.practical_marks !== null
-                                ? result?.practical_marks
-                                : "-"
+                              result?.practical_marks !== null ? (
+                                result?.practical_marks
+                              ) : (
+                                "-"
+                              )
                             ) : (
                               <input
                                 type="number"

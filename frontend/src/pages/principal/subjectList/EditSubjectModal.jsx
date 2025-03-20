@@ -71,7 +71,9 @@ const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-11/12 md:w-1/2">
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">Edit Subject</h2>
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">
+          Edit Subject
+        </h2>
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           {/* Subject Code */}
           <div>
@@ -139,13 +141,15 @@ const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
-              <div className="w-11 h-6 bg-gray-300 rounded-full
+              <div
+                className="w-11 h-6 bg-gray-300 rounded-full
                 peer-focus:ring-4 peer-focus:ring-purple-700 dark:peer-focus:ring-purple-800 
                 peer-checked:bg-purple-700 
                 peer-checked:after:translate-x-full 
                 after:content-[''] after:absolute after:top-0.5 after:left-[2px] 
                 after:bg-white after:border-gray-300 after:border after:rounded-full 
-                after:h-5 after:w-5 after:transition-all" />
+                after:h-5 after:w-5 after:transition-all"
+              />
             </label>
           </div>
           {formik.touched.is_credit && formik.errors.is_credit && (
@@ -198,13 +202,15 @@ const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
               />
-              <div className="w-11 h-6 bg-gray-300 rounded-full
+              <div
+                className="w-11 h-6 bg-gray-300 rounded-full
                 peer-focus:ring-4 peer-focus:ring-purple-700 dark:peer-focus:ring-purple-800 
                 peer-checked:bg-purple-700 
                 peer-checked:after:translate-x-full 
                 after:content-[''] after:absolute after:top-0.5 after:left-[2px] 
                 after:bg-white after:border-gray-300 after:border after:rounded-full 
-                after:h-5 after:w-5 after:transition-all" />
+                after:h-5 after:w-5 after:transition-all"
+              />
             </label>
           </div>
           {formik.touched.is_optional && formik.errors.is_optional && (

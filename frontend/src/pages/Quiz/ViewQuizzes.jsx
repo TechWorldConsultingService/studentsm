@@ -5,11 +5,9 @@ import { Divider, List, Modal } from "antd";
 import React, { useEffect, useState } from "react";
 
 export default function ViewQuizzes({ selectedQuizCategory, onClose }) {
-  const { access } = useSelector(state => state.user);
+  const { access } = useSelector((state) => state.user);
 
-  console.log({ selectedQuizCategory });
-
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [quizList, setQuizList] = useState([]);
 
   useEffect(() => {
@@ -49,8 +47,6 @@ export default function ViewQuizzes({ selectedQuizCategory, onClose }) {
     }
   }, [selectedQuizCategory]);
 
-  console.log({ quizList });
-
   return (
     <Modal
       centered
@@ -64,8 +60,8 @@ export default function ViewQuizzes({ selectedQuizCategory, onClose }) {
         </h2>
       }
     >
-      {quizList.map(quiz => (
-        <>
+      {quizList.map((quiz) => (
+        <div key={quiz.id}>
           <List
             size="small"
             header={<div className="font-bold">{quiz.question_text}</div>}
@@ -77,7 +73,7 @@ export default function ViewQuizzes({ selectedQuizCategory, onClose }) {
               quiz.option3,
               quiz.option4,
             ]}
-            renderItem={item => (
+            renderItem={(item) => (
               <List.Item
                 className={
                   item === quiz.correct_answer
@@ -90,7 +86,7 @@ export default function ViewQuizzes({ selectedQuizCategory, onClose }) {
             )}
           />
           <Divider orientation="left"></Divider>
-        </>
+        </div>
       ))}
     </Modal>
   );
