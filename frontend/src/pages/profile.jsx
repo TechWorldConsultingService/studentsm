@@ -1,6 +1,6 @@
-import React from 'react';
-import MainLayout from '../layout/MainLayout';
-import { useSelector } from 'react-redux';
+import React from "react";
+import MainLayout from "../layout/MainLayout";
+import { useSelector } from "react-redux";
 
 const Profile = () => {
   // Retrieve user data from Redux store
@@ -8,7 +8,7 @@ const Profile = () => {
   const {
     first_name,
     last_name,
-    role = '',
+    role = "",
     email,
     phone,
     address,
@@ -20,13 +20,12 @@ const Profile = () => {
     classes,
     subjects,
     gender,
-    profilePicture,
   } = user;
 
   const userRole = role.toLowerCase();
 
   const capitalize = (str) =>
-    !str ? '' : str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    !str ? "" : str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
   const hasSubjects = Array.isArray(subjects) && subjects.length > 0;
   const hasClasses = Array.isArray(classes) && classes.length > 0;
@@ -50,9 +49,7 @@ const Profile = () => {
               <h2 className="text-3xl font-bold text-gray-800">
                 {capitalize(first_name)} {capitalize(last_name)}
               </h2>
-              <p className="text-gray-600 text-lg">
-                {capitalize(userRole)}
-              </p>
+              <p className="text-gray-600 text-lg">{capitalize(userRole)}</p>
             </div>
           </div>
 
@@ -65,45 +62,45 @@ const Profile = () => {
               </h3>
               <ul className="space-y-3 text-gray-700">
                 <li>
-                  <span className="font-semibold">Email:</span> {email || '—'}
+                  <span className="font-semibold">Email:</span> {email || "—"}
                 </li>
                 <li>
-                  <span className="font-semibold">Phone:</span> {phone || '—'}
+                  <span className="font-semibold">Phone:</span> {phone || "—"}
                 </li>
                 <li>
-                  <span className="font-semibold">Gender:</span> {gender || '—'}
+                  <span className="font-semibold">Gender:</span> {gender || "—"}
                 </li>
                 <li>
-                  <span className="font-semibold">Address:</span>{' '}
-                  {address || '—'}
+                  <span className="font-semibold">Address:</span>{" "}
+                  {address || "—"}
                 </li>
 
                 {/* Conditional fields by role */}
-                {userRole === 'student' && (
+                {userRole === "student" && (
                   <>
                     <li>
-                      <span className="font-semibold">Date of Birth:</span>{' '}
-                      {date_of_birth || '—'}
+                      <span className="font-semibold">Date of Birth:</span>{" "}
+                      {date_of_birth || "—"}
                     </li>
                     <li>
-                      <span className="font-semibold">Parents/Guardian:</span>{' '}
-                      {parents || '—'}
+                      <span className="font-semibold">Parents/Guardian:</span>{" "}
+                      {parents || "—"}
                     </li>
                   </>
                 )}
 
-                {userRole === 'teacher' && (
+                {userRole === "teacher" && (
                   <>
                     <li>
-                      <span className="font-semibold">Date of Joining:</span>{' '}
-                      {date_of_joining || '—'}
+                      <span className="font-semibold">Date of Joining:</span>{" "}
+                      {date_of_joining || "—"}
                     </li>
                   </>
                 )}
 
-                {(userRole === 'principal' ||
-                  userRole === 'admin' ||
-                  userRole === 'accountant') && (
+                {(userRole === "principal" ||
+                  userRole === "admin" ||
+                  userRole === "accountant") && (
                   <>
                     {/* Add any specific fields for principal/admin/accountant
                         if needed, such as date_of_hire, etc. */}
@@ -115,25 +112,26 @@ const Profile = () => {
             {/* Academic / Role-Specific Information */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition duration-200">
               <h3 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-                {userRole === 'student' || userRole === 'teacher'
-                  ? 'Academic Information'
-                  : 'Profile Details'}
+                {userRole === "student" || userRole === "teacher"
+                  ? "Academic Information"
+                  : "Profile Details"}
               </h3>
               <ul className="space-y-3 text-gray-700">
                 <li>
-                  <span className="font-semibold">Username:</span> {username || '—'}
+                  <span className="font-semibold">Username:</span>{" "}
+                  {username || "—"}
                 </li>
 
                 {/* Student-specific info */}
-                {userRole === 'student' && studentClass && (
+                {userRole === "student" && studentClass && (
                   <li>
-                    <span className="font-semibold">Class:</span>{' '}
+                    <span className="font-semibold">Class:</span>{" "}
                     {`${studentClass.class_name} (Code: ${studentClass.class_code})`}
                   </li>
                 )}
 
                 {/* Teacher-specific info: classes, etc. */}
-                {userRole === 'teacher' && hasClasses && (
+                {userRole === "teacher" && hasClasses && (
                   <li>
                     <span className="font-semibold">Assigned Classes:</span>
                     <div className="mt-1 ml-4 text-sm">
@@ -147,12 +145,10 @@ const Profile = () => {
                 )}
 
                 {/* Principal/Admin/Accountant can have additional fields if necessary */}
-                {(userRole === 'principal' ||
-                  userRole === 'admin' ||
-                  userRole === 'accountant') && (
-                  <>
-                    {/* Placeholder for role-specific info */}
-                  </>
+                {(userRole === "principal" ||
+                  userRole === "admin" ||
+                  userRole === "accountant") && (
+                  <>{/* Placeholder for role-specific info */}</>
                 )}
               </ul>
             </div>
@@ -162,7 +158,7 @@ const Profile = () => {
           {hasSubjects && (
             <div className="bg-white mt-6 p-6 rounded-lg shadow hover:shadow-lg transition duration-200">
               <h3 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-                {userRole === 'teacher' ? 'Subjects You Teach' : 'Subjects'}
+                {userRole === "teacher" ? "Subjects You Teach" : "Subjects"}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {subjects.map((subject) => (

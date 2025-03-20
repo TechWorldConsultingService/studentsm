@@ -13,12 +13,17 @@ import { setSelectedClass } from "../../../redux/reducerSlices/userSlice";
 const ClassNotes = () => {
   const { className } = useParams();
   const dispatch = useDispatch();
-  const { access, id: teacher_id, selectedClassName, selectedClassID } = useSelector(
-    (state) => state.user
-  );
+  const {
+    access,
+    id: teacher_id,
+    selectedClassName,
+  } = useSelector((state) => state.user);
 
   useEffect(() => {
-    if (className && className.toLowerCase() !== selectedClassName.toLowerCase()) {
+    if (
+      className &&
+      className.toLowerCase() !== selectedClassName.toLowerCase()
+    ) {
       dispatch(setSelectedClass(className));
     }
   }, [className, selectedClassName, dispatch]);
@@ -81,7 +86,7 @@ const ClassNotes = () => {
   };
 
   useEffect(() => {
-    if (selectedSubjectId ) {
+    if (selectedSubjectId) {
       fetchNotesList();
     }
   }, [selectedSubjectId]);
@@ -139,9 +144,7 @@ const ClassNotes = () => {
                   {noteList?.notes?.map((item) => (
                     <tr key={item.id} className="border-b hover:bg-gray-100">
                       <td className="px-6 py-4">
-                        {new Date(item.created_at)
-                          .toISOString()
-                          .split("T")[0]}
+                        {new Date(item.created_at).toISOString().split("T")[0]}
                       </td>
                       <td className="px-6 py-4">{item.chapter}</td>
                       <td className="px-6 py-4">{item.title}</td>
@@ -194,7 +197,10 @@ const ClassNotes = () => {
           />
         )}
         {showViewModal && selectedTip && (
-          <ViewNotesModal tip={selectedTip} onClose={() => setShowViewModal(false)} />
+          <ViewNotesModal
+            tip={selectedTip}
+            onClose={() => setShowViewModal(false)}
+          />
         )}
         {showEditModal && selectedTip && (
           <EditNotesModal

@@ -54,7 +54,6 @@ export default function PaymentStatements() {
   }, []);
 
   const handleDateChange = ({ from, to }) => {
-    console.log({ from, to });
     if (from && to) {
       queryRef.current = `start_date=${from}&end_date=${to}`;
     } else {

@@ -3,7 +3,6 @@ import { useFormik } from "formik";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import Password from "antd/es/input/Password";
 import * as Yup from "yup";
 import { NepaliDatePicker } from "nepali-datepicker-reactjs";
@@ -11,7 +10,6 @@ import "nepali-datepicker-reactjs/dist/index.css";
 
 const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
   const { access, is_ad } = useSelector((state) => state.user);
-  const navigate = useNavigate();
   const [classList, setClassList] = useState([]);
   const [sectionsList, setSectionsList] = useState([]);
   const [optionalSubjects, setOptionalSubjects] = useState([]);
@@ -46,8 +44,7 @@ const EditStudentModal = ({ handleCloseModal, fetchStudents, studentInfo }) => {
       address: Yup.string()
         .min(5, "Address must be at least 5 characters long.")
         .max(50, "Address can't exceed 50 characters."),
-        date_of_birth: Yup.date()
-        .required("Date of birth is required."),
+      date_of_birth: Yup.date().required("Date of birth is required."),
       parents: Yup.string()
         .min(2, "Parent's name must be at least 2 characters long.")
         .max(25, "Parent's name can't exceed 25 characters."),

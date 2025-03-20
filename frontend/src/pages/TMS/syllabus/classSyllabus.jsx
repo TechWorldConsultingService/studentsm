@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -8,7 +7,7 @@ import toast from "react-hot-toast";
 import ClassLayout from "../../../layout/ClassLayout";
 import Spinner from "../../../components/Spinner";
 import CheckIcon from "../../../components/CheckIcon";
-import SyllabusModal from "./SyllabusModal"; 
+import SyllabusModal from "./SyllabusModal";
 import DeleteSyllabusModal from "./DeleteSyllabusModal";
 
 // A simple message card
@@ -25,7 +24,11 @@ const MessageCard = ({ title, message, onRetry, variant = "error" }) => {
           strokeWidth="2"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </div>
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
@@ -43,10 +46,11 @@ const MessageCard = ({ title, message, onRetry, variant = "error" }) => {
 };
 
 const ClassSyllabus = () => {
-  const navigate = useNavigate();
-  const { access, id: teacher_id, selectedClassName } = useSelector(
-    (state) => state.user
-  );
+  const {
+    access,
+    id: teacher_id,
+    selectedClassName,
+  } = useSelector((state) => state.user);
 
   // -- State --
   const [subjectList, setSubjectList] = useState([]);
@@ -61,7 +65,8 @@ const ClassSyllabus = () => {
   const [selectedSyllabusForEdit, setSelectedSyllabusForEdit] = useState(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedSyllabusForDelete, setSelectedSyllabusForDelete] = useState(null);
+  const [selectedSyllabusForDelete, setSelectedSyllabusForDelete] =
+    useState(null);
 
   // ========== Fetch Subjects ==========
   useEffect(() => {
@@ -106,7 +111,7 @@ const ClassSyllabus = () => {
 
       // If we get a valid array, we store it
       setSyllabusData(response.data || []);
-      
+
       // If the data array is empty, we’ll consider that “No Syllabus Found”
       if (!response.data || response.data.length === 0) {
         setNoSyllabusFound(true);
@@ -154,7 +159,13 @@ const ClassSyllabus = () => {
     }
   };
 
-  const buildPatchData = (updatedData, syllabusId, chapterId, topicId, subtopicId) => {
+  const buildPatchData = (
+    updatedData,
+    syllabusId,
+    chapterId,
+    topicId,
+    subtopicId
+  ) => {
     const foundSyllabus = updatedData.find((s) => s.id === syllabusId);
     if (!foundSyllabus) return { chapters: [] };
 
@@ -182,7 +193,9 @@ const ClassSyllabus = () => {
       };
 
       if (subtopicId !== null) {
-        const foundSubtopic = foundTopic.subtopics.find((sub) => sub.id === subtopicId);
+        const foundSubtopic = foundTopic.subtopics.find(
+          (sub) => sub.id === subtopicId
+        );
         if (foundSubtopic) {
           topicObj.subtopics.push({
             id: subtopicId,
@@ -196,7 +209,12 @@ const ClassSyllabus = () => {
     return patchData;
   };
 
-  const toggleCompletion = (syllabusId, chapterId, topicId = null, subtopicId = null) => {
+  const toggleCompletion = (
+    syllabusId,
+    chapterId,
+    topicId = null,
+    subtopicId = null
+  ) => {
     setSyllabusData((prevData) => {
       const updatedData = prevData.map((syllabus) => {
         if (syllabus.id === syllabusId) {
@@ -212,7 +230,9 @@ const ClassSyllabus = () => {
                       }
                       return sub;
                     });
-                    const allSubtopicsDone = updatedSubtopics.every((s) => s.is_completed);
+                    const allSubtopicsDone = updatedSubtopics.every(
+                      (s) => s.is_completed
+                    );
                     return {
                       ...topic,
                       subtopics: updatedSubtopics,
@@ -229,7 +249,11 @@ const ClassSyllabus = () => {
 
               // If all topics done, mark chapter as complete
               const allTopicsDone = updatedTopics.every((t) => t.is_completed);
-              return { ...chapter, topics: updatedTopics, is_completed: allTopicsDone };
+              return {
+                ...chapter,
+                topics: updatedTopics,
+                is_completed: allTopicsDone,
+              };
             }
             return chapter;
           });
@@ -286,7 +310,9 @@ const ClassSyllabus = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold text-purple-800">Class Syllabus</h1>
+              <h1 className="text-3xl font-extrabold text-purple-800">
+                Class Syllabus
+              </h1>
               <p className="mt-2 text-gray-600">
                 Explore and mark completed chapters, topics, and subtopics.
               </p>
@@ -310,7 +336,9 @@ const ClassSyllabus = () => {
 
           {/* Subject Selector */}
           <div className="mt-6">
-            <label className="block text-purple-700 font-semibold mb-1">Select Subject</label>
+            <label className="block text-purple-700 font-semibold mb-1">
+              Select Subject
+            </label>
             <select
               value={selectedSubject}
               onChange={(e) => {
@@ -351,7 +379,9 @@ const ClassSyllabus = () => {
                       <h2 className="text-2xl font-semibold text-purple-800">
                         {syllabus.subject_name} - {syllabus.class_name}
                       </h2>
-                      <p className="text-gray-600 mt-1">Teacher: {syllabus.teacher_name}</p>
+                      <p className="text-gray-600 mt-1">
+                        Teacher: {syllabus.teacher_name}
+                      </p>
                     </div>
 
                     {/* Edit / Delete */}
@@ -375,7 +405,9 @@ const ClassSyllabus = () => {
                       <div
                         key={chapter.id}
                         className={`p-4 mb-6 rounded-xl shadow-md border ${
-                          chapter.is_completed ? "border-green-300 bg-green-50" : "border-purple-200 bg-purple-50"
+                          chapter.is_completed
+                            ? "border-green-300 bg-green-50"
+                            : "border-purple-200 bg-purple-50"
                         }`}
                       >
                         <label className="flex items-center cursor-pointer">
@@ -387,7 +419,9 @@ const ClassSyllabus = () => {
                           />
                           <h3
                             className={`text-lg font-bold ${
-                              chapter.is_completed ? "text-green-700" : "text-purple-800"
+                              chapter.is_completed
+                                ? "text-green-700"
+                                : "text-purple-800"
                             }`}
                           >
                             Chapter: {chapter.name}
@@ -405,12 +439,20 @@ const ClassSyllabus = () => {
                               <input
                                 type="checkbox"
                                 checked={topic.is_completed || false}
-                                onChange={() => toggleCompletion(syllabus.id, chapter.id, topic.id)}
+                                onChange={() =>
+                                  toggleCompletion(
+                                    syllabus.id,
+                                    chapter.id,
+                                    topic.id
+                                  )
+                                }
                                 className="mr-3 w-5 h-5 text-purple-600 focus:ring-purple-500 rounded"
                               />
                               <span
                                 className={`text-base font-semibold ${
-                                  topic.is_completed ? "text-green-700" : "text-gray-800"
+                                  topic.is_completed
+                                    ? "text-green-700"
+                                    : "text-gray-800"
                                 }`}
                               >
                                 Topic: {topic.name}
@@ -429,13 +471,20 @@ const ClassSyllabus = () => {
                                     type="checkbox"
                                     checked={subtopic.is_completed || false}
                                     onChange={() =>
-                                      toggleCompletion(syllabus.id, chapter.id, topic.id, subtopic.id)
+                                      toggleCompletion(
+                                        syllabus.id,
+                                        chapter.id,
+                                        topic.id,
+                                        subtopic.id
+                                      )
                                     }
                                     className="mr-3 w-4 h-4 text-purple-500 focus:ring-purple-400 rounded"
                                   />
                                   <span
                                     className={`text-sm ${
-                                      subtopic.is_completed ? "font-semibold text-green-700" : "text-gray-700"
+                                      subtopic.is_completed
+                                        ? "font-semibold text-green-700"
+                                        : "text-gray-700"
                                     }`}
                                   >
                                     Subtopic: {subtopic.name}

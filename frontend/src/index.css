@@ -45,3 +45,22 @@
 .sms-custom-discussion-tree .ant-tree-treenode .ant-tree-node-content-wrapper {
   width: 100% !important;
 }
+
+.sms-skeleton-wrapper {
+  display: grid;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main-content";
+  grid-template-columns: 255px 1fr;
+  grid-template-rows: 150px 1fr;
+}
+
+.sms-skeleton-aside {
+  grid-area: sidebar;
+}
+.sms-skeleton-header {
+  grid-area: header;
+}
+.sms-skeleton-main {
+  grid-area: main-content;
+}

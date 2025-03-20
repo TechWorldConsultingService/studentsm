@@ -43,7 +43,10 @@ const Login = () => {
 
   const loginUser = async (values) => {
     try {
-      const response = await axios.post("http://localhost:8000/api/login/", values);
+      const response = await axios.post(
+        "http://localhost:8000/api/login/",
+        values
+      );
       const data = response.data;
 
       if (response.status === 200) {
@@ -54,7 +57,7 @@ const Login = () => {
         // Redirect based on role
         switch (data.role) {
           case "accountant":
-            navigate("/accountantdashboard")
+            navigate("/accountantdashboard");
             break;
           case "student":
             navigate("/studentdashboard");
@@ -76,12 +79,12 @@ const Login = () => {
       if (error.response && error.response.data && error.response.data.msg) {
         toast.error(error.response.data.msg);
       } else {
-        console.log(error, "error")
-        console.log(error.response?.data?.detail, "ok")
+        console.log(error, "error");
+        console.log(error.response?.data?.detail, "ok");
         toast.error(
           "Error login",
           error.response?.data?.detail || "network error or server down "
-        );
+        );
       }
     }
   };
@@ -99,89 +102,98 @@ const Login = () => {
 
       {/* Right section / Form */}
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 px-5 py-10">
+        <div className="bg-white rounded-xl shadow-xl pt-8 pb-4 w-[70%] ">
+          {/* Logo and Branding */}
+          <div className="flex flex-col items-center mb-2">
+            <img src="/logo.jpeg" alt="Logo" className="h-12 w-28 mb-2" />
+            <span className="text-lg font-semibold text-purple-800">
+              Satyam Xaviers
+            </span>
+          </div>
 
-      <div className="bg-white rounded-xl shadow-xl pt-8 pb-4 w-[70%] ">
-        {/* Logo and Branding */}
-        <div className="flex flex-col items-center mb-2">
-          <img src="/logo.jpeg" alt="Logo" className="h-12 w-28 mb-2" />
-          <span className="text-lg font-semibold text-purple-800">Satyam Xaviers</span>
-        </div>
+          {/* Card Wrapper */}
+          <div className="  w-full max-w-md py-8 px-6 md:px-10 flex flex-col items-center">
+            <h2 className="text-2xl font-bold text-purple-800">Welcome!</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Please enter your details to sign in
+            </p>
 
-        {/* Card Wrapper */}
-        <div className="  w-full max-w-md py-8 px-6 md:px-10 flex flex-col items-center">
-          <h2 className="text-2xl font-bold text-purple-800">Welcome!</h2>
-          <p className="text-sm text-gray-600 mb-6">Please enter your details to sign in</p>
-          
-          <form className="w-full" onSubmit={formik.handleSubmit}>
-            {/* Username */}
-            <div className="mb-5">
-              <Input
-                size="large"
-                placeholder="Enter Username"
-                type="text"
-                id="username"
-                prefix={<UserOutlined className="text-purple-800" />}
-                name="username"
-                className={`rounded-md ${
-                  formik.touched.username && formik.errors.username
-                    ? "border-red-500"
-                    : "border-none"
-                }`}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.username}
-              />
-              {formik.touched.username && formik.errors.username && (
-                <div className="text-red-500 text-sm mt-1">{formik.errors.username}</div>
-              )}
-            </div>
+            <form className="w-full" onSubmit={formik.handleSubmit}>
+              {/* Username */}
+              <div className="mb-5">
+                <Input
+                  size="large"
+                  placeholder="Enter Username"
+                  type="text"
+                  id="username"
+                  prefix={<UserOutlined className="text-purple-800" />}
+                  name="username"
+                  className={`rounded-md ${
+                    formik.touched.username && formik.errors.username
+                      ? "border-red-500"
+                      : "border-none"
+                  }`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.username}
+                />
+                {formik.touched.username && formik.errors.username && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {formik.errors.username}
+                  </div>
+                )}
+              </div>
 
-            {/* Password */}
-            <div className="mb-5">
-              <Input
-                size="large"
-                placeholder="Enter Password"
-                id="password"
-                name="password"
-                prefix={<RiLockPasswordLine className="text-purple-800" />}
-                type={isVisible ? "text" : "password"}
-                className={`rounded-md ${
-                  formik.touched.password && formik.errors.password
-                    ? "border-red-500"
-                    : "border-none"
-                }`}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.password}
-                suffix={
-                  <Button
-                    type="text"
-                    onClick={toggleVisibility}
-                    className="flex items-center"
-                    icon={
-                      isVisible ? (
-                        <FaRegEyeSlash className="text-purple-800" />
-                      ) : (
-                        <FaRegEye className="text-purple-800" />
-                      )
-                    }
-                  />
-                }
-              />
-              {formik.touched.password && formik.errors.password && (
-                <div className="text-red-500 text-sm mt-1">{formik.errors.password}</div>
-              )}
-            </div>
+              {/* Password */}
+              <div className="mb-5">
+                <Input
+                  size="large"
+                  placeholder="Enter Password"
+                  id="password"
+                  name="password"
+                  prefix={<RiLockPasswordLine className="text-purple-800" />}
+                  type={isVisible ? "text" : "password"}
+                  className={`rounded-md ${
+                    formik.touched.password && formik.errors.password
+                      ? "border-red-500"
+                      : "border-none"
+                  }`}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  value={formik.values.password}
+                  suffix={
+                    <Button
+                      type="text"
+                      onClick={toggleVisibility}
+                      className="flex items-center"
+                      icon={
+                        isVisible ? (
+                          <FaRegEyeSlash className="text-purple-800" />
+                        ) : (
+                          <FaRegEye className="text-purple-800" />
+                        )
+                      }
+                    />
+                  }
+                />
+                {formik.touched.password && formik.errors.password && (
+                  <div className="text-red-500 text-sm mt-1">
+                    {formik.errors.password}
+                  </div>
+                )}
+              </div>
 
-            {/* Submit Button */}
-            <Button
-              htmlType="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md py-2 text-lg font-medium transition-all"
-            >
-              Log In
-            </Button>
-          </form>
-        </div>
+              {/* Submit Button */}
+              <Button
+                disabled={formik.isSubmitting}
+                loading={formik.isSubmitting}
+                htmlType="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md py-2 text-lg font-medium transition-all"
+              >
+                Log In
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

@@ -83,12 +83,7 @@ const AddExamDetailsByPrincipal = () => {
 
   const openViewDetailModal = (detail) => {
     setSelectedDetail(detail);
-    setIsViewModalOpen(true); 
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedDetail(null);
+    setIsViewModalOpen(true);
   };
 
   // Handle delete functionality
@@ -127,7 +122,7 @@ const AddExamDetailsByPrincipal = () => {
 
       toast.success("Exam detail deleted successfully!");
       setIsConfirmDeleteOpen(false);
-      setDetailsToDelete(null); 
+      setDetailsToDelete(null);
     } catch (error) {
       console.error("Error deleting exam detail:", error);
       toast.error("Error deleting exam detail.");
@@ -135,9 +130,9 @@ const AddExamDetailsByPrincipal = () => {
   };
 
   const handleConfirmDelete = (detailId) => {
-    console.log("Confirm delete for ID:", detailId); 
+    console.log("Confirm delete for ID:", detailId);
     setDetailsToDelete(detailId);
-    setIsConfirmDeleteOpen(true); 
+    setIsConfirmDeleteOpen(true);
   };
 
   const handleCloseDeleteModal = () => {
@@ -172,12 +167,15 @@ const AddExamDetailsByPrincipal = () => {
       }
 
       // Fetch updated exam details
-      const { data } = await axios.get(`http://localhost:8000/api/exam-details/exam/${examId}/`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const { data } = await axios.get(
+        `http://localhost:8000/api/exam-details/exam/${examId}/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       setExamDetails(data);
       setIsModalOpen(false);
       setSelectedDetail(null);
@@ -193,7 +191,9 @@ const AddExamDetailsByPrincipal = () => {
           <h1 className="text-3xl font-extrabold text-purple-800">
             Exam Details of {exams.name}
           </h1>
-          <p className="mt-4 text-gray-600">Exam with their respective subjects.</p>
+          <p className="mt-4 text-gray-600">
+            Exam with their respective subjects.
+          </p>
 
           {/* Button to add new exam detail */}
           <div className="mt-3 text-right">
@@ -231,7 +231,9 @@ const AddExamDetailsByPrincipal = () => {
                   {examDetails?.exam_details?.map((detail) => (
                     <tr key={detail.id} className="border-b hover:bg-purple-50">
                       <td className="px-6 py-4">{detail.class_details.name}</td>
-                      <td className="px-6 py-4">{detail.subject.subject_name}</td>
+                      <td className="px-6 py-4">
+                        {detail.subject.subject_name}
+                      </td>
                       <td className="px-6 py-4">{detail.exam_date}</td>
                       <td className="px-6 py-4 flex gap-2">
                         <button
@@ -263,7 +265,9 @@ const AddExamDetailsByPrincipal = () => {
 
           {/* No Exam Details */}
           {!isLoading && examDetails.length === 0 && (
-            <div className="mt-4 text-gray-600">There are no subjects for this exam.</div>
+            <div className="mt-4 text-gray-600">
+              There are no subjects for this exam.
+            </div>
           )}
         </div>
 
@@ -274,7 +278,9 @@ const AddExamDetailsByPrincipal = () => {
               <h2 className="text-xl font-semibold text-purple-700 mb-4">
                 Are you sure?
               </h2>
-              <p className="mb-4">Do you really want to delete this exam detail?</p>
+              <p className="mb-4">
+                Do you really want to delete this exam detail?
+              </p>
               <div className="mt-4 flex justify-end gap-4">
                 <button
                   onClick={handleCloseDeleteModal}
@@ -297,14 +303,29 @@ const AddExamDetailsByPrincipal = () => {
         {isViewModalOpen && selectedDetail && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
-              <h2 className="text-2xl font-bold text-purple-800">Exam Detail</h2>
+              <h2 className="text-2xl font-bold text-purple-800">
+                Exam Detail
+              </h2>
               <div className="mt-4">
-                <p className="text-gray-700"><strong>Class:</strong> {selectedDetail.class_details.name}</p>
-                <p className="text-gray-700"><strong>Subject:</strong> {selectedDetail.subject.subject_name}</p>
-                <p className="text-gray-700"><strong>Full Marks:</strong> {selectedDetail.full_marks}</p>
-                <p className="text-gray-700"><strong>Pass Marks:</strong> {selectedDetail.pass_marks}</p>
-                <p className="text-gray-700"><strong>Exam Date:</strong> {selectedDetail.exam_date}</p>
-                <p className="text-gray-700"><strong>Exam Time:</strong> {selectedDetail.exam_time}</p>
+                <p className="text-gray-700">
+                  <strong>Class:</strong> {selectedDetail.class_details.name}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Subject:</strong>{" "}
+                  {selectedDetail.subject.subject_name}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Full Marks:</strong> {selectedDetail.full_marks}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Pass Marks:</strong> {selectedDetail.pass_marks}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Exam Date:</strong> {selectedDetail.exam_date}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Exam Time:</strong> {selectedDetail.exam_time}
+                </p>
               </div>
               <div className="mt-6 text-center">
                 <button
