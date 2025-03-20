@@ -138,10 +138,6 @@ urlpatterns = [
     path("api/students/update-roll-numbers/<int:class_id>/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
     path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
 
-
-    path('api/messages/', MessageListView.as_view(), name='message-list'),
-    path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
-
     # Syllabus and related endpoints
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
@@ -184,6 +180,8 @@ urlpatterns = [
     path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),   #API to view all the personal msg of a single user
     path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'), #API to view all the role based msg of a single user
     path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'), #API to view/edit/delete a specific msg
+    path('api/messages/personal/', PersonalMessageListAPIView.as_view(), name='personal-messages'),
+    path('api/messages/role-based/', RoleBasedMessageListAPIView.as_view(), name='role-based-messages'),
 
     path('api/users/search/', UserSearchAPIView.as_view(), name='user-search'),
     path('api/finance-summary/', FinanceSummaryAPIView.as_view(), name='finance-summary'),

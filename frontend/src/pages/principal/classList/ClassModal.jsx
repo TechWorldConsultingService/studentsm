@@ -6,34 +6,22 @@ import axios from "axios";
 import { Select } from "antd";
 import * as Yup from "yup";
 
-
+// Updated validation schema: now validating arrays of numbers
 const classSchema = Yup.object().shape({
   class_code: Yup.string()
     .required("Class Code is required.")
     .typeError("Class Code must be a string."),
   class_name: Yup.string().required("Class Name is required."),
   subjects: Yup.array()
-    .min(3, "At least three compulsory subjects must be selected.")
-    .of(
-      Yup.object().shape({
-        subject_name: Yup.string().required("Subject name is required."),
-        subject_code: Yup.string().required("Subject code is required."),
-      })
-    ),
-  optional_subjects: Yup.array().of(
-    Yup.object().shape({
-      subject_name: Yup.string().required("Subject name is required."),
-      subject_code: Yup.string().required("Subject code is required."),
-    })
-  ),
+    .of(Yup.number().required("Subject ID is required."))
+    .min(3, "At least three compulsory subjects must be selected."),
+  optional_subjects: Yup.array().of(Yup.number().required("Subject ID is required.")),
 });
 
 const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
   const { access } = useSelector((state) => state.user);
-
   const [subjectList, setSubjectList] = useState([]);
   const [optionalSubjectList, setOptionalSubjectList] = useState([]);
-
 
   const isEdit = Boolean(classInfo && classInfo.id);
 
@@ -41,8 +29,9 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
     initialValues: {
       class_code: classInfo?.class_code || "",
       class_name: classInfo?.class_name || "",
-      subjects: classInfo?.subject_details || [],
-      optional_subjects: classInfo?.optional_subject_details || [],
+      subjects: classInfo?.subject_details?.map((sub) => sub.id) || [],
+      optional_subjects:
+        classInfo?.optional_subject_details?.map((sub) => sub.id) || [],
     },
     validationSchema: classSchema,
     onSubmit: async (values) => {
@@ -81,7 +70,8 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
           toast.error("Authentication error. Please log in again.");
         } else {
           toast.error(
-            "Error saving class: " + (error.response?.data?.detail || error.message)
+            "Error saving class: " +
+              (error.response?.data?.detail || error.message)
           );
         }
       }
@@ -92,12 +82,15 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
   const fetchSubjects = async () => {
     if (!access) return;
     try {
-      const { data } = await axios.get("http://localhost:8000/api/subjects/compulsory/", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const { data } = await axios.get(
+        "http://localhost:8000/api/subjects/compulsory/",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       setSubjectList(data);
     } catch (error) {
       toast.error("Error fetching compulsory subjects.");
@@ -107,12 +100,15 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
   const fetchOptionalSubjects = async () => {
     if (!access) return;
     try {
-      const { data } = await axios.get("http://localhost:8000/api/subjects/optional/", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const { data } = await axios.get(
+        "http://localhost:8000/api/subjects/optional/",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       setOptionalSubjectList(data);
     } catch (error) {
       toast.error("Error fetching optional subjects.");
@@ -124,27 +120,12 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
     fetchOptionalSubjects();
   }, [access]);
 
-  // Helper for multiple selects
-  const handleSubjectsChange = (selectedNames) => {
-    const selectedSubjects = selectedNames.map((name) => {
-      const found = subjectList.find((sub) => sub.subject_name === name);
-      return {
-        subject_name: found.subject_name,
-        subject_code: found.subject_code,
-      };
-    });
-    formik.setFieldValue("subjects", selectedSubjects);
+  const handleSubjectsChange = (selectedIds) => {
+    formik.setFieldValue("subjects", selectedIds);
   };
 
-  const handleOptionalSubjectsChange = (selectedNames) => {
-    const selectedSubj = selectedNames.map((name) => {
-      const found = optionalSubjectList.find((sub) => sub.subject_name === name);
-      return {
-        subject_name: found.subject_name,
-        subject_code: found.subject_code,
-      };
-    });
-    formik.setFieldValue("optional_subjects", selectedSubj);
+  const handleOptionalSubjectsChange = (selectedIds) => {
+    formik.setFieldValue("optional_subjects", selectedIds);
   };
 
   return (
@@ -208,12 +189,12 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
               id="subjects"
               className="w-full mt-1"
               placeholder="Select at least three subjects"
-              value={formik.values.subjects.map((sub) => sub.subject_name)}
+              value={formik.values.subjects}
               onChange={handleSubjectsChange}
               onBlur={() => formik.setFieldTouched("subjects", true)}
             >
               {subjectList.map((item) => (
-                <Select.Option key={item.id} value={item.subject_name}>
+                <Select.Option key={item.id} value={item.id}>
                   {item.subject_name} ({item.subject_code})
                 </Select.Option>
               ))}
@@ -235,13 +216,13 @@ const ClassModal = ({ classInfo, onClose, refreshClasses }) => {
               id="optional_subjects"
               className="w-full mt-1"
               placeholder="Select optional subjects"
-              value={formik.values.optional_subjects.map((sub) => sub.subject_name)}
+              value={formik.values.optional_subjects}
               onChange={handleOptionalSubjectsChange}
               onBlur={() => formik.setFieldTouched("optional_subjects", true)}
             >
               {optionalSubjectList.map((item) => (
-                <Select.Option key={item.id} value={item.subject_name}>
-                  {item.subject_name}({item.subject_code})
+                <Select.Option key={item.id} value={item.id}>
+                  {item.subject_name} ({item.subject_code})
                 </Select.Option>
               ))}
             </Select>
