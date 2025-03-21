@@ -3,6 +3,9 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
 import LazyRoute from "./components/LazyRoute";
 
+
+
+
 const Login = lazy(() => import("./login/login"));
 const SelectClassForAttendance = lazy(() =>
   import("./pages/attendance/SelectClassForAttendence")
@@ -95,6 +98,12 @@ const DiscussionForum = lazy(() => import("./pages/DiscussionForum"));
 const DiscussionForumDetails = lazy(() =>
   import("./pages/DiscussionForum/DiscussionDetails")
 );
+const PrincipalNotice = lazy(() => import("./pages/Notification/PrincipalNotice"))
+const PrincipalMessage = lazy(() => import ("./pages/Notification/PrincipalMessage"))
+const NotificationView = lazy(() => import("./pages/Notification/NotificationView"))
+const TeacherNotice = lazy(() => import("./pages/Notification/TeacherNotice") )
+
+
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -205,6 +214,10 @@ function App() {
         selectedClassForAttendance: selectedClassForAttendance,
       }),
     },
+      {path:"/principalAddNotice", element: LazyRoute(PrincipalNotice)},
+      {path: "/principalAddMessage", element: LazyRoute(PrincipalMessage)},
+      {path: "/notificationView", element: LazyRoute(NotificationView)},
+      {path: "/teacherNotice", element: LazyRoute(TeacherNotice)}
   ]);
 
   return <RouterProvider router={router} />;

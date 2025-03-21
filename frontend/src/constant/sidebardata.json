@@ -59,6 +59,12 @@
       "title": "Chat",
       "icon": "MdChatBubbleOutline",
       "link": "/chat"
+    },
+    {
+      "id": 9,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "link": "/notificationView"
     }
   ],
   "teacher": [
@@ -79,6 +85,15 @@
       "title": "Calendar",
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
+    },
+    {
+      "id": 9,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "subSidebar": [
+        { "id": 1, "title": "Add Notice", "link": "/teacherNotice" },
+        { "id": 2, "title": "View Notice", "link": "/notificationView" }
+      ]
     },
     {
       "id": 4,

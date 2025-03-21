@@ -9,6 +9,7 @@ import "./TodoListPage.css";
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
   const { access } = useSelector((state) => state.user);
+  const [showAddModal, setShowAddModal] = useState(false)
 
   // Fetch tasks on component mount
   useEffect(() => {
@@ -29,7 +30,9 @@ const TaskList = () => {
       },
     }).then((res) => {
       setTasks([...tasks, res.data]);
+      onClose()
     });
+    
   };
 
   // Delete a task
@@ -71,17 +74,32 @@ const TaskList = () => {
     });
   };
 
+const onClose = () => {
+  setShowAddModal (false)
+}
+
   return (
     <MainLayout>
-      <div className="p-5 bg-gray-100 min-h-screen">
+      <div className="p-5 bg-gray-100 ">
         <div className="bg-white p-5 rounded shadow-md">
-          <h2 className="text-xl font-semibold mb-4">To-Do Lists</h2>
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">To-do List</h2>
 
-          {/* TaskForm Component */}
-          <TaskForm addTask={handleAddTask} />
+        <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
+            >
+              Add To-Do Task
+            </button>
+          </div>
+
+        </div>
+
 
           {/* Task List */}
-          <div>
+
+          <div className="pt-3">
+          <h2 className="text-xl font-bold text-purple-800 mb-4">To-do List Are as :</h2>
             {tasks.map((task, index) => (
               <div
                 key={task.id}
@@ -112,7 +130,17 @@ const TaskList = () => {
               </div>
             ))}
           </div>
-        </div>
+
+{
+  showAddModal && (
+    <TaskForm 
+    onClose = {onClose}
+    addTask={handleAddTask}
+    />
+  )
+}
+
+
       </div>
     </MainLayout>
   );
