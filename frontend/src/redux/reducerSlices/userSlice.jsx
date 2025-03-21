@@ -1,7 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-// import userSlice from '../redux/reducerSlices/userSlice';
 
-// Initial state based on the structure of the response data
 const initialState = {
   isLoggedIn: false,
   id: null,
@@ -22,8 +20,12 @@ const initialState = {
   last_name: "",
   date_of_joining:"",
   class_teacher:{},
-  selectedClass: "", 
+  selectedClassName: "", 
   selectedSubject:"",
+  chatSocketUrl: "", // WebSocket connection URL
+  selectedClassID: "",
+  selectedSubjectName:"",
+  is_ad:""
 };
 
 const userSlice = createSlice({
@@ -49,8 +51,11 @@ const userSlice = createSlice({
         first_name,
         last_name,
         class_teacher,
-        date_of_joining
+        date_of_joining,
+        is_ad,
       } = action.payload;
+
+
 
       return {
         ...state,
@@ -73,28 +78,30 @@ const userSlice = createSlice({
         class_teacher,
         date_of_joining,
         isLoggedIn: true, 
+        is_ad,
       };
     },
 
     logoutUser() {
       return initialState; 
     },
-    setSelectedClass(state, action) {
-      const {className} = action.payload
-      return{
-        ...state,
-        selectedClass:className
-      }
+    
+    setSelectedClass: (state, action) => {
+      state.selectedClassName = action.payload;
     },
+
     setSelectedSubject(state,action) {
-      const {subjectId} = action.payload
-      return{
-        ...state,
-        selectedSubject: subjectId
-      }
+        state.selectedSubject = action.payload
+    },
+    setSelectedSubjectName(state,action) {
+      state.selectedSubjectName = action.payload
+  },
+    setSelectedClassId:  (state,action) => {
+        state.selectedClassID =action.payload
     }
+    
   },
 });
 
-export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject } = userSlice.actions;
+export const { setLoginDetails, logoutUser,setSelectedClass, setSelectedSubject, setSelectedClassId,setSelectedSubjectName } = userSlice.actions;
 export default userSlice.reducer;

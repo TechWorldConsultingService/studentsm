@@ -1,18 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import NavBar from "../components/navBar";
 import ClassSidebar from "../components/classSidebar";
-import NavBelowMd from "../components/navClassBelowMd";
-
 
 const ClassLayout = ({ children }) => {
   return (
-    <div className="flex h-full w-screen flex-col md:flex-row ">
-      <div className="w-52 hidden md:block"> <ClassSidebar  /> </div>
+    <div className="flex h-full w-screen flex-col md:flex-row">
+      {/* Our new collapsible sidebar */}
+      <ClassSidebar />
 
-      <div className=" flex w-full flex-col ">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col">
         <NavBar />
-        <NavBelowMd />
-        <div className="bg-gray-100 p-4 flex-1">{children}</div>
+        <div className="bg-gray-100 p-4 flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ const StudentList = () => {
 
   const [studentList, setStudentList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -21,9 +22,10 @@ const StudentList = () => {
   const [classList, setClassList] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
 
-  // Fetch students
+  // Fetch all students
   const fetchAllStudents = async () => {
     if (!access) {
+      setError("User is not authenticated. Please log in.");
       toast.error("User is not authenticated. Please log in.");
       return;
     }
@@ -36,36 +38,47 @@ const StudentList = () => {
         },
       });
       setStudentList(data);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
+      setError(null);
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching students:", error.message || error);
+        const errMsg = "Error fetching students: " + (err.message || err);
+        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch class-wise students
   const fetchClassWiseStudents = async () => {
     if (!access) {
+      setError("User is not authenticated. Please log in.");
       toast.error("User is not authenticated. Please log in.");
       return;
     }
     setLoading(true);
     try {
-      const { data } = await axios.get(`http://localhost:8000/api/students-by-class/?class_id=${selectedClassId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const { data } = await axios.get(
+        `http://localhost:8000/api/students/class/${selectedClassId}/`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
       setStudentList(data);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
+      setError(null);
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching students:", error.message || error);
+        const errMsg = "Error fetching students: " + (err.message || err);
+        setError(errMsg);
+        toast.error(errMsg);
       }
     } finally {
       setLoading(false);
@@ -73,15 +86,14 @@ const StudentList = () => {
   };
 
   useEffect(() => {
-    if(!selectedClassId){
+    if (!selectedClassId) {
       fetchAllStudents();
     } else {
-      fetchClassWiseStudents()
+      fetchClassWiseStudents();
     }
-
   }, [access, navigate, selectedClassId]);
 
-  // fetch class
+  // Fetch classes
   const fetchClass = async () => {
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
@@ -95,8 +107,8 @@ const StudentList = () => {
         },
       });
       setClassList(data);
-    } catch (error) {
-      toast.error("Error fetching class:", error.message || error);
+    } catch (err) {
+      toast.error("Error fetching class: " + (err.message || err));
     }
   };
 
@@ -104,7 +116,7 @@ const StudentList = () => {
     fetchClass();
   }, [access, navigate]);
 
-
+  // View student details
   const handleViewDetails = (studentInfo) => {
     setSelectedStudent(studentInfo);
     setShowModal(false);
@@ -115,11 +127,13 @@ const StudentList = () => {
     setSelectedStudent(null);
   };
 
+  // Add student
   const handleShowAddModal = () => {
     setIsEditMode(false);
     setShowModal(true);
   };
 
+  // Edit student
   const handleShowEditModal = (studentInfo) => {
     setIsEditMode(true);
     setSelectedStudent(studentInfo);
@@ -130,18 +144,17 @@ const StudentList = () => {
     setShowModal(false);
   };
 
+  // Delete student
   const handleConfirmDelete = (studentId) => {
     setStudentToDelete(studentId);
     setShowDeleteModal(true);
   };
 
   const handleDeleteStudent = async () => {
-    console.log("studentToDelete:", studentToDelete);
     if (!access) {
       toast.error("User is not authenticated. Please log in.");
       return;
     }
-
     try {
       await axios.delete(
         `http://localhost:8000/api/students/${studentToDelete}/delete/`,
@@ -159,10 +172,10 @@ const StudentList = () => {
 
       toast.success("Student deleted successfully.");
       setShowDeleteModal(false);
-    } catch (error) {
+    } catch (err) {
       toast.error(
-        "Error deleting student:",
-        error.response?.data?.detail || error.message
+        "Error deleting student: " +
+          (err.response?.data?.detail || err.message)
       );
     }
   };
@@ -186,7 +199,7 @@ const StudentList = () => {
             </button>
           </div>
 
-          <div className=" bg-white">
+          <div className="bg-white mt-4">
             <div>
               <h2 className="text-2xl font-bold text-purple-700">
                 Available Students
@@ -197,7 +210,10 @@ const StudentList = () => {
             </div>
 
             <div className="mt-4 flex space-x-2 items-center">
-              <label className="block text-lg font-semibold text-purple-700 mb-2">
+              <label
+                htmlFor="selectClass"
+                className="block text-lg font-semibold text-purple-700 mb-2"
+              >
                 Select Class:
               </label>
               <select
@@ -209,10 +225,7 @@ const StudentList = () => {
                 <option value="">Select Class</option>
                 {classList.length > 0 &&
                   classList.map((item) => (
-                    <option
-                      key={item.id}
-                      value={item.id}
-                    >
+                    <option key={item.id} value={item.id}>
                       {item.class_name}
                     </option>
                   ))}
@@ -220,8 +233,11 @@ const StudentList = () => {
             </div>
           </div>
 
+          {/* Display loading, error, or student list */}
           {loading ? (
             <div className="mt-6 text-center text-gray-600">Loading...</div>
+          ) : error ? (
+            <div className="mt-6 text-center text-red-600">{error}</div>
           ) : (
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -236,11 +252,11 @@ const StudentList = () => {
                   {studentList.length > 0 ? (
                     studentList.map((student) => (
                       <tr
-                        key={student.phone}
+                        key={student.id}
                         className="border-b hover:bg-purple-50"
                       >
                         <td className="px-4 py-2">
-                          {student.class_details.class_name}
+                          {student.class_details?.class_name}
                         </td>
                         <td className="px-4 py-2">
                           {student.user.first_name} {student.user.last_name}
@@ -268,9 +284,11 @@ const StudentList = () => {
                       </tr>
                     ))
                   ) : (
-                    <span className="text-gray-600">
-                      No student is added to show.
-                    </span>
+                    <tr>
+                      <td colSpan={3} className="p-4 text-gray-600">
+                        No student is added to show.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -278,7 +296,7 @@ const StudentList = () => {
           )}
         </div>
 
-        {/* Modal for student details */}
+        {/* Student Details Modal */}
         {selectedStudent && !isEditMode && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2">
@@ -290,7 +308,8 @@ const StudentList = () => {
                   <strong>Username:</strong> {selectedStudent.user.username}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Name:</strong> {selectedStudent.user.first_name}{" "}
+                  <strong>Name:</strong>{" "}
+                  {selectedStudent.user.first_name}{" "}
                   {selectedStudent.user.last_name}
                 </p>
                 <p className="text-gray-700">
@@ -317,7 +336,25 @@ const StudentList = () => {
                 </p>
                 <p className="text-gray-700">
                   <strong>Class:</strong>{" "}
-                  {selectedStudent.class_details.class_name}
+                  {selectedStudent.class_details?.class_name}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Roll Number:</strong>{" "}
+                  {selectedStudent.roll_no}
+                </p>
+
+                <p className="text-gray-700">
+                  <strong>Optional Subjects:</strong>{" "}
+                  {selectedStudent.optional_subjects &&
+                  selectedStudent.optional_subjects.length > 0
+                    ? selectedStudent.optional_subjects
+                        .map((sub) => sub.subject_name)
+                        .join(", ")
+                    : "N/A"}
+                </p>
+                <p className="text-gray-700">
+                  <strong>Class Section:</strong>{" "}
+                  {selectedStudent.class_code_section || "N/A"}
                 </p>
               </div>
               <div className="mt-6 text-center">
@@ -357,7 +394,7 @@ const StudentList = () => {
           </div>
         )}
 
-        {/* Add or Edit Modal */}
+        {/* Add or Edit Student Modal */}
         {showModal &&
           (isEditMode ? (
             <EditStudentModal

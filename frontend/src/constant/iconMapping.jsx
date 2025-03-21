@@ -1,5 +1,11 @@
-
-import { MdOutlineSpaceDashboard, MdCoPresent } from "react-icons/md";
+import {
+  MdOutlineSpaceDashboard,
+  MdChatBubbleOutline,
+  MdCoPresent,
+  MdPayments,
+  MdOutlineManageHistory,
+  MdNotificationAdd
+} from "react-icons/md";
 import { IoCalendarOutline, IoBusOutline } from "react-icons/io5";
 import { PiStudent } from "react-icons/pi";
 import { TbReportSearch } from "react-icons/tb";
@@ -7,20 +13,30 @@ import { IoIosGitPullRequest } from "react-icons/io";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import { SlPeople } from "react-icons/sl";
 import { IoMdPersonAdd } from "react-icons/io";
-
+import { FaFileInvoiceDollar } from "react-icons/fa";
+import { MdReceiptLong, MdForum } from "react-icons/md";
+import { FaTasks } from "react-icons/fa";
 
 
 const iconMapping = {
-  MdOutlineSpaceDashboard: MdOutlineSpaceDashboard,
-  IoCalendarOutline: IoCalendarOutline,
-  IoBusOutline: IoBusOutline,
-  PiStudent: PiStudent,
-  MdCoPresent:MdCoPresent,
-  TbReportSearch: TbReportSearch,
-  IoIosGitPullRequest: IoIosGitPullRequest,
-  LuFileSpreadsheet: LuFileSpreadsheet,
-  SlPeople:SlPeople,
-  IoMdPersonAdd:IoMdPersonAdd,
+  MdOutlineSpaceDashboard,
+  IoCalendarOutline,
+  IoBusOutline,
+  PiStudent,
+  MdCoPresent,
+  TbReportSearch,
+  IoIosGitPullRequest,
+  LuFileSpreadsheet,
+  SlPeople,
+  IoMdPersonAdd,
+  MdChatBubbleOutline,
+  MdPayments,
+  FaFileInvoiceDollar,
+  MdOutlineManageHistory,
+  MdReceiptLong,
+  FaTasks,
+  MdForum,
+  MdNotificationAdd
 };
 
 export default iconMapping;

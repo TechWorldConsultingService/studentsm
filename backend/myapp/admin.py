@@ -1,12 +1,11 @@
 from django.contrib import admin
 from django import forms
 from .models import *
-from .models import (
-    Teacher, Principal, Student, LeaveApplication, Subject, 
-    Class, DailyAttendance, Event, LessonAttendance, Post, 
-    # StaffLocation, 
-    Staff, Assignment, Syllabus, DiscussionPost, DiscussionComment,
-)
+
+@admin.register(CustomUser)
+class CustomUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'is_master', 'is_principal', 'is_teacher', 'is_student', 'is_accountant', 'is_active')
+    search_fields = ('username', 'email')
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -15,6 +14,11 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ('title', 'caption', 'creator__username')  # Enable search by title, caption, or creator username
     ordering = ('-created_at',)  # Default ordering (newest posts first)
     date_hierarchy = 'created_at'  # Adds a date-based drill-down for `created_at`
+
+@admin.register(DateSetting)
+class DateSettingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'is_ad')  # Show ID and whether it's AD or BS
+    list_editable = ('is_ad',)  # Allow quick toggle in the list view
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
@@ -69,19 +73,25 @@ class ClassAdmin(admin.ModelAdmin):
     list_display = ('id', 'class_name', 'class_code')
     search_fields = ('class_name', 'class_code')
 
+@admin.register(Section)
+class SectionAdmin(admin.ModelAdmin):
+    list_display = ('id','section_name', 'school_class',)  # Display section name and associated class
+    search_fields = ('section_name', 'school_class__class_name')  # Allow searching by section and class name
+    list_filter = ('school_class',)  # Filter by class in the admin panel
+
 # DailyAttendance admin customization
 @admin.register(DailyAttendance)
 class DailyAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'date', 'status')
-    list_filter = ('date', 'status')
-    search_fields = ('student__user__username',)
+    list_display = ("student", "date", "status", "recorded_by")  # Display key fields
+    list_filter = ("date", "status",)  # Use actual fields
+    search_fields = ("student__user__username", "recorded_by__user__username")  # Search by student or teacher
+    ordering = ("-date",)  # Show latest attendance first
 
-# LessonAttendance admin customization
-@admin.register(LessonAttendance)
-class LessonAttendanceAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'subject', 'date', 'status')
-    list_filter = ('date', 'status', 'subject')
-    search_fields = ('student__user__username', 'subject__name')
+    def student(self, obj):
+        return obj.student.user.username  # Show student username
+
+    def recorded_by(self, obj):
+        return obj.recorded_by.user.username if obj.recorded_by else "N/A"  # Show teacher name
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
@@ -89,11 +99,11 @@ class EventAdmin(admin.ModelAdmin):
     list_filter = ('title', 'description')
     # search_fields = ('student__user__username', 'subject__name')
 
-@admin.register(Staff)
+@admin.register(Accountant)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'phone', 'address', 'gender', 'role', 'date_of_joining')
-    search_fields = ('user__username', 'phone', 'address', 'role')
-    list_filter = ('gender', 'role', 'date_of_joining')
+    list_display = ('id', 'user', 'phone', 'address', 'gender', 'date_of_joining')
+    search_fields = ('user__username', 'phone', 'address')
+    list_filter = ('gender', 'date_of_joining')
 
 
 class AssignmentForm(forms.ModelForm):
@@ -146,6 +156,21 @@ class AssignmentAdmin(admin.ModelAdmin):
     # list_filter = ('subject','student')  # Filters for the sidebar
     search_fields = ('title', 'subject')  # Searchable fields
 
+@admin.register(AssignmentSubmission)
+class AssignmentSubmissionAdmin(admin.ModelAdmin):
+    list_display = ('student', 'assignment', 'submitted_on', 'is_checked')
+    list_filter = ('is_checked', 'submitted_on')
+    search_fields = ('student__username', 'assignment__assignment_name')
+    ordering = ('-submitted_on',)
+    readonly_fields = ('submitted_on',)
+
+    def student(self, obj):
+        return obj.student.username  # Display student username
+
+    def assignment(self, obj):
+        return obj.assignment.assignment_name  # Display assignment name
+
+
 @admin.register(Syllabus)
 class SyllabusAdmin(admin.ModelAdmin):
     list_display = ('class_assigned', 'subject', 'teacher', 'completion_percentage', 'created_at', 'updated_at')
@@ -157,33 +182,7 @@ class SyllabusAdmin(admin.ModelAdmin):
         return obj.get_completion_percentage()
     completion_percentage.short_description = 'Completion (%)'
 
-'''
-class FeePaymentHistoryInline(admin.TabularInline):
-    model = FeePaymentHistory
-    extra = 0
-    readonly_fields = ['payment_date']
-    fields = ['amount_paid', 'payment_date', 'mode_of_payment', 'transaction_id', 'notes']
 
-@admin.register(Fees)
-class FeesAdmin(admin.ModelAdmin):
-    list_display = ['student', 'total_amount', 'amount_paid', 'pending_amount', 'due_date', 'status']
-    list_filter = ['status', 'due_date']
-    search_fields = ['student__user__username', 'student__user__email']
-    readonly_fields = ['pending_amount', 'status', 'created_at', 'updated_at']
-    inlines = [FeePaymentHistoryInline]
-
-    def get_queryset(self, request):
-        """
-        Customize queryset to prefetch related student data for efficiency.
-        """
-        queryset = super().get_queryset(request)
-        return queryset.select_related('student__user')
-
-@admin.register(FeePaymentHistory)
-class FeePaymentHistoryAdmin(admin.ModelAdmin):
-    list_display = ['fee_record', 'amount_paid', 'payment_date', 'mode_of_payment', 'transaction_id']
-    list_filter = ['mode_of_payment', 'payment_date']
-    search_fields = ['fee_record__student__user__username', 'transaction_id'] '''
 
 
 # @admin.register(StaffLocation)
@@ -208,46 +207,6 @@ class DiscussionCommentAdmin(admin.ModelAdmin):
 
 
 
-from .models import FeeCategory, FeeStructure, PaymentTransaction
-
-# Admin configuration for FeeCategory
-@admin.register(FeeCategory)
-class FeeCategoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'amount', 'per_months')
-    search_fields = ('name',)
-    list_filter = ('per_months',)
-    ordering = ('name',)
-    fields = ('name', 'amount', 'per_months')
-
-
-# Inline configuration for FeeCategory in FeeStructure
-class FeeCategoryInline(admin.TabularInline):
-    model = FeeStructure.fee_categories.through
-    extra = 1
-
-
-# Admin configuration for FeeStructure
-@admin.register(FeeStructure)
-class FeeStructureAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student_class', 'monthly_fee', 'total_fee')
-    search_fields = ('student_class__class_name',)
-    list_filter = ('student_class',)
-    ordering = ('student_class',)
-    fields = ('student_class', 'monthly_fee', 'fee_categories')
-    inlines = [FeeCategoryInline]
-
-
-# Admin configuration for PaymentTransaction
-@admin.register(PaymentTransaction)
-class PaymentTransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'payment_no', 'total_amount', 'paid_amount', 'remaining_dues', 'created_at')
-    search_fields = ('payment_no', 'student__user__username', 'student__user__first_name')
-    list_filter = ('created_at', 'student__class_code__class_name')  # Corrected field
-    ordering = ('-created_at',)
-    fields = ('student', 'months', 'fee_structure', 'total_amount', 'paid_amount', 'remaining_dues', 'payment_no', 'created_at')
-    readonly_fields = ('total_amount', 'remaining_dues', 'payment_no', 'created_at')
-
-
 from django.contrib import admin
 from .models import Exam, ExamDetail, StudentResult
 from django.contrib import admin
@@ -268,7 +227,6 @@ class ExamDetailAdmin(admin.ModelAdmin):
     ordering = ('-exam_date',)
 
    
-
 
 
 # StudentResult admin customization
@@ -330,3 +288,63 @@ class NotesAdmin(admin.ModelAdmin):
     list_filter = ('subject', 'class_code', 'created_at', 'created_by')
     search_fields = ('title', 'chapter', 'description', 'created_by__username')
     readonly_fields = ('created_at',)
+
+
+from django.contrib import admin
+from .models import FeeCategoryName, FeeCategory, TransportationFee, StudentBill, StudentPayment
+
+@admin.register(FeeCategoryName)
+class FeeCategoryNameAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+    search_fields = ('name',)
+
+@admin.register(FeeCategory)
+class FeeCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'fee_category_name', 'class_assigned', 'amount')
+    search_fields = ('fee_category_name__name', 'class_assigned__class_name')
+    list_filter = ('class_assigned', 'fee_category_name')
+
+@admin.register(TransportationFee)
+class TransportationFeeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'place', 'amount')
+    search_fields = ('place',)
+    list_filter = ('place',)
+
+@admin.register(StudentBill)
+class StudentBillAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student', 'bill_number', 'month', 'total_amount', 'date')
+    search_fields = ('student__user__username', 'bill_number', 'month')
+
+@admin.register(StudentBillFeeCategory)
+class StudentBillFeeCategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student_bill', 'fee_category', 'scholarship')
+    list_filter = ('scholarship',)
+    search_fields = ('student_bill__bill_number', 'fee_category__fee_category_name__name')
+
+
+@admin.register(StudentPayment)
+class StudentPaymentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'student', 'payment_number', 'amount_paid', 'date')
+    search_fields = ('student__user__username', 'payment_number')
+    list_filter = ('date', 'student')
+
+
+@admin.register(StudentTransaction)
+class StudentTransactionAdmin(admin.ModelAdmin):
+    list_display = ('student', 'transaction_type', 'bill_number', 'payment_number', 'balance')
+    search_fields = ('student__user__username', 'bill__bill_number', 'payment__payment_number')
+    list_filter = ('transaction_type', 'student')
+
+    def bill_number(self, obj):
+        return obj.bill.bill_number if obj.transaction_type == 'bill' else None
+    bill_number.short_description = 'Bill Number'
+
+    def payment_number(self, obj):
+        return obj.payment.payment_number if obj.transaction_type == 'payment' else None
+    payment_number.short_description = 'Payment Number'
+# Communication admin customization
+@admin.register(Communication)
+class CommunicationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'sent_at')
+    search_fields = ('sender__username', 'receiver__username', 'receiver_role')
+    list_filter = ('receiver_role', 'sent_at')

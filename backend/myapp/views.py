@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import authenticate, login, logout
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status,permissions,generics
@@ -18,8 +18,163 @@ from django.db import transaction
 from django.utils.dateparse import parse_date
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import *
-
+from rest_framework import status
+from django.db.models import Count
+from collections import defaultdict
+from django.db.models import Count, Q
 from rest_framework.decorators import action
+from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.views import TokenRefreshView
+from django.utils.decorators import method_decorator
+import nepali_datetime as ndt
+from .serializers import FinanceSummarySerializer
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 5  # Default page size
+    page_size_query_param = 'page_size'  # Allow dynamic page size in request
+    max_page_size = 100  # Limit max items per page
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LoginAPIView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
+
+            user = authenticate(request, username=username, password=password)
+            if user is None:
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            refresh = RefreshToken.for_user(user)
+            setting = DateSetting.get_instance()
+            is_ad = setting.is_ad  
+
+            role_data = {}
+
+            if hasattr(user, 'student'):
+                student = user.student
+                student_class = student.class_code
+
+                # Fetch class subjects
+                class_subjects = student_class.subjects.all() if student_class else []
+                
+                # Fetch optional subjects for the student
+                optional_subjects = student.optional_subjects.all()
+
+                # Combine class subjects and optional subjects
+                subjects = list(class_subjects) + list(optional_subjects)
+
+                # Format subjects data
+                subjects_data = [
+                    {'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name}
+                    for subject in subjects
+                ]
+
+                role_data = {
+                    'id': student.id,
+                    'role': 'student',
+                    'phone': student.phone,
+                    'address': student.address,
+                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
+                    'gender': student.gender,
+                    'parents': student.parents,
+                    'class': {
+                        'id': student_class.id if student_class else None,
+                        'class_code': student_class.class_code if student_class else None,
+                        'class_name': student_class.class_name if student_class else None,
+                    } if student_class else None,
+                    'subjects': subjects_data,  # Include both class subjects and optional subjects
+                }
+
+            elif hasattr(user, 'teacher'):
+                teacher = user.teacher
+                role_data = {
+                    'id': teacher.id,
+                    'role': 'teacher',
+                    'phone': teacher.phone,
+                    'address': teacher.address,
+                    'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
+                    'gender': teacher.gender,
+                    'subjects': [{'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'classes': [{'id': cls.id, 'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
+                    'class_teacher': {
+                        'id': teacher.class_teacher.id if teacher.class_teacher else None,
+                        'class_code': teacher.class_teacher.class_code if teacher.class_teacher else None,
+                        'class_name': teacher.class_teacher.class_name if teacher.class_teacher else None,
+                    } if teacher.class_teacher else None,
+                }
+
+            elif hasattr(user, 'principal'):
+                principal = user.principal
+                role_data = {
+                    'id': principal.id, 
+                    'role': 'principal',
+                    'phone': principal.phone,
+                    'address': principal.address,
+                    'gender': principal.gender,
+                }
+
+            elif hasattr(user, 'accountant'):
+                accountant = user.accountant
+                role_data = {
+                    'id': accountant.id, 
+                    'role': 'accountant',
+                    'phone': accountant.phone,
+                    'address': accountant.address,
+                    'gender': accountant.gender,
+                    'date_of_joining': accountant.date_of_joining.strftime('%Y-%m-%d'),
+                }
+            
+            else:
+                return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
+
+            response_data = {
+                'id': role_data.get('id'),
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,
+                'username': username,
+                **role_data,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_ad': is_ad,
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+ 
+
+# View for handling user logout
+@method_decorator(csrf_exempt, name='dispatch')
+class LogoutAPIView(APIView):
+    permission_classes = (IsAuthenticated,)  # Ensure the user is authenticated
+
+    def post(self, request):
+        # Deserialize the request data using LogoutSerializer
+        serializer = LogoutSerializer(data=request.data)
+        if serializer.is_valid():
+            refresh_token = serializer.validated_data['refresh']
+            try:
+                # Blacklist the refresh token
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Log the user out
+            logout(request)
+
+            return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+        
+        # If serializer is invalid, return validation errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class PostListCreateView(generics.ListCreateAPIView):
@@ -41,8 +196,34 @@ class PostListCreateView(generics.ListCreateAPIView):
         else:
             raise PermissionDenied("You do not have permission to create posts.")
         
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DateSettingView(APIView):
+    """
+    API to get and update the global date setting.
+    """
+
+    def get(self, request):
+        """Fetch the current date setting (AD or BS)."""
+        setting = DateSetting.get_instance()
+        return Response({"is_ad": setting.is_ad}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Update the date setting (AD or BS)."""
+        setting = DateSetting.get_instance()
+        is_ad = request.data.get("is_ad")  # Boolean value expected
+
+        if is_ad is not None:
+            setting.is_ad = is_ad
+            setting.save()
+            return Response({"message": "Date setting updated", "is_ad": setting.is_ad}, status=status.HTTP_200_OK)
+        
+        return Response({"error": "Missing 'is_ad' parameter"}, status=status.HTTP_400_BAD_REQUEST)
+
+        
 # View for handling teacher registration
 # @csrf_exempt
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterTeacherView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -96,6 +277,7 @@ class RegisterTeacherView(APIView):
             return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling principal registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterPrincipalView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -139,19 +321,16 @@ class RegisterPrincipalView(APIView):
             return Response(principal_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling student registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterStudentView(APIView):
     def post(self, request, format=None):
-        # Determine if the request data is in JSON format or form-data
         if request.content_type == 'application/json':
-            # Handle JSON data
             user_data = request.data.get('user')
             if not user_data:
-                # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
             
             student_data = request.data
         else:
-            # Handle form-data
             user_data = {
                 'username': request.data.get('user.username'),
                 'password': request.data.get('user.password'),
@@ -167,25 +346,25 @@ class RegisterStudentView(APIView):
                 'parents': request.data.get('parents'),
                 'gender': request.data.get('gender'),
                 'class_code': request.data.get('class_code'),
+                'class_code_section': request.data.get('class_code_section', None),  # Section is optional
                 'user': user_data,
             }
-        
-        # Serialize student data and validate
+
         student_serializer = StudentSerializer(data=student_data)
-        
+
         if student_serializer.is_valid():
-            # Save the student instance and return success response
             student = student_serializer.save()
             student.user.is_student = True
             student.user.save()
             
             return Response(student_serializer.data, status=status.HTTP_201_CREATED)
         else:
-            # Return error response if validation fails
             return Response(student_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 # View for handling staff registration
-class RegisterStaffView(APIView):
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterAccountantView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
         if request.content_type == 'application/json':
@@ -195,7 +374,7 @@ class RegisterStaffView(APIView):
                 # Return an error if user data is missing
                 return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-            staff_data = request.data
+            accountant_data = request.data
         else:
             # Handle form-data
             user_data = {
@@ -206,28 +385,27 @@ class RegisterStaffView(APIView):
                 'last_name': request.data.get('user.last_name'),
             }
 
-            staff_data = {
+            accountant_data = {
                 'phone': request.data.get('phone'),
                 'address': request.data.get('address'),
                 'date_of_joining': request.data.get('date_of_joining'),
                 'gender': request.data.get('gender'),
-                'role': request.data.get('role'),
                 'user': user_data,
             }
 
         # Serialize staff data and validate
-        staff_serializer = StaffSerializer(data=staff_data)
+        accountant_serializer = AccountantSerializer(data=accountant_data)
 
-        if staff_serializer.is_valid():
+        if accountant_serializer.is_valid():
             # Save the staff instance and return success response
-            staff = staff_serializer.save()
-            staff.user.is_staff = True
-            staff.user.save()
+            accountant = accountant_serializer.save()
+            accountant.user.is_accountant = True
+            accountant.user.save()
 
-            return Response(staff_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(accountant_serializer.data, status=status.HTTP_201_CREATED)
         else:
             # Return error response if validation fails
-            return Response(staff_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(accountant_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API view to list all teachers
 class TeacherListView(APIView):
@@ -250,86 +428,14 @@ class StudentListView(APIView):
         serializer = GetStudentSerializer(students, many=True)  # Serialize the student data
         return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
 
-# API view to list students by subject and class
-class StudentsBySubjectAndClassView(APIView):
-    def get(self, request, format=None):
-        # Retrieve subject ID and class ID from query parameters
-        subject_id = request.query_params.get('subject_id')
-        class_id = request.query_params.get('class_id')
-
-        if not subject_id or not class_id:
-            return Response(
-                {"error": "Both subject_id and class_id query parameters are required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # Ensure the subject exists
-            subject_instance = Subject.objects.get(id=subject_id)
-            # Ensure the class exists
-            class_instance = Class.objects.get(id=class_id)
-
-            # Check if the subject is associated with the class
-            if not class_instance.subjects.filter(id=subject_instance.id).exists():
-                return Response(
-                    {"error": "The specified subject is not associated with the given class."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Filter students in the specified class
-            students = Student.objects.filter(class_code=class_instance)
-
-        except Subject.DoesNotExist:
-            return Response(
-                {"error": "Subject with the given ID does not exist."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Class.DoesNotExist:
-            return Response(
-                {"error": "Class with the given ID does not exist."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Serialize the student data
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class StudentsBySubjectView(APIView):
-    def get(self, request, format=None):
-        # Retrieve subject ID from query parameters
-        subject_id = request.query_params.get('subject_id')
-
-        if subject_id:
-            try:
-                # Ensure the subject exists
-                subject_instance = Subject.objects.get(id=subject_id)
-                # Get all classes associated with the subject
-                classes_with_subject = subject_instance.classes.all()
-                # Get students in those classes
-                students = Student.objects.filter(class_code__in=classes_with_subject)
-            except Subject.DoesNotExist:
-                return Response(
-                    {"error": "Subject with the given ID does not exist."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-        else:
-            return Response(
-                {"error": "subject_id query parameter is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Serialize the student data
-        serializer = StudentSerializer(students, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 # List all staff members
-class StaffListView(APIView):
+class AccountantListView(APIView):
     """
-    Handle GET requests to list all staff members.
+    Handle GET requests to list all accountant members.
     """
     def get(self, request, format=None):
-        staff = Staff.objects.all()  # Retrieve all staff records
-        serializer = StaffSerializer(staff, many=True)  # Serialize the data for multiple staff records
+        accountant = Accountant.objects.all()  # Retrieve all accountant records
+        serializer = AccountantSerializer(accountant, many=True)  # Serialize the data for multiple accountant records
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # API view to see specific teacher
@@ -383,19 +489,19 @@ class StudentDetailView(APIView):
             # Return error message with 404 Not Found status if Student does not exist
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
-# Retrieve specific staff member details
-class StaffDetailView(APIView):
+# Retrieve specific Accountant member details
+class AccountantDetailView(APIView):
     """
-    Handle GET requests to retrieve details of a specific staff member by primary key.
+    Handle GET requests to retrieve details of a specific accountant member by primary key.
     """
     def get(self, request, pk, format=None):
         try:
-            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
-            serializer = StaffSerializer(staff)  # Serialize the staff data
+            accountant = Accountant.objects.get(pk=pk)  # Retrieve Accountant record by primary key
+            serializer = AccountantSerializer(accountant)  # Serialize the Accountant data
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Staff.DoesNotExist:
+        except Accountant.DoesNotExist:
             # Return an error response if staff member is not found
-            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "accountant not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # API view to delete specific teacher
 class TeacherDeleteView(APIView):
@@ -445,18 +551,18 @@ class StudentDeleteView(APIView):
             return Response({"error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
         
 # Delete a specific staff member
-class StaffDeleteView(APIView):
+class AccountantDeleteView(APIView):
     """
-    Handle DELETE requests to delete a specific staff member by primary key.
+    Handle DELETE requests to delete a specific Accountant member by primary key.
     """
     def delete(self, request, pk, format=None):
         try:
-            staff = Staff.objects.get(pk=pk)  # Retrieve staff record by primary key
-            staff.delete()  # Delete the staff record
-            return Response({"message": "Staff deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except Staff.DoesNotExist:
-            # Return an error response if staff member is not found
-            return Response({"error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
+            accountant = Accountant.objects.get(pk=pk)  # Retrieve accountant record by primary key
+            accountant.delete()  # Delete the accountant record
+            return Response({"message": "Accountant deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Accountant.DoesNotExist:
+            # Return an error response if accountant member is not found
+            return Response({"error": "Accountant not found"}, status=status.HTTP_404_NOT_FOUND)
         
 # API view to update teacher info
 class TeacherUpdateAPIView(APIView):
@@ -534,23 +640,23 @@ class StudentUpdateAPIView(APIView):
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# API view to update staff info
-class StaffUpdateAPIView(APIView):
+# API view to update accountant info
+class AccountantUpdateAPIView(APIView):
     def put(self, request, pk):
         try:
-            # Try to retrieve the staff object by primary key (pk)
-            staff = Staff.objects.get(pk=pk)
-        except Staff.DoesNotExist:
-            # Return an error response if the staff does not exist
-            return Response({"error": "Staff not found."}, status=status.HTTP_404_NOT_FOUND)
+            # Try to retrieve the accountant object by primary key (pk)
+            accountant = Accountant.objects.get(pk=pk)
+        except Accountant.DoesNotExist:
+            # Return an error response if the accountant does not exist
+            return Response({"error": "accountant not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Serialize the incoming data, allowing partial updates
-        serializer = StaffSerializer(staff, data=request.data, partial=True)
+        serializer = AccountantSerializer(accountant, data=request.data, partial=True)
         if serializer.is_valid():
-            # If the data is valid, save the updated staff instance
-            staff = serializer.save()
-            # Return the updated staff's data in the response
-            return Response(StaffSerializer(staff).data)
+            # If the data is valid, save the updated Accountant instance
+            accountant = serializer.save()
+            # Return the updated Accountant's data in the response
+            return Response(AccountantSerializer(accountant).data)
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -632,24 +738,17 @@ class LeaveApplicationListView(APIView):
 
     def get(self, request, format=None):
         """
-        Handle GET requests to retrieve all leave applications for the current user.
+        Handle GET requests to retrieve all leave applications for the current user,
+        whether they are a student or a teacher.
         """
-        try:
-            student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            return Response(
-                {"error": "No student profile associated with the current user."},
-                status=404,
-            )
+        user = request.user
+        applications = LeaveApplication.objects.filter(applicant=user)
 
-        # Get all leave applications for the current user
-        applications = LeaveApplication.objects.filter(applicant=student.user)
-        # Serialize the leave applications
         serializer = LeaveApplicationSerializer(applications, many=True)
-        # Return the serialized data
         return Response(serializer.data)
 
 # API view to create a new leave application
+@method_decorator(csrf_exempt, name='dispatch')
 class LeaveApplicationCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -831,63 +930,70 @@ class LeaveApplicationStatusUpdateView(APIView):
 
 # API view to list all subjects or create a new subject
 class SubjectListCreateView(APIView):
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve a list of all subjects.
-        """
-        subjects = Subject.objects.all()  # Retrieve all Subject instances
-        serializer = SubjectSerializer(subjects, many=True)  # Serialize Subject data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    def get(self, request):
+        """Retrieve a list of all subjects."""
+        subjects = Subject.objects.all()
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, format=None):
-        """
-        Handle POST requests to create a new Subject instance.
-        """
-        serializer = SubjectSerializer(data=request.data)  # Deserialize Subject data
+    def post(self, request):
+        """Create a new subject."""
+        serializer = SubjectSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)  # Return serialized data with 201 Created status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # API view to retrieve, update, or delete a specific subject
 class SubjectDetailView(APIView):
-    def get(self, request, pk, format=None):
-        """
-        Handle GET requests to retrieve the details of a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        serializer = SubjectSerializer(subject)  # Serialize the Subject instance
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    def get_object(self, pk):
+        """Retrieve subject instance or return 404."""
+        return get_object_or_404(Subject, pk=pk)
 
-    def put(self, request, pk, format=None):
-        """
-        Handle PUT requests to update a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        serializer = SubjectSerializer(subject, data=request.data)  # Deserialize and validate data for updating
+    def get(self, request, pk):
+        """Retrieve a specific subject by primary key."""
+        subject = self.get_object(pk)
+        serializer = SubjectSerializer(subject)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """Update a specific subject (full update)."""
+        subject = self.get_object(pk)
+        serializer = SubjectSerializer(subject, data=request.data, partial=True)  # ✅ Partial update
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  # Return validation errors with 400 Bad Request status
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk, format=None):
-        """
-        Handle DELETE requests to remove a specific Subject by primary key.
-        """
-        subject = get_object_or_404(Subject, pk=pk)  # Retrieve the Subject instance by primary key
-        subject.delete()  # Delete the Subject instance
-        return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
+    def delete(self, request, pk):
+        """Delete a specific subject."""
+        subject = self.get_object(pk)
+        subject.delete()
+        return Response({"message": "Subject successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+    
+class CompulsorySubjectsAPIView(APIView):
+    """API to list all compulsory subjects (is_optional=False)"""
+    
+    def get(self, request):
+        subjects = Subject.objects.filter(is_optional=False)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
 
+class OptionalSubjectsAPIView(APIView):
+    """API to list all optional subjects (is_optional=True)"""
+    
+    def get(self, request):
+        subjects = Subject.objects.filter(is_optional=True)
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data)
 
 # API view to list all classes or create a new class
+@method_decorator(csrf_exempt, name='dispatch')
 class ClassListCreateView(APIView):
-    def get(self, request, format=None):
-        """
-        Handle GET requests to retrieve a list of all classes.
-        """
-        classes = Class.objects.all()  # Retrieve all Class instances
-        serializer = ClassSerializer(classes, many=True)  # Serialize Class data
-        return Response(serializer.data, status=status.HTTP_200_OK)  # Return serialized data with 200 OK status
+    def get(self, request, *args, **kwargs):
+        classes = Class.objects.prefetch_related("sections")  # ✅ Prefetch only sections
+        serializer = ClassDetailSerializer(classes, many=True)
+        return Response(serializer.data)
 
     def post(self, request, format=None):
         """
@@ -913,9 +1019,6 @@ class ClassDetailView(APIView):
 
     # def put(self, request, pk, format=None):
     def put(self, request, pk, format=None):
-        """
-        Handle PUT requests to update a specific Class by primary key.
-        """
         class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         serializer = ClassSerializer(class_instance, data=request.data)  # Deserialize and validate data for updating
         if serializer.is_valid():
@@ -925,98 +1028,88 @@ class ClassDetailView(APIView):
 
     # def delete(self, request, pk, format=None):
     def delete(self, request, pk, format=None):
-        """
-        Handle DELETE requests to remove a specific Class by primary key.
-        """
         class_instance = get_object_or_404(Class, pk=pk)  # Retrieve the Class instance by primary key
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
-# Daily Attendance API View
-class DailyAttendanceView(APIView):
+@method_decorator(csrf_exempt, name='dispatch')
+class SectionListCreateAPIView(APIView):
+    def get(self, request, class_id, format=None):
+        """
+        Retrieve class details along with its sections.
+        """
+        try:
+            school_class = Class.objects.prefetch_related("sections").get(id=class_id)
+        except Class.DoesNotExist:
+            return Response({"status": "error", "message": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        class_data = {
+            "id": school_class.id,
+            "class_code": school_class.class_code,
+            "class_name": school_class.class_name,
+            "sections": SectionSerializer(school_class.sections.all(), many=True).data
+        }
+
+        return Response({"status": "success", "class": class_data}, status=status.HTTP_200_OK)
+
     def post(self, request, class_id, format=None):
         """
-        Record daily attendance for all students in a specific class.
+        Create a section and automatically assign it to the class from the URL.
         """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance_data = request.data.get('attendance', [])
+        serializer = SectionSerializer(data=request.data, context={'class_id': class_id})  # Pass class_id in context
+        if serializer.is_valid():
+            serializer.save()  # school_class is set automatically in the serializer
+            return Response({"message": "Section created successfully"}, status=status.HTTP_201_CREATED)
         
-        for data in attendance_data:
-            data['date'] = timezone.now().date()  # Today's date for daily attendance
-            serializer = DailyAttendanceSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"message": "Daily attendance recorded successfully."}, status=status.HTTP_201_CREATED)
 
-    def get(self, request, class_id, date=None, format=None):
-        """
-        Retrieve daily attendance records for a specific class and optionally filter by date.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance = DailyAttendance.objects.filter(student__in=students)
+class SectionDetailAPIView(APIView):
+    """
+    Handles retrieving, updating, and deleting a section.
+    """
+    def get(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        serializer = SectionSerializer(section)
+        return Response({"status": "success", "section": serializer.data}, status=status.HTTP_200_OK)
 
-        if date:
-            attendance_date = parse_date(date)
-            if attendance_date:
-                attendance = attendance.filter(date=attendance_date)
-            else:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        serializer = SectionSerializer(section, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Section updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = DailyAttendanceSerializer(attendance, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def delete(self, request, pk):
+        section = get_object_or_404(Section, pk=pk)
+        section.delete()
+        return Response({"message": "Section deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
-# Lesson Attendance API View
-class LessonAttendanceView(APIView):
-    def post(self, request, class_id, subject_id, format=None):
-        """
-        Record lesson-wise attendance for all students in a specific class and subject.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance_data = request.data.get('attendance', [])
-
-        for data in attendance_data:
-            data['subject'] = subject_id
-            data['date'] = timezone.now().date()  # Today's date for lesson attendance
-            serializer = LessonAttendanceSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"message": "Lesson attendance recorded successfully."}, status=status.HTTP_201_CREATED)
-
-    def get(self, request, class_id, subject_id, date=None, format=None):
-        """
-        Retrieve lesson attendance records for a specific class, subject, and optionally filter by date.
-        """
-        students = Student.objects.filter(classes__id=class_id)
-        attendance = LessonAttendance.objects.filter(student__in=students, subject__id=subject_id)
-
-        if date:
-            attendance_date = parse_date(date)
-            if attendance_date:
-                attendance = attendance.filter(date=attendance_date)
-            else:
-                return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = LessonAttendanceSerializer(attendance, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class EventListView(generics.ListCreateAPIView):
-    queryset = Event.objects.all()
+from rest_framework import viewsets, permissions
+class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]  # Only authenticated users can view and create events
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Users can only see their own events
+        # return Event.objects.filter(created_by=self.request.user)
+        return Event.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)  # Save the user who created the event
+        serializer.save(created_by=self.request.user)
 
-class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=["GET"])
+    def all_events(self, request):
+        """Return all events for teachers and principals"""
+        user = request.user
+        if user.is_teacher or user.is_principal:
+            queryset = Event.objects.all()
+        else:
+            queryset = Event.objects.filter(created_by=user)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 from rest_framework.permissions import AllowAny
 class TeacherAssignmentsView(APIView):
@@ -1088,6 +1181,8 @@ class StudentAssignmentsBySubjectView(APIView):
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# to assign homework for student by teacher
+@method_decorator(csrf_exempt, name='dispatch')
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
 
@@ -1123,6 +1218,57 @@ class AssignHomeworkView(APIView):
             return Response(AssignmentSerializer(assignment).data, status=status.HTTP_201_CREATED)
         # Return validation errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# delete assignment by same teacher who assigned the assignment
+class DeleteAssignmentView(APIView):
+    permission_classes = [AllowAny]
+
+    def delete(self, request, assignment_id, format=None):
+        # Ensure the request has a logged-in user
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if the user is a teacher
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can delete assignments."}, status=status.HTTP_403_FORBIDDEN)
+        
+        teacher = request.user.teacher  # Get the associated teacher instance
+        
+        try:
+            assignment = Assignment.objects.get(id=assignment_id, teacher=teacher)
+        except Assignment.DoesNotExist:
+            return Response({"error": "Assignment not found or you are not authorized to delete it."}, status=status.HTTP_404_NOT_FOUND)
+        
+        assignment.delete()
+        return Response({"message": "Assignment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# update assignment detail by teacher
+class UpdateAssignmentView(APIView):
+    permission_classes = [AllowAny]
+
+    def put(self, request, assignment_id, format=None):
+        # Ensure the request has a logged-in user
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Check if the user is a teacher
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can update assignments."}, status=status.HTTP_403_FORBIDDEN)
+        
+        teacher = request.user.teacher  # Get the associated teacher instance
+        
+        try:
+            assignment = Assignment.objects.get(id=assignment_id, teacher=teacher)
+        except Assignment.DoesNotExist:
+            return Response({"error": "Assignment not found or you are not authorized to update it."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = AssignmentSerializer(assignment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class FilterSubjectsView(APIView):
     permission_classes = [AllowAny]
@@ -1165,6 +1311,7 @@ class FilterSubjectsView(APIView):
         subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
         return JsonResponse({"subjects": list(subjects.values())}, safe=False)
 
+
 class StudentAssignmentsView(APIView):
     """
     View for students to fetch all assigned homework.
@@ -1196,6 +1343,7 @@ class StudentAssignmentsView(APIView):
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SubmitStudentAssignmentView(APIView):
     permission_classes = [IsAuthenticated]
  
@@ -1204,7 +1352,10 @@ class SubmitStudentAssignmentView(APIView):
         Submit an assignment for a student.
         """
         try:
-            student = request.user.student  # Ensure the user is linked to a Student instance
+            # student = request.user  # Ensure the user is linked to a Student instance
+            # student = request.user.student  # Ensure the user is linked to a Student instance
+                    # Ensure the user is linked to a Student instance
+            student = get_object_or_404(Student, user=request.user)  
 
         except Student.DoesNotExist:
             return Response(
@@ -1247,14 +1398,79 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=request.user,  # # Pass the CustomUser instance
+            # student=request.user,  # # Pass the CustomUser instance
+            student=student.user,  # # Pass the CustomUser instance
             submission_file=submission_file,
             written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data,{"message": "Assignment submitted successfully."}, status=status.HTTP_201_CREATED)
     
+class CheckSubmissionStatusView(APIView):
+    """
+    Check if a student has already submitted a specific assignment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, assignment_id, format=None):
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can check submission status."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Debugging: Print student instance to confirm
+        print(f"Student instance: {student}") 
+        
+        # Ensure that the student variable contains a Student instance
+        if not isinstance(student, Student):
+            return Response(
+                {"error": "Invalid student reference."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if the student has submitted this assignment
+        submission_exists = AssignmentSubmission.objects.filter(
+            assignment_id=assignment_id, student=student.user
+        ).exists()
+
+        return Response({"submitted": submission_exists}, status=status.HTTP_200_OK)
+
+
+
+# delete submitted assignment of student by student if not reviewed yet:
+class DeleteStudentSubmissionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, submission_id, format=None):
+        try:
+            student = request.user.student  # Ensure the user is a student
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can delete their submissions."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            submission = AssignmentSubmission.objects.get(id=submission_id, student=request.user)
+        except AssignmentSubmission.DoesNotExist:
+            return Response(
+                {"error": "Submission not found or you are not authorized to delete it."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if submission.is_checked:
+            return Response(
+                {"error": "You cannot delete a submission that has been reviewed by the teacher."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        submission.delete()
+        return Response({"message": "Submission deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+
 # review list of assignements given by teacher//uses by teacher 
 class ReviewAssignmentsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1299,6 +1515,7 @@ class ReviewAssignmentsView(APIView):
 
 # to allow a teacher to review a specific assignment submission
 # from rest_framework import status
+@method_decorator(csrf_exempt, name='dispatch')
 class ReviewAssignmentSubmissionView(APIView):
     # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
@@ -1340,7 +1557,40 @@ class ReviewAssignmentSubmissionView(APIView):
             {"message": "Review submitted successfully."},
             status=status.HTTP_200_OK
         )
+    
+# get/fetch all assignment with subject id
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
+class AssignmentsBySubjectView(APIView):
+    """
+    API view to fetch all assignments filtered by subject id.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        subject_id = request.query_params.get('subject_id')
+        if not subject_id:
+            return Response(
+                {"error": "Subject ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter assignments by subject id
+        assignments = Assignment.objects.filter(subject_id=subject_id)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for this subject."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
+@method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1411,6 +1661,42 @@ class SyllabusView(APIView):
         serializer = SyllabusSerializer(syllabus)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, *args, **kwargs):
+        """ Allows teachers to delete a syllabus """
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can delete a syllabus."}, status=status.HTTP_403_FORBIDDEN)
+
+        teacher = request.user.teacher
+        syllabus_id = kwargs.get("pk")  # Get the syllabus ID from URL
+
+        try:
+            syllabus = Syllabus.objects.get(id=syllabus_id, teacher=teacher)
+        except Syllabus.DoesNotExist:
+            return Response({"error": "You do not have permission to delete this syllabus."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        syllabus.delete()  # Delete the syllabus
+        return Response({"message": "Syllabus deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+# syllabus get / filter by subject id
+class SyllabusFilterView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_id = request.query_params.get("subject_id")
+
+        if not subject_id:
+            return Response({"error": "Subject ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        syllabus = Syllabus.objects.filter(subject_id=subject_id)
+
+        if not syllabus.exists():
+            return Response({"message": "No syllabus found for this subject."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SyllabusSerializer(syllabus, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 from rest_framework import viewsets
 class ChapterViewSet(viewsets.ModelViewSet):
     queryset = Chapter.objects.all()
@@ -1442,6 +1728,7 @@ class SubtopicViewSet(viewsets.ModelViewSet):
         return Response({"message": "Subtopic marked as completed"}, status=status.HTTP_200_OK)
 
 # Discussion Post API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionPostAPIView(APIView):
     """
     API View to list and create posts.
@@ -1449,7 +1736,7 @@ class DiscussionPostAPIView(APIView):
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
-        serializer = DiscussionPostSerializer(posts, many=True)
+        serializer = GetDiscussionPostSerializer(posts, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -1462,13 +1749,14 @@ class DiscussionPostAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Discussion Comment API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionCommentAPIView(APIView):
     """
     API View to list and create comments under a specific post.
     """
     def get(self, request, post_id):
         comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
-        serializer = DiscussionCommentSerializer(comments, many=True)
+        serializer = GetDiscussionCommentSerializer(comments, many=True)
         return Response(serializer.data)
 
     def post(self, request, post_id):
@@ -1479,12 +1767,38 @@ class DiscussionCommentAPIView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class DiscussionPostDeleteAPIView(APIView):
+    
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionPostDetailAPIView(APIView):
     """
-    API View to delete a discussion post.
+    API View to retrieve, update, and delete a discussion post.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionPostSerializer(post)
+        return Response(serializer.data)
+
+    def put(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this post.")
+
+        serializer = DiscussionPostSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, post_id):
         try:
@@ -1494,14 +1808,41 @@ class DiscussionPostDeleteAPIView(APIView):
 
         if post.created_by != request.user:
             raise PermissionDenied("You are not authorized to delete this post.")
+
         post.delete()
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-class DiscussionCommentDeleteAPIView(APIView):
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionCommentDetailAPIView(APIView):
     """
-    API View to delete a discussion comment.
+    API View to retrieve, update, and delete a discussion comment.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionCommentSerializer(comment)
+        return Response(serializer.data)
+
+    def put(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if comment.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this comment.")
+
+        serializer = DiscussionCommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, comment_id):
         try:
@@ -1514,142 +1855,9 @@ class DiscussionCommentDeleteAPIView(APIView):
 
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
     
-class FeeCategoryListCreateView(APIView):
-    def get(self, request):
-        fee_categories = FeeCategory.objects.all()
-        serializer = FeeCategorySerializer(fee_categories, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = FeeCategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class FeeCategoryDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeCategorySerializer(fee_category)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeCategorySerializer(fee_category, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            fee_category = FeeCategory.objects.get(pk=pk)
-        except FeeCategory.DoesNotExist:
-            return Response({'error': 'FeeCategory not found'}, status=status.HTTP_404_NOT_FOUND)
-        fee_category.delete()
-        return Response({'message': 'FeeCategory deleted'}, status=status.HTTP_204_NO_CONTENT)
-
-class FeeStructureListCreateView(APIView):
-    def get(self, request):
-        fee_structures = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories')
-        serializer = FeeStructureSerializer(fee_structures, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = FeeStructureSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class FeeStructureDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.select_related('student_class').prefetch_related('fee_categories').get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeStructureSerializer(fee_structure)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = FeeStructureSerializer(fee_structure, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            fee_structure = FeeStructure.objects.get(pk=pk)
-        except FeeStructure.DoesNotExist:
-            return Response({'error': 'FeeStructure not found'}, status=status.HTTP_404_NOT_FOUND)
-        fee_structure.delete()
-        return Response({'message': 'FeeStructure deleted'}, status=status.HTTP_204_NO_CONTENT)
-
-class StudentFeeListView(APIView):
-    def get(self, request, student_id):
-        transactions = PaymentTransaction.objects.filter(student_id=student_id)
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-class StudentPendingFeesView(APIView):
-    def get(self, request, student_id):
-        transactions = PaymentTransaction.objects.filter(student_id=student_id, remaining_dues__gt=0)
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-class PaymentTransactionListCreateView(APIView):
-    def get(self, request):
-        transactions = PaymentTransaction.objects.select_related('student', 'fee_structure')
-        serializer = PaymentTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = PaymentTransactionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class PaymentTransactionDetailView(APIView):
-    def get(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.select_related('student', 'fee_structure').get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = PaymentTransactionSerializer(transaction)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = PaymentTransactionSerializer(transaction, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk):
-        try:
-            transaction = PaymentTransaction.objects.get(pk=pk)
-        except PaymentTransaction.DoesNotExist:
-            return Response({'error': 'PaymentTransaction not found'}, status=status.HTTP_404_NOT_FOUND)
-        transaction.delete()
-        return Response({'message': 'PaymentTransaction deleted'}, status=status.HTTP_204_NO_CONTENT)
-    
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamAPIView(APIView):
     def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
@@ -1663,6 +1871,7 @@ class ExamAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamDetailAPIView(APIView):
     def get(self, request):
         """
@@ -1679,6 +1888,7 @@ class ExamDetailAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentResultAPIView(APIView):
     def get(self, request):
         results = StudentResult.objects.all()
@@ -1782,6 +1992,7 @@ class SingleStudentResultAPIView(APIView):
         student_result.delete()
         return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
+
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1874,10 +2085,18 @@ class ExamDetailsByExamView(APIView):
         try:
             # Fetch the exam
             exam = Exam.objects.get(id=exam_id)      
-
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            
             # Fetch the related exam details
             exam_details = []
             for detail in exam.exam_details.all():
+                exam_date = detail.exam_date
+
+                # Convert exam_date to BS if needed
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
                 exam_details.append({
                     "id": detail.id,
                     "class_details": {
@@ -1892,7 +2111,7 @@ class ExamDetailsByExamView(APIView):
                     },
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
                 })
 
@@ -1905,10 +2124,13 @@ class ExamDetailsByExamView(APIView):
                 "exam_details": exam_details,
             }
             return Response(response_data, status=status.HTTP_200_OK)
+
         except Exam.DoesNotExist:
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class SubjectWiseExamResultsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1929,8 +2151,17 @@ class SubjectWiseExamResultsView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Prepare exam and subject details
+            # Get the first exam detail
             exam_detail = results[0].exam_detail
+
+            # Convert exam_date to BS if needed
+            exam_date = exam_detail.exam_date
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
+            # Prepare exam and subject details
             exam_details = {
                 "exam_id": exam_detail.exam.id,
                 "exam_name": exam_detail.exam.name,
@@ -1940,7 +2171,7 @@ class SubjectWiseExamResultsView(APIView):
                 "subject_name": exam_detail.subject.subject_name,
                 "full_marks": exam_detail.full_marks,
                 "pass_marks": exam_detail.pass_marks,
-                "exam_date": exam_detail.exam_date,
+                "exam_date": exam_date,  # Converted if necessary
             }
 
             # Prepare results data for all students
@@ -1983,7 +2214,6 @@ class SubjectWiseExamResultsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class ExamDetailsByTeacherView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
 
@@ -2006,15 +2236,24 @@ class ExamDetailsByTeacherView(APIView):
         if not exam_details.exists():
             return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
 
+        # Check date format setting (BS or AD)
+        date_setting = DateSetting.get_instance()
+
         # Prepare the response with the desired structure
         response_data = []
         for detail in exam_details:
+            # Convert exam_date to BS if needed
+            exam_date = detail.exam_date
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
             response_data.append({
                 "exam_details": {
                     "id": detail.id,  # Exam detail ID
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,
+                    "exam_date": exam_date,  # Converted if necessary
                 },
                 "exam": {
                     "id": detail.exam.id,
@@ -2033,6 +2272,8 @@ class ExamDetailsByTeacherView(APIView):
             })
         return Response(response_data, status=200)
 
+
+
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, class_id, *args, **kwargs):
         try:
@@ -2045,9 +2286,19 @@ class ExamTimetableView(APIView):
             if not exam_details.exists():
                 return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Prepare response data without full_marks and pass_marks
-            exam_details_data = [
-                {
+            # Check date format setting (BS or AD)
+            date_setting = DateSetting.get_instance()
+
+            # Prepare response data with date conversion
+            exam_details_data = []
+            for detail in exam_details:
+                # Convert exam_date to BS if needed
+                exam_date = detail.exam_date
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
+                exam_details_data.append({
                     "id": detail.id,
                     "class_details": {
                         "id": detail.class_assigned.id,
@@ -2059,11 +2310,9 @@ class ExamTimetableView(APIView):
                         "subject_code": detail.subject.subject_code,
                         "subject_name": detail.subject.subject_name,
                     },
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
-                }
-                for detail in exam_details
-            ]
+                })
 
             response_data = {
                 "id": exam.id,
@@ -2080,6 +2329,7 @@ class ExamTimetableView(APIView):
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ExamsByClassView(APIView):
     def get(self, request, class_id, *args, **kwargs):
@@ -2114,14 +2364,14 @@ class ExamsByClassView(APIView):
 
 
 class BulkUpdateRollNumbersAPIView(APIView):
-    def put(self, request, *args, **kwargs):
+    def put(self, request, class_id, *args, **kwargs):
         """
-        API to bulk update roll numbers for students.
-        Expects a JSON payload:
+        API to bulk update roll numbers for students within a given class.
+        Expects JSON:
         {
             "students": [
-                {"id": 1, "first_name": "John", "last_name": "Doe", "roll_no": "101"},
-                {"id": 2, "first_name": "Jane", "last_name": "Smith", "roll_no": "102"}
+                {"id": 1, "roll_no": "3"},
+                {"id": 2, "roll_no": "4"}
             ]
         }
         """
@@ -2131,27 +2381,55 @@ class BulkUpdateRollNumbersAPIView(APIView):
             return Response({"detail": "Students data is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            with transaction.atomic():  # Ensuring atomicity (all or nothing)
-                for student_data in students_data:
-                    student_id = student_data.get("id")
-                    roll_no = student_data.get("roll_no")
+            # Validate class exists
+            if not Class.objects.filter(id=class_id).exists():
+                return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
 
-                    if student_id is None or roll_no is None:
-                        return Response({"detail": "Invalid student data format."}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                student_ids = [s["id"] for s in students_data]
 
-                    # Update the student's roll number
-                    Student.objects.filter(id=student_id).update(roll_no=roll_no)
+                # Fetch students from database who belong to the given class
+                students = Student.objects.filter(id__in=student_ids, class_code_id=class_id)
+
+                if students.count() != len(students_data):
+                    return Response({"detail": "Some students do not belong to the given class."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Get existing roll numbers in the class (excluding the students being updated)
+                existing_rolls = set(
+                    Student.objects.filter(class_code_id=class_id)
+                    .exclude(id__in=student_ids)
+                    .values_list("roll_no", flat=True)
+                )
+
+                # Get new roll numbers from request
+                new_roll_numbers = {s["roll_no"] for s in students_data}
+
+                # Ensure no duplicate roll numbers within the class
+                if len(new_roll_numbers) != len(students_data):
+                    return Response({"detail": "Duplicate roll numbers detected."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if existing_rolls & new_roll_numbers:
+                    return Response({"detail": "Roll number conflict in the class."}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Temporarily clear roll numbers for students being updated
+                Student.objects.filter(id__in=student_ids).update(roll_no=None)
+
+                # Assign new roll numbers
+                roll_no_map = {s["id"]: s["roll_no"] for s in students_data}
+                for student in students:
+                    student.roll_no = roll_no_map[student.id]
+
+                Student.objects.bulk_update(students, ["roll_no"])
 
             return Response({"detail": "Roll numbers updated successfully."}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import transaction
-from .models import StudentResult, StudentOverallResult
 
 @receiver(post_save, sender=StudentResult)
 def update_student_overall_result(sender, instance, **kwargs):
@@ -2233,6 +2511,7 @@ def recalculate_rankings(exam, class_instance):
         result.rank = rank
         result.save()
 
+
 class StudentRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2290,30 +2569,9 @@ class StudentRankingView(APIView):
             )
 
 
-class MessageListView(generics.ListAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
-
-class SendMessageView(generics.CreateAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
-
-
-class NotesListCreateView(APIView):
+@method_decorator(csrf_exempt, name='dispatch')
+class NotesCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get(self, request):
-        """List all notes (Anyone can view)."""
-        notes = Notes.objects.all()
-        serializer = NotesSerializer(notes, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         """Create a new note (Only teachers can post)."""
@@ -2343,7 +2601,7 @@ class NotesDetailView(APIView):
         if note is None:
             return Response({"error": "Note not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = NotesSerializer(note, context={'request': request})  # Pass request context
+        serializer = GetNotesSerializer(note, context={'request': request})  # Pass request context
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
@@ -2373,3 +2631,1168 @@ class NotesDetailView(APIView):
 
         note.delete()
         return Response({"message": "Note deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+class NotesBySubjectAPIView(APIView):
+    def get(self, request, subjectid):
+        try:
+            # Fetch the subject by its ID
+            subject = Subject.objects.get(id=subjectid)
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch all notes for the given subject
+        notes = Notes.objects.filter(subject=subject)
+
+        # Serialize the notes data
+        serializer = GetNotesSerializer(notes, many=True)
+
+        # Return the serialized data
+        return Response({"notes": serializer.data}, status=status.HTTP_200_OK)
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class DailyAttendanceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        today = timezone.now().date()
+        user = request.user  # Logged-in user (CustomUser)
+
+        # Ensure the logged-in user is a teacher
+        try:
+            teacher = Teacher.objects.get(user=user)
+        except Teacher.DoesNotExist:
+            return Response({"detail": "User is not a teacher."}, status=status.HTTP_400_BAD_REQUEST)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # To track the students whose attendance is already recorded
+        already_recorded_students = []
+        new_attendance_students = []
+
+        # Flag to check if all attendance records are already taken
+        all_records_taken = True
+
+        try:
+            with transaction.atomic():  # Wrap the entire operation in a transaction
+                for attendance in attendance_data:
+                    student = attendance.get('student')
+                    status_value = attendance.get('status')
+
+                    # Check if the record exists for the student on the given day
+                    existing_record = DailyAttendance.objects.filter(student_id=student, date=today).first()
+
+                    if existing_record:
+                        # If record already exists, skip this student
+                        already_recorded_students.append(student)
+                    else:
+                        # Create a new record for students without today's attendance
+                        DailyAttendance.objects.create(
+                            student_id=student,
+                            date=today,
+                            status=status_value,
+                            recorded_by=teacher
+                        )
+                        new_attendance_students.append(student)
+                        all_records_taken = False  # Mark as False if there are new records
+
+            if all_records_taken:
+                return Response({"detail": "Attendance already taken for the day."}, status=status.HTTP_400_BAD_REQUEST)
+
+            response_data = {
+                "detail": "Attendance records processed successfully.",
+                "already_recorded_students": already_recorded_students,
+                "new_attendance_students": new_attendance_students
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            # If any error occurs, the entire transaction will be rolled back
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttendanceByClassAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
+
+    def get(self, request, classid, date):
+        """Retrieve attendance records for a class on a specific date."""
+        try:
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        attendance_records = DailyAttendance.objects.filter(student__class_code=class_obj, date=date_obj)
+
+        # Serialize class details
+        class_details = {
+            "id": class_obj.id,
+            "name": class_obj.class_name,
+            "code": class_obj.class_code
+        }
+
+        # Serialize attendance data
+        attendance_list = [
+            {
+                "student_id": record.student.id,
+                "full_name": f"{record.student.user.first_name} {record.student.user.last_name}".strip(),
+                "roll_no": record.student.roll_no,
+                "status": record.status
+            }
+            for record in attendance_records
+        ]
+
+        return Response({
+            "date": date_obj,
+            "class": class_details,
+            "attendance": attendance_list
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request, classid, date):
+        """Update attendance for a class on a specific date."""
+        try:
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        attendance_data = request.data.get('attendance', [])
+
+        if not attendance_data:
+            return Response({"detail": "No attendance data provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                for record in attendance_data:
+                    student_id = record.get('student')
+                    status_value = record.get('status')
+
+                    attendance_record = DailyAttendance.objects.filter(
+                        student_id=student_id, date=date_obj, student__class_code=class_obj
+                    ).first()
+
+                    if attendance_record:
+                        attendance_record.status = status_value
+                        attendance_record.save()
+                    else:
+                        return Response(
+                            {"detail": f"Attendance record for student {student_id} does not exist."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+            return Response({"detail": "Class attendance updated successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, classid, date):
+        """Delete attendance records for a class on a specific date."""
+        try:
+            date_obj = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            class_obj = Class.objects.get(id=classid)
+        except Class.DoesNotExist:
+            return Response({"detail": "Class not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            with transaction.atomic():
+                attendance_records = DailyAttendance.objects.filter(student__class_code=class_obj, date=date_obj)
+
+                if not attendance_records.exists():
+                    return Response({"detail": "No attendance records found for the specified class and date."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                attendance_records.delete()
+
+            return Response({"detail": "Class attendance records deleted successfully."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    
+
+class StudentsByClassAttendanceAPIView(APIView):
+    def get(self, request, class_id):
+        students = Student.objects.filter(class_code_id=class_id).prefetch_related('user')
+
+        # Get student IDs to fetch last transactions in bulk (optimized)
+        student_ids = students.values_list('id', flat=True)
+
+        # Fetch last transaction for each student in bulk (avoiding N+1 queries)
+        last_transactions = {
+            txn.student_id: txn.balance
+            for txn in StudentTransaction.objects.filter(student_id__in=student_ids).order_by('student_id', '-transaction_date')
+        }
+
+        # Attach balance to each student instance
+        for student in students:
+            student.pre_balance = last_transactions.get(student.id, 0)  # Default to 0 if no transaction
+
+        serializer = StudentListAttendanceSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    
+
+class SubjectWiseStudentListAPIView(APIView):
+    def get(self, request, subject_id):
+        """Retrieve students enrolled in a given subject."""
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response({"detail": "Subject not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        students = Student.objects.filter(class_code__subjects=subject).distinct()
+        serializer = GetStudentSerializer(students, many=True)
+
+        return Response({
+            "subject": {
+                "id": subject.id,
+                "name": subject.subject_name,
+                "code": subject.subject_code
+            },
+            "students": serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+# Fee Category API
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+@method_decorator(csrf_exempt, name='dispatch')
+class FeeCategoryNameAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        fee_category_names = FeeCategoryName.objects.all()
+        serializer = FeeCategoryNameSerializer(fee_category_names, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = FeeCategoryNameSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class FeeCategoryNameDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            serializer = FeeCategoryNameSerializer(fee_category_name)
+            return Response(serializer.data)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            serializer = FeeCategoryNameSerializer(fee_category_name, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, category_id, *args, **kwargs):
+        try:
+            fee_category_name = FeeCategoryName.objects.get(id=category_id)
+            fee_category_name.delete()
+            return Response({"detail": "FeeCategoryName deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except FeeCategoryName.DoesNotExist:
+            return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class FeeCategoryByClassAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, class_id, *args, **kwargs):
+        fee_categories = FeeCategory.objects.filter(class_assigned__id=class_id)
+        serializer = GetFeeCategorySerializer(fee_categories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, class_id, *args, **kwargs):
+        # Add class_id to the incoming data
+        data = request.data
+        data['class_assigned'] = class_id  # Ensure the class_id is included in the new category data
+
+        # Validation: Check if the FeeCategory already exists for this class and category name
+        fee_category_name = data.get('fee_category_name')
+        if FeeCategory.objects.filter(class_assigned__id=class_id, fee_category_name__id=fee_category_name).exists():
+            return Response({"detail": "Fee category for this class already created."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = FeeCategorySerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class FeeCategoryDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            serializer = GetFeeCategorySerializer(fee_category)
+            return Response(serializer.data)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            serializer = FeeCategorySerializer(fee_category, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, class_id, category_id, *args, **kwargs):
+        try:
+            fee_category = FeeCategory.objects.get(id=category_id, class_assigned__id=class_id)
+            fee_category.delete()
+            return Response({"detail": "FeeCategory deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except FeeCategory.DoesNotExist:
+            return Response({"detail": "FeeCategory not found."}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+@method_decorator(csrf_exempt, name='dispatch')
+class TransportationFeeListCreateAPIView(APIView):
+    def get(self, request):
+        transportation_fees = TransportationFee.objects.all()
+        serializer = TransportationFeeSerializer(transportation_fees, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        # Validation: Check if the transportation fee with the same name already exists
+        place = request.data.get('place')
+        if TransportationFee.objects.filter(place=place).exists():
+            return Response({"detail": "Transportation Fee with that name already created."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = TransportationFeeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TransportationFeeDetailAPIView(APIView):
+    def get(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TransportationFeeSerializer(transportation_fee)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TransportationFeeSerializer(transportation_fee, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            transportation_fee = TransportationFee.objects.get(pk=pk)
+        except TransportationFee.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        transportation_fee.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class StudentBillAPIView(APIView):
+    def get(self, request, student_id, *args, **kwargs):
+        """Retrieve all bills for a specific student."""
+        bills = StudentBill.objects.filter(student__id=student_id)
+        serializer = GetStudentBillSerializer(bills, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, student_id, *args, **kwargs):
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        month = request.data.get("month")
+        if StudentBill.objects.filter(student=student, month=month).exists():
+            return Response({"error": "Bill already generated for this month."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate pre_balance (last transaction balance)
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
+        # Prepare request data
+        request.data["student"] = student.id
+        serializer = StudentBillSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Start atomic transaction block
+            with transaction.atomic():
+                # Create the bill
+                student_bill = serializer.save()
+
+                # Calculate post_balance (pre_balance + bill amount)
+                post_balance = pre_balance + student_bill.total_amount
+
+                # Create the transaction for the bill
+                StudentTransaction.objects.create(
+                    student=student_bill.student,
+                    transaction_type='bill',
+                    bill=student_bill,
+                    balance=post_balance,
+                    transaction_date=student_bill.date
+                )
+
+                # Commit the transaction
+                bill_data = GetStudentBillSerializer(student_bill).data
+                bill_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Student Bill generated successfully with Bill Number: {student_bill.bill_number}',
+                    'bill_details': bill_data
+                }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class StudentBillDetailAPIView(APIView):
+    def get(self, request, bill_number=None):
+        try:
+            # Fetch the StudentBill object
+            bill = StudentBill.objects.get(bill_number=bill_number)
+
+            # Serialize the bill data
+            serializer = GetStudentBillSerializer(bill)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except StudentBill.DoesNotExist:
+            return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class StudentPaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, student_id, *args, **kwargs):
+        """Retrieve all payments for a specific student."""
+        payments = StudentPayment.objects.filter(student__id=student_id)
+        serializer = GetStudentPaymentSerializer(payments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, student_id, *args, **kwargs):
+        try:
+            student = Student.objects.get(id=student_id)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        
+
+        last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+        pre_balance = last_transaction.balance if last_transaction else 0
+
+        data = request.data
+        data['student'] = student_id
+
+        serializer = StudentPaymentSerializer(data=data, context={'request': request})  # Pass request context
+
+        if serializer.is_valid():
+            # Begin atomic transaction
+            with transaction.atomic():
+                # Create the payment object
+                payment = serializer.save()
+
+                # Update the balances
+                post_balance = pre_balance - payment.amount_paid
+
+                # Create the transaction for the payment
+                last_transaction = StudentTransaction.objects.filter(student=student).order_by('-transaction_date').first()
+                last_balance = last_transaction.balance if last_transaction else Decimal('0.00')
+                new_balance = last_balance - Decimal(str(payment.amount_paid))
+
+                # Save the new transaction entry
+                StudentTransaction.objects.create(
+                    student=payment.student,
+                    transaction_type='payment',
+                    payment=payment,
+                    balance=new_balance,
+                    transaction_date=payment.date
+                )
+
+                # Commit the transaction
+                post_balance = pre_balance - payment.amount_paid
+
+                payment_data = GetStudentPaymentSerializer(payment).data
+                payment_data.update({
+                    "pre_balance": pre_balance,
+                    "post_balance": post_balance
+                })
+
+                return Response({
+                    'message': f'Payment done successfully with Payment Number: {payment.payment_number}',
+                    'payment_details': payment_data
+                }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StudentPaymentDetailAPIView(APIView):
+    def get(self, request, payment_number=None):
+        try:
+            # Fetch the StudentPayment object
+            payment = StudentPayment.objects.get(payment_number=payment_number)
+
+            # Serialize the payment data
+            serializer = GetStudentPaymentSerializer(payment)
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except StudentPayment.DoesNotExist:
+            return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class StudentTransactionsAPIView(APIView):
+    def get(self, request, student_id):
+        # Get all transactions for the student
+        transactions = StudentTransaction.objects.filter(student_id=student_id)
+        if not transactions.exists():
+            return Response({"message": "No transactions found"}, status=404)
+
+        # Get the date setting (BS or AD)
+        date_setting = DateSetting.get_instance()
+
+        # Serialize transactions
+        transaction_serializer = StudentTransactionSerializer(transactions, many=True)
+        transaction_data = transaction_serializer.data
+
+        # Extract student details from the first transaction manually
+        first_transaction = transactions.first()
+        student = first_transaction.student
+
+        # Convert date_of_birth to BS if needed
+        date_of_birth = student.date_of_birth
+        if date_of_birth and not date_setting.is_ad:
+            bs_dob = nepali_datetime.date.from_datetime_date(date_of_birth)
+            date_of_birth = bs_dob.strftime('%Y-%m-%d')
+
+        student_data = {
+            "id": student.id,
+            "name": student.user.username,
+            "parents": student.parents,
+            "roll_no": student.roll_no,
+            "phone": student.phone,
+            "address": student.address,
+            "date_of_birth": date_of_birth,  # Converted if necessary
+            "gender": student.gender,
+            "class_name": student.class_code.class_name if student.class_code else None
+        }
+
+        # Convert transaction dates to BS if needed
+        for transaction in transaction_data:
+            transaction_date = transaction.get("transaction_date")
+            if transaction_date and not date_setting.is_ad:
+                ad_date = datetime.strptime(transaction_date, "%Y-%m-%d")  # Assuming AD format in DB
+                bs_date = nepali_datetime.date.from_datetime_date(ad_date)
+                transaction["transaction_date"] = bs_date.strftime('%Y-%m-%d')
+
+            # Remove student data from each transaction
+            transaction.pop("student", None)
+
+        # Return response with student details only once
+        return Response({
+            "student": student_data,  # Extracted manually
+            "transactions": transaction_data  # Transactions without duplicate student data
+        })
+
+
+
+class DashboardAPIView(APIView):
+    def get(self, request):
+        # Count total numbers
+        total_students = Student.objects.count()
+        total_teachers = Teacher.objects.count()
+        total_classes = Class.objects.count()
+
+        # Gender distribution
+        student_gender_distribution = Student.objects.values('gender').annotate(count=Count('gender'))
+        teacher_gender_distribution = Teacher.objects.values('gender').annotate(count=Count('gender'))
+
+        # Convert to dictionary format
+        student_gender_data = {item["gender"]: item["count"] for item in student_gender_distribution}
+        teacher_gender_data = {item["gender"]: item["count"] for item in teacher_gender_distribution}
+
+        # Students per class
+        students_per_class = {
+            cls.class_name: cls.students.count() for cls in Class.objects.prefetch_related('students')
+        }
+
+        # Prepare response data (without using a serializer)
+        data = {
+            "total_students": total_students,
+            "total_teachers": total_teachers,
+            "total_classes": total_classes,
+            "student_gender_distribution": student_gender_data,
+            "teacher_gender_distribution": teacher_gender_data,
+            "students_per_class": students_per_class,
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class AttendanceSummaryAPIView(APIView):
+
+    def get(self, request, date=None):
+        """
+        Get overall attendance statistics for a specific date.
+        """
+        if not date:
+            date = timezone.now().date()  # Default to today's date
+        else:
+            try:
+                date = timezone.datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get all students
+        total_students = Student.objects.count()
+
+        # Get attendance records for the given date
+        attendance_records = DailyAttendance.objects.filter(date=date)
+
+        # Count present and absent students
+        present_count = attendance_records.filter(status=True).count()
+        absent_count = attendance_records.filter(status=False).count()
+
+        # Get class-wise statistics
+        class_wise_stats = defaultdict(lambda: {"total": 0, "present": 0, "absent": 0})
+
+        for student in Student.objects.all():
+            class_name = student.class_code.class_name  # Assuming class_code is related to Class model
+            class_wise_stats[class_name]["total"] += 1
+
+        for record in attendance_records:
+            class_name = record.student.class_code.class_name
+            if record.status:
+                class_wise_stats[class_name]["present"] += 1
+            else:
+                class_wise_stats[class_name]["absent"] += 1
+
+        return Response({
+            "date": date,
+            "total_students": total_students,
+            "total_present": present_count,
+            "total_absent": absent_count,
+            "class_wise_attendance": class_wise_stats
+        }, status=status.HTTP_200_OK)
+    
+
+class SyllabusSummaryAPIView(APIView):
+    def get(self, request, teacher_id):
+        syllabuses = Syllabus.objects.filter(teacher_id=teacher_id).prefetch_related('chapters__topics__subtopics')
+
+        syllabus_data = []
+
+        for syllabus in syllabuses:
+            # Count total subtopics (since progress is tracked at the subtopic level)
+            total_subtopics = syllabus.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+            completed_subtopics = syllabus.chapters.aggregate(
+                completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+            )["completed"] or 0
+
+            # Calculate completion percentage
+            completion_percentage = (completed_subtopics / total_subtopics * 100) if total_subtopics else 0
+
+            syllabus_data.append({
+                "subject": syllabus.subject.name,
+                "total_topics": syllabus.chapters.aggregate(total=Count("topics"))["total"] or 0,  # Total topics count
+                "total_subtopics": total_subtopics,  # Total subtopics count
+                "completed_subtopics": completed_subtopics,  # Completed subtopics count
+                "completion_percentage": round(completion_percentage, 2),
+            })
+
+        return Response({"syllabus_progress": syllabus_data}, status=200)
+
+class SyllabusCompletionPercentageAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_name = request.query_params.get("subject_name", None)
+        subject_code = request.query_params.get("subject_code", None)
+
+        if not subject_name and not subject_code:
+            return Response({"error": "Either subject_name or subject_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter syllabus by subject name or code
+        if subject_name:
+            syllabuses = Syllabus.objects.filter(subject__subject_name__icontains=subject_name)
+        elif subject_code:
+            syllabuses = Syllabus.objects.filter(subject__subject_code__icontains=subject_code)
+
+        if not syllabuses.exists():
+            return Response({"message": "No syllabuses found for this subject."}, status=status.HTTP_404_NOT_FOUND)
+
+        syllabus_data = []
+
+        # Calculate completion percentage for each syllabus
+        for syllabus in syllabuses:
+            total_topics = syllabus.chapters.aggregate(total=Count("topics"))["total"] or 0
+            total_subtopics = syllabus.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+
+            completed_topics = syllabus.chapters.aggregate(
+                completed=Count("topics", filter=Q(topics__is_completed=True))
+            )["completed"] or 0
+
+            completed_subtopics = syllabus.chapters.aggregate(
+                completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+            )["completed"] or 0
+
+            total_completed = completed_topics + completed_subtopics
+            total_items = total_topics + total_subtopics
+
+            completion_percentage = (total_completed / total_items * 100) if total_items else 0
+
+            syllabus_data.append({
+                "subject": syllabus.subject.subject_name,
+                "subject_code": syllabus.subject.subject_code,
+                "class_name": syllabus.class_assigned.class_name,
+                "teacher_name": syllabus.teacher.user.username,
+                "completion_percentage": round(completion_percentage, 2),
+            })
+
+        return Response({"syllabus_progress": syllabus_data}, status=status.HTTP_200_OK)
+
+from django.db.models import Sum
+class FeeDashboardAPIView(APIView):
+    def get(self, request):
+        # Get current month & year
+        current_month = now().strftime("%B")  # e.g., "February"
+        current_year = now().year
+
+        # 🔹 Total amount billed (All time)
+        total_billed_all_time = StudentBill.objects.aggregate(total=Sum('total_amount'))["total"] or 0
+
+        # 🔹 Total amount billed (Current Month)
+        total_billed_monthly = StudentBill.objects.filter(date__month=datetime.now().month).aggregate(total=Sum('total_amount'))["total"] or 0
+
+        # 🔹 Total payments made (All time)
+        total_paid_all_time = StudentPayment.objects.aggregate(total=Sum('amount_paid'))["total"] or 0
+
+        # 🔹 Total payments made (Current Month)
+        total_paid_monthly = StudentPayment.objects.filter(date__month=datetime.now().month).aggregate(total=Sum('amount_paid'))["total"] or 0
+
+        # 🔹 Number of payments (All time)
+        total_payments_all_time = StudentPayment.objects.count()
+
+        # 🔹 Number of payments (Current Month)
+        total_payments_monthly = StudentPayment.objects.filter(date__month=datetime.now().month).count()
+
+        # 🔹 Students with cleared dues (Balance = 0)
+        cleared_students = StudentTransaction.objects.filter(balance=0).values("student").distinct().count()
+
+        # 🔹 Students with outstanding balance (Balance > 0) and have transactions/bills
+        students_with_dues = StudentTransaction.objects.filter(balance__gt=0).filter(student__in=StudentBill.objects.values('student')).values("student").distinct().count()  # Ensure there is a bill generated for the student
+        
+
+        # 🔹 Total Scholarship/Discount Amount
+        discount_amount = StudentBill.objects.aggregate(total=Sum("discount"))["total"] or 0
+
+        # 🔹 Total Fee Amount where Scholarship is applied
+        scholarship_fee_amount = StudentBillFeeCategory.objects.filter(scholarship=True).aggregate(total=Sum("fee_category__amount"))["total"] or 0
+
+        # Response Data
+        data = {
+            "bills": {
+                "total_bill_amount_alltime": total_billed_all_time,
+                "bill_amount_monthly": [
+                    {
+                        "month": current_month,
+                        "amount": total_billed_monthly
+                    }
+                ],
+                "total_payment_amount_alltime": total_paid_all_time,
+                "number_of_payments_done": total_payments_all_time,
+                "payment_amount_monthly": [
+                    {
+                        "month": current_month,
+                        "amount": total_paid_monthly,
+                        "no_of_payment": total_payments_monthly
+                    }
+                ],
+                "dues": {
+                    "students_cleared": cleared_students,
+                    "students_with_dues": students_with_dues
+                },
+                "total_discount_amount": discount_amount,
+                "total_scholarship_fee_amount": scholarship_fee_amount
+            }
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PaymentSearchAPIView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination  # Pagination class should not be instantiated
+    serializer_class = None  # We will return custom JSON
+
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+
+        if not start_date or not end_date:
+            return StudentPayment.objects.none()  # Return empty queryset
+
+        try:
+            if '/' in start_date and '/' in end_date:
+                start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
+                end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
+                start_date_ad = start_date_bs_obj.to_datetime_date()
+                end_date_ad = end_date_bs_obj.to_datetime_date()
+            else:
+                start_date_ad = parse_date(start_date)
+                end_date_ad = parse_date(end_date)
+                if not start_date_ad or not end_date_ad:
+                    raise ValueError
+                if start_date_ad > end_date_ad:
+                    return StudentPayment.objects.none()
+
+        except ValueError:
+            return StudentPayment.objects.none()
+
+        return StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        total_amount = queryset.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        payment_data = []
+        for payment in queryset:
+            student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
+            class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
+            created_by = payment.created_by.username if payment.created_by else "Unknown"
+
+            payment_data.append({
+                "student_name": student_name,
+                "class": class_name,
+                "payment_amount": payment.amount_paid,
+                "payment_date": payment.date.strftime('%Y-%m-%d'),
+                "created_by": created_by
+            })
+
+        # Apply pagination
+        page = self.paginate_queryset(payment_data)
+        if page is not None:
+            return self.get_paginated_response({
+                "payments": page,
+                "total_payment_amount": total_amount
+            })
+
+        return Response({
+            "payments": payment_data,
+            "total_payment_amount": total_amount
+        })
+
+
+# API to create a new message
+class CreateMessageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = CommunicationSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()  # sender is automatically set in the serializer
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# API to get messages for a specific receiver
+class UserMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages where the logged-in user is the direct receiver.
+        """
+        user = request.user
+        messages = Communication.objects.filter(receiver=user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# API to get messages based on logged-in user's role
+class RoleBasedMessagesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Fetch messages based on the logged-in user's role.
+        """
+        user = request.user
+        role_filters = []
+        messages = Communication.objects.none()
+
+        # Role-based filters
+        if user.is_teacher:
+            role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
+        if user.is_accountant:
+            role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
+
+        # Fetch general role-based messages
+        messages = Communication.objects.filter(receiver_role__in=role_filters)
+
+        # Student-specific message filtering
+        if user.is_student:
+            student_instance = getattr(user, 'student', None)
+            if student_instance:
+                user_classes = student_instance.class_code.all()  # ✅ Fetch student's multiple classes
+
+                student_messages = Communication.objects.filter(
+                    receiver_role__in=["student", "teacher_student", "student_accountant", "all"]
+                ).filter(
+                    Q(class_field__isnull=True) | Q(class_field__in=user_classes)  # ✅ Check if student belongs to any of the message's classes
+                )
+
+                messages = messages.union(student_messages)
+
+        # Serialize messages and send response
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class CommunicationDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk):
+        """
+        Retrieve a single message by ID
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        serializer = GetCommunicationSerializer(message)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        """
+        Update an existing message, but only if the logged-in user is the sender
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to edit this message.")
+        
+        serializer = CommunicationSerializer(message, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        """
+        Delete a message, but only if the logged-in user is the sender.
+        """
+        message = get_object_or_404(Communication, pk=pk)
+        
+        # Check if the logged-in user is the sender
+        if message.sender != request.user:
+            raise PermissionDenied("You do not have permission to delete this message.")
+        
+        message.delete()
+        
+        # Return 200 OK with the success message
+        return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)
+    
+
+class PersonalMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=False)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RoleBasedMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=True)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class FinanceSummaryAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Optional, restrict access
+    # permission_classes = [AllowAny]  # Optional, restrict access
+
+    def get(self, request, *args, **kwargs):
+        # Total Fees Collected
+        total_fees_collected = StudentPayment.objects.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+        # Total Outstanding Amount
+        total_fees_billed = StudentBill.objects.aggregate(total=Sum('total_amount'))['total'] or 0
+        total_outstanding_amount = total_fees_billed - total_fees_collected
+
+        # Total Transaction Count
+        total_transaction_count = StudentTransaction.objects.count()
+
+        # Prepare response data
+        data = {
+            "total_fees_collected": total_fees_collected,
+            "total_outstanding_amount": total_outstanding_amount,
+            "total_transaction_count": total_transaction_count
+        }
+
+        serializer = FinanceSummarySerializer(data)
+        return Response(serializer.data)
+    
+class IsPrincipal(BasePermission):
+    def has_permission(self, request, view):
+        return Principal.objects.filter(user=request.user).exists()
+
+@api_view(['GET'])
+def dashboard_stats(request):
+    # Check if user is a principal
+    if not Principal.objects.filter(user=request.user).exists():
+        return Response(
+            {"error": "Access Denied. Only principals can view this data."}, 
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    total_students = Student.objects.count()
+    total_teachers = Teacher.objects.count()
+    total_subjects = Subject.objects.count()
+    total_classes = Class.objects.count()
+    pending_leaves = LeaveApplication.objects.filter(status='Pending').count()
+    exams_this_month = ExamDetail.objects.filter(
+        exam_date__month=now().month, 
+        exam_date__year=now().year
+    ).count()
+
+    data = {
+        "total_students": total_students,
+        "total_teachers": total_teachers,
+        "total_subjects": total_subjects,
+        "total_classes": total_classes,
+        "pending_leaves": pending_leaves,
+        "exams_this_month": exams_this_month,
+    }
+    
+    return Response(data, status=status.HTTP_200_OK)
+
+class UserSearchAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        fullname = request.query_params.get('fullname', None)
+        if fullname:
+            users = CustomUser.objects.filter(
+                Q(first_name__icontains=fullname) | Q(last_name__icontains=fullname)
+            )
+        else:
+            users = CustomUser.objects.all()
+        
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+class QuizViewSet(viewsets.ModelViewSet):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+class QuizQuestionViewSet(viewsets.ModelViewSet):
+    queryset = QuizQuestion.objects.all()
+    serializer_class = QuizQuestionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'], url_path='by-quiz')
+    def get_questions_by_quiz(self, request):
+        quiz_id = request.query_params.get('quiz_id')  # Fetch from query params
+        if not quiz_id:
+            return Response({"error": "quiz_id is required"}, status=400)
+        
+        questions = QuizQuestion.objects.filter(quiz_id=quiz_id)
+        serializer = self.get_serializer(questions, many=True)
+        return Response(serializer.data)
+
+
+class QuizScoreViewSet(viewsets.ModelViewSet):
+    queryset = QuizScore.objects.all()
+    serializer_class = QuizScoreSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        quiz = serializer.validated_data['quiz']
+        new_score = serializer.validated_data['score']
+
+        # Check if the user already has a score for this quiz
+        existing_score = QuizScore.objects.filter(user=user, quiz=quiz).first()
+
+        if existing_score:
+            # Update the existing score only if the new one is higher
+            if new_score > existing_score.score:
+                existing_score.score = new_score
+                existing_score.save()
+                quiz.update_highest_score(user, new_score)  # Update highest score if necessary
+        else:
+            # Create a new score entry if no previous score exists
+            serializer.save(user=user)
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .models import Task
+from .serializers import TaskSerializer
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by("order")  # Order tasks properly
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+

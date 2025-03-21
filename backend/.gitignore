@@ -17,3 +17,5 @@ db.sqlite3-journal
 
 **/migrations/
 **/**/migrations
+__pycache__/
+*.pyc

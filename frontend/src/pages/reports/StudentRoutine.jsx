@@ -12,7 +12,9 @@ const StudentRoutine = () => {
   const [examRoutines, setExamRoutines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [routineError, setRoutineError] = useState("");
+  const [selectedExam, setSelectedExam] = useState(null);
 
+  // Fetch Exam List
   useEffect(() => {
     const fetchExams = async () => {
       if (!access) {
@@ -35,43 +37,57 @@ const StudentRoutine = () => {
     fetchExams();
   }, [access]);
 
+  // Fetch Exam Routine when Exam & Class are Selected
   useEffect(() => {
     const fetchExamRoutines = async () => {
-      if (!access) {
-        toast.error("User is not authenticated. Please log in.");
-        return;
-      }
+      if (!access || !selectedExam || !selectedExam.is_timetable_published) return;
 
-      if (selectedExamId && selectedClassId) {
-        try {
-          setLoading(true);
-          const { data } = await axios.get(
-            `http://localhost:8000/api/exam-timetable/${selectedExamId}/${selectedClassId}/`,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${access}`,
-              },
-            }
-          );
-          if (data.exam_details && data.exam_details.length > 0) {
-            setExamRoutines(data.exam_details);
-            setRoutineError("");
-          } else {
-            setRoutineError("The exam routine has not been published yet.");
-            setExamRoutines([]);
+      try {
+        setLoading(true);
+        const { data } = await axios.get(
+          `http://localhost:8000/api/exam-timetable/${selectedExamId}/${selectedClassId}/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
           }
-          setLoading(false);
-        } catch (error) {
-          setLoading(false);
+        );
+
+        if (data.exam_details && data.exam_details.length > 0) {
+          setExamRoutines(data.exam_details);
+          setRoutineError("");
+        } else {
           setRoutineError("The exam routine has not been published yet.");
           setExamRoutines([]);
         }
+      } catch (error) {
+        setRoutineError(
+          error?.response?.data?.detail || "An unexpected error occurred. Please try again."
+        );
+        setExamRoutines([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchExamRoutines();
-  }, [access, selectedExamId, selectedClassId]);
+  }, [access, selectedExamId, selectedClassId, selectedExam]);
+
+  // Handle Exam Selection
+  const handleExamChange = (e) => {
+    const examId = e.target.value;
+    const exam = examList.find((exam) => exam.id === parseInt(examId));
+    setSelectedExamId(examId);
+    setSelectedExam(exam);
+
+    if (exam && !exam.is_timetable_published) {
+      setRoutineError("The timetable for this exam has not been published yet.");
+      setExamRoutines([]);
+    } else {
+      setRoutineError(""); // Clear error when selecting a valid exam
+    }
+  };
 
   return (
     <MainLayout>
@@ -86,7 +102,7 @@ const StudentRoutine = () => {
             <select
               name="selectExam"
               id="selectExam"
-              onChange={(e) => setSelectedExamId(e.target.value)}
+              onChange={handleExamChange}
               className="w-fit p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
             >
               <option value="">Select Exam</option>
@@ -102,7 +118,7 @@ const StudentRoutine = () => {
             <p className="text-center text-purple-600 font-medium">Loading exam routines...</p>
           ) : routineError ? (
             <p className="text-center text-red-600 font-medium">{routineError}</p>
-          ) : selectedExamId && selectedClassId ? (
+          ) : selectedExamId && selectedClassId && examRoutines.length > 0 ? (
             <table className="min-w-full mt-4 table-auto text-sm text-purple-900">
               <thead>
                 <tr className="bg-purple-700 text-white font-semibold">
@@ -114,7 +130,9 @@ const StudentRoutine = () => {
               <tbody>
                 {examRoutines.map((routine, index) => (
                   <tr key={index} className="border-b hover:bg-purple-100">
-                    <td className="px-4 py-2 font-medium text-purple-800">{routine.subject.subject_name}</td>
+                    <td className="px-4 py-2 font-medium text-purple-800">
+                      {routine.subject.subject_name}
+                    </td>
                     <td className="px-4 py-2 font-medium text-purple-800">{routine.exam_date}</td>
                     <td className="px-4 py-2 font-medium text-purple-800">{routine.exam_time}</td>
                   </tr>
@@ -129,7 +147,9 @@ const StudentRoutine = () => {
 
           <div className="mt-6 text-sm text-purple-700">
             <p>
-              <strong>Note:</strong> Please make sure to reach your exam location at least 30 minutes before the start time. All students must bring their student ID cards to the examination hall.
+              <strong>Note:</strong> Please make sure to reach your exam location at least 30
+              minutes before the start time. All students must bring their student ID cards to the
+              examination hall.
             </p>
           </div>
         </div>

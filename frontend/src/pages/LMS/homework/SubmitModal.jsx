@@ -1,142 +1,148 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 
-const SubmitModal = ({ assignment, showModal, handleClose, onSubmit }) => {
-  const { access } = useSelector((state) => state.user);
-  const [submission_file, setSubmission_file] = useState(null);
-  const [written_submission, setWritten_submission] = useState("");
+const SubmitModal = ({ assignment, access, onSubmit, onClose }) => {
+  const [submissionFile, setSubmissionFile] = useState(null);
+  const [writtenSubmission, setWrittenSubmission] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  if (!assignment) {
-    return null; // If there's no assignment, don't render the modal
-  }
 
-  const handleFileChange = (e) => {
-    setSubmission_file(e.target.files[0]);
-  };
-
-  const handleTextChange = (e) => {
-    setWritten_submission(e.target.value);
-  };
-
-  const handleSubmit = async () => {
-    if (submission_file || written_submission) {
-      setLoading(true);
-      setError(""); // Clear any previous error
-
-      // Create a FormData object to handle both file and text submission
-      const formData = new FormData();
-      formData.append("assignment_id", assignment.id);
-      formData.append("written_submission", written_submission);
-
-      // Append the file if it exists
-      if (submission_file) {
-        formData.append("submission_file", submission_file);
-      }
-
+  useEffect(() => {
+    const checkSubmissionStatus = async () => {
       try {
-        // Make the API request to submit the assignment
-        const response = await axios.post(
-          "http://localhost:8000/api/submit-assignment/",
-          formData,
+        const response = await axios.get(
+          `http://localhost:8000/api/check-submission/${assignment.id}/`,
           {
             headers: {
-              "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${access}`,
             },
           }
         );
-
-        // Check for success response
-        if (response.status === 200) {
-          alert("Assignment submitted successfully!");
-          onSubmit({ submission_file, written_submission, assignment });
-          handleClose();
-        } else {
-          throw new Error("Something went wrong!");
-        }
+        setHasSubmitted(response.data.submitted); 
       } catch (error) {
-        setError(error.message || "Failed to submit assignment.");
-      } finally {
-        setLoading(false);
+        toast.error("Failed to check submission status.");
       }
-    } else {
-      alert("Please provide a submission (submission_file or written_submission).");
+    };
+
+    checkSubmissionStatus();
+  }, [assignment, access]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size > 1 * 1024 * 1024) {
+      toast.error("File size exceeds 1MB limit.");
+      e.target.value = null;
+      return;
+    }
+    setSubmissionFile(file);
+  };
+
+  const handleSubmit = async () => {
+    if (!submissionFile && !writtenSubmission.trim()) {
+      toast.warn("Please provide a submission (file or text).");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to submit?")) return;
+
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("assignment_id", assignment.id);
+    formData.append("written_submission", writtenSubmission);
+    if (submissionFile) formData.append("submission_file", submissionFile);
+
+    try {
+      await axios.post("http://localhost:8000/api/submit-assignment/", formData, {
+        headers: {
+          Authorization: `Bearer ${access}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success("Assignment submitted!");
+      onSubmit({ file: submissionFile, text: writtenSubmission, assignment });
+      onClose();
+    } catch (error) {
+      toast.error("Failed to submit assignment.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-      <div className="p-6 bg-white shadow-lg rounded-lg">
-        <h2 className=" text-xl font-semibold text-purple-800 mb-4">
-          Homework: {assignment.assignment_name}
+    <div className="fixed inset-0 z-50 bg-gray-600 bg-opacity-70 flex items-center justify-center p-4">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+        <h2 className="text-2xl font-bold text-purple-800 mb-4">
+          SUBMIT: {assignment.assignment_name}
         </h2>
-        <div className="flex flex-col space-y-1">
-          <span className="mb-1">
-            <strong className="text-purple-800">Class: </strong> {assignment.class_assigned}
-          </span>
-          <span className="mb-1">
-            <strong className="text-purple-800">Subject:</strong> {assignment.subject}
-          </span>
-          <span className="mb-1">
-            <strong className="text-purple-800">Topic: </strong> {assignment.assignment_name}
-          </span>
-          <span className="mb-1">
-            <strong className="text-purple-800">Description: </strong> {assignment.description}
-          </span>
-          <span className="mb-1">
-            <strong className="text-purple-800">Due Date: </strong> {assignment.due_date}
-          </span>
-          <span className="mb-1">
-            <strong className="text-purple-800">Assign Date: </strong>
-            {new Date(assignment.assigned_on).toISOString().split("T")[0]}
-          </span>
 
-          <div className="mb-3 mt-3">
-            <label htmlFor="text" className=" text-gray-700 mb-3">
-              <strong className="text-purple-800">Write Your Response:</strong>
-            </label>
-            <textarea
-              id="written_submission"
-              className="mt-2  w-full border border-purple-500 focus:border-purple-800 focus:outline-none focus:ring-0 focus:shadow-md"
-              value={written_submission}
-              onChange={handleTextChange}
-              rows="4"
-            />
-
-            <div className="mb-4">
-              <label htmlFor="file" className=" text-gray-700">
-                <strong className="text-purple-800">OR Upload File:</strong>
-              </label>
-              <input
-                type="file"
-                id="submission_file"
-                className="m-1  block w-full"
-                onChange={handleFileChange}
-              />
-            </div>
+        <div className="text-sm space-y-1 mb-4">
+          <div>
+            <strong>Class:</strong> {assignment.class_assigned}
+          </div>
+          <div>
+            <strong>Subject:</strong> {assignment.subject}
+          </div>
+          <div>
+            <strong>Due Date:</strong> {assignment.due_date}
           </div>
         </div>
 
-        {/* Show loading or error */}
-        {loading && <p>Submitting...</p>}
-        <div className="flex justify-center space-x-5">
+        {hasSubmitted ? (
+          <>
+          <div className="text-purple-800 ">You have already submitted this assignment.</div>
           <button
-            onClick={handleSubmit}
-            className="bg-purple-600 text-white py-2 px-4 rounded mr-2"
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-          <button
-            onClick={handleClose}
-            className="bg-gray-300 text-black py-2 px-4 rounded"
-          >
-            Cancel
-          </button>
-        </div>
+          onClick={onClose}
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded flex justify-self-center mt-5"
+        >
+          Cancel
+        </button>
+        </>
+        ) : (
+          <>
+            {/* Written text area */}
+            <label className="block font-semibold mb-2" htmlFor="written_submission">
+              Write your response:
+            </label>
+            <textarea
+              id="written_submission"
+              rows={4}
+              value={writtenSubmission}
+              onChange={(e) => setWrittenSubmission(e.target.value)}
+              className="w-full p-2 border border-purple-300 rounded mb-4"
+              placeholder="Type your answer..."
+            />
+
+            {/* File upload */}
+            <label className="block font-semibold mb-2" htmlFor="file_input">
+              Or upload file:
+            </label>
+            <input
+              id="file_input"
+              type="file"
+              onChange={handleFileChange}
+              className="mb-4"
+            />
+
+            {loading && <p className="text-purple-600 mb-2">Submitting...</p>}
+
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded"
+              >
+                {loading ? "Submitting..." : "Submit"}
+              </button>
+              <button
+          onClick={onClose}
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded "
+        >
+          Cancel
+        </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
