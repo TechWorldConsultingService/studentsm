@@ -1,8 +1,7 @@
 import React, { useState, Suspense, lazy } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./App.css";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import SkeletonLoader from "./components/Skeleton";
+import LazyRoute from "./components/LazyRoute";
 
 const Login = lazy(() => import("./login/login"));
 const SelectClassForAttendance = lazy(() =>
@@ -97,23 +96,13 @@ const DiscussionForumDetails = lazy(() =>
   import("./pages/DiscussionForum/DiscussionDetails")
 );
 
-const LazyRoute = (Component, props = {}) => {
-  return (
-    <ErrorBoundary fallback={<div>Something went wrong</div>}>
-      <Suspense fallback={<SkeletonLoader />}>
-        <Component {...props} />
-      </Suspense>
-    </ErrorBoundary>
-  );
-};
-
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
     useState("");
 
   const router = createBrowserRouter([
     { path: "/examplePage", element: LazyRoute(ArrayInput) },
-    { path: "/", element: LazyRoute(Login) },
+    { path: "/", element: LazyRoute(Login, { noMainLayout: true }) },
     { path: "/tasklist", element: LazyRoute(TaskList) },
     // { path: "/todo", element: LazyRoute(TodoListPage ) },
 
@@ -131,8 +120,14 @@ function App() {
     // { path: "/mybus", element: LazyRoute(MyBus ) },
     { path: "/profile", element: LazyRoute(Profile) },
     { path: "/myStudents", element: LazyRoute(MyStudents) },
-    { path: "/lms", element: LazyRoute(LearningManagemanetSystem) },
-    { path: "/tms", element: LazyRoute(TeachingManagementSystem) },
+    {
+      path: "/lms",
+      element: LazyRoute(LearningManagemanetSystem, { noMainLayout: true }),
+    },
+    {
+      path: "/tms",
+      element: LazyRoute(TeachingManagementSystem, { noMainLayout: true }),
+    },
     { path: "/classList", element: LazyRoute(ClassList) },
     { path: "/subjectList", element: LazyRoute(SubjectList) },
     { path: "/studentList", element: LazyRoute(StudentList) },
@@ -165,14 +160,23 @@ function App() {
     { path: "/manage-leaves", element: LazyRoute(ManageAllLeaves) },
     {
       path: "/lms/:subjectName/homework",
-      element: LazyRoute(StudentAssignmentsPage),
+      element: LazyRoute(StudentAssignmentsPage, { noMainLayout: true }),
     },
-    { path: "/lms/:subjectName/notes", element: LazyRoute(SubjectNotes) },
-    { path: "/lms/:subjectName/syllabus", element: LazyRoute(SubjectSyllabus) },
-    { path: "/tms/:classId/syllabus", element: LazyRoute(ClassSyllabus) },
+    {
+      path: "/lms/:subjectName/notes",
+      element: LazyRoute(SubjectNotes, { noMainLayout: true }),
+    },
+    {
+      path: "/lms/:subjectName/syllabus",
+      element: LazyRoute(SubjectSyllabus, { noMainLayout: true }),
+    },
+    {
+      path: "/tms/:classId/syllabus",
+      element: LazyRoute(ClassSyllabus, { noMainLayout: true }),
+    },
     {
       path: "/tms/:classId/homework",
-      element: LazyRoute(TeacherHomeworkDashboard),
+      element: LazyRoute(TeacherHomeworkDashboard, { noMainLayout: true }),
     },
     { path: "/myStudent", element: LazyRoute(MyStudentDetails) },
     { path: "/schoolSetting", element: LazyRoute(SchoolSettings) },
@@ -183,9 +187,12 @@ function App() {
     },
     {
       path: "/tms/assignments/:assignmentId/submissions",
-      element: LazyRoute(AssignmentSubmissionsPage),
+      element: LazyRoute(AssignmentSubmissionsPage, { noMainLayout: true }),
     },
-    { path: "/tms/:classId/notes", element: LazyRoute(ClassNotes) },
+    {
+      path: "/tms/:classId/notes",
+      element: LazyRoute(ClassNotes, { noMainLayout: true }),
+    },
     {
       path: "/selectClassForAttendence",
       element: LazyRoute(SelectClassForAttendance, {
