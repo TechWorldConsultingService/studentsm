@@ -97,7 +97,7 @@ const AddNoticeModal = ({ onClose, refreshNotices }) => {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-purple-600"
               >
-                <option value="">Select a class (optional)</option>
+                <option value="">Select a class</option>
                 {classOptions.map((cls) => (
                   <option key={cls.id} value={cls.id}>
                     {cls.class_name}
@@ -122,21 +122,22 @@ const AddNoticeModal = ({ onClose, refreshNotices }) => {
           </div>
 
           {/* Submit Button */}
-          <div className="text-center">
+          <div className="text-center space-x-5">
             <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              Send Notice
+              Send
             </button>
-          </div>
-        </form>
-
-        <div className="text-center mt-4">
-          <button onClick={onClose} className="text-gray-600 underline">
+            <button
+            type="button"
+            onClick={onClose}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          >
             Cancel
           </button>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );

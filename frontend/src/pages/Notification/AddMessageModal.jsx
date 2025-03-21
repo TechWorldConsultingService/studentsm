@@ -32,17 +32,21 @@ const AddMessageModal = ({ onClose, refreshMessages }) => {
         return;
       }
       const payload = {
-        receiver: selectedUser.id, 
+        receiver: selectedUser.id,
         message: values.message,
       };
       try {
         // POST new message
-        await axios.post("http://localhost:8000/api/messages/create/", payload, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${access}`,
-          },
-        });
+        await axios.post(
+          "http://localhost:8000/api/messages/create/",
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${access}`,
+            },
+          }
+        );
         toast.success("Message sent successfully.");
         resetForm();
         setSearchResults([]);
@@ -105,12 +109,17 @@ const AddMessageModal = ({ onClose, refreshMessages }) => {
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/2 lg:w-1/3 max-h-full overflow-auto">
-        <h2 className="text-2xl font-bold mb-6 text-purple-800">Send Message</h2>
+        <h2 className="text-2xl font-bold mb-6 text-purple-800">
+          Send Message
+        </h2>
 
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           {/* User Search */}
           <div>
-            <label htmlFor="fullname" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="fullname"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Search User By Full Name
             </label>
             <div className="flex">
@@ -133,7 +142,9 @@ const AddMessageModal = ({ onClose, refreshMessages }) => {
               </button>
             </div>
             {formik.touched.fullname && formik.errors.fullname && (
-              <div className="text-red-500 text-sm mt-1">{formik.errors.fullname}</div>
+              <div className="text-red-500 text-sm mt-1">
+                {formik.errors.fullname}
+              </div>
             )}
           </div>
 
@@ -165,7 +176,10 @@ const AddMessageModal = ({ onClose, refreshMessages }) => {
 
           {/* Message Input */}
           <div>
-            <label htmlFor="message" className="block text-gray-700 font-semibold mb-2">
+            <label
+              htmlFor="message"
+              className="block text-gray-700 font-semibold mb-2"
+            >
               Message
             </label>
             <textarea
@@ -179,27 +193,32 @@ const AddMessageModal = ({ onClose, refreshMessages }) => {
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
             ></textarea>
             {formik.touched.message && formik.errors.message && (
-              <div className="text-red-500 text-sm mt-1">{formik.errors.message}</div>
+              <div className="text-red-500 text-sm mt-1">
+                {formik.errors.message}
+              </div>
             )}
           </div>
 
           {/* Submit Button */}
-          <div className="text-center">
+          <div className="text-center space-x-5 ">
             <button
               type="submit"
               disabled={formik.isSubmitting}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              {formik.isSubmitting ? "Sending..." : "Send Message"}
+              {formik.isSubmitting ? "Sending..." : "Send"}
             </button>
-          </div>
-        </form>
-
-        <div className="text-center mt-4">
-          <button onClick={onClose} className="text-gray-600 underline">
+          <button
+            type="button"
+            onClick={onClose}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          >
             Cancel
           </button>
         </div>
+        </form>
+
+
       </div>
     </div>
   );

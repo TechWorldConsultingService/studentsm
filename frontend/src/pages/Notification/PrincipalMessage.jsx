@@ -29,7 +29,7 @@ const PrincipalMessage = () => {
     setLoading(true);
     try {
       // GET user messages
-      const { data } = await axios.get("http://localhost:8000/api/messages/create/", {
+      const { data } = await axios.get("http://localhost:8000/api/messages/personal/", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${access}`,
@@ -77,7 +77,7 @@ const PrincipalMessage = () => {
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
           <h1 className="text-3xl font-extrabold text-purple-800">Messages</h1>
 
-          <div className="mt-6">
+          <div className="mt-6 flex justify-end">
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
@@ -121,7 +121,6 @@ const PrincipalMessage = () => {
                       </td>
                       <td className="px-4 py-2">
                         {/* Only show Edit/Delete if current user is sender */}
-                        {msg.sender?.id === user?.id && (
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleEdit(msg)}
@@ -136,7 +135,6 @@ const PrincipalMessage = () => {
                               Delete
                             </button>
                           </div>
-                        )}
                       </td>
                     </tr>
                   ))}
