@@ -180,11 +180,11 @@
     },
     {
       "id": 7,
-      "title": "Notification",
-      "icon": "IoCalendarOutline",
+      "title": "Add Notice",
+      "icon": "MdNotificationAdd",
       "subSidebar": [
-        { "id": 1, "title": "Message", "link": "/principalAddMessage" },
-        { "id": 2, "title": "Notice", "link": "/principalAddNotice" }
+        { "id": 1, "title": "Personal", "link": "/principalAddMessage" },
+        { "id": 2, "title": "Group", "link": "/principalAddNotice" }
       ]
     },
     {

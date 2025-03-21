@@ -50,7 +50,7 @@ const EditNoticeModal = ({ noticeData, onClose, refreshNotices }) => {
       payload.class_field = selectedClass;
     }
     try {
-      await axios.patch(
+      await axios.put(
         `http://localhost:8000/api/messages/${noticeData.id}/`,
         payload,
         {
@@ -123,21 +123,22 @@ const EditNoticeModal = ({ noticeData, onClose, refreshNotices }) => {
           </div>
 
           {/* Submit */}
-          <div className="text-center">
+          <div className="text-center space-x-5">
             <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
-              Update Notice
+              Update
             </button>
-          </div>
-        </form>
-
-        <div className="text-center mt-4">
-          <button onClick={onClose} className="text-gray-600 underline">
+            <button
+            type="button"
+            onClick={onClose}
+            className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          >
             Cancel
           </button>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
