@@ -1,11 +1,7 @@
 import React from "react";
-import { FaRegMessage, FaAngleDown } from "react-icons/fa6";
 import { IoMdNotificationsOutline, IoMdSearch } from "react-icons/io";
-import { CgProfile } from "react-icons/cg";
-import { useDispatch, useSelector } from "react-redux";
 import { Dropdown, Space } from "antd";
 import { FaRegMessage, FaAngleDown } from "react-icons/fa6";
-import { IoMdNotificationsOutline, IoMdSearch, IoMdClose } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
