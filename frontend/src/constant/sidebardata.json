@@ -64,7 +64,10 @@
       "id": 9,
       "title": "Notification",
       "icon": "IoMdNotifications",
-      "link": "/notificationView"
+      "subSidebar": [
+        { "id": 1, "title": "Notice", "link": "/notificationView" },
+        { "id": 2, "title": "Message", "link": "/messageView" }
+      ]
     }
   ],
   "teacher": [
@@ -86,15 +89,7 @@
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
     },
-    {
-      "id": 9,
-      "title": "Notification",
-      "icon": "IoMdNotifications",
-      "subSidebar": [
-        { "id": 1, "title": "Add Notice", "link": "/teacherNotice" },
-        { "id": 2, "title": "View Notice", "link": "/notificationView" }
-      ]
-    },
+   
     {
       "id": 4,
       "title": "Quiz",
@@ -151,6 +146,24 @@
       "subSidebar": [
         { "id": 1, "title": "Roll Number", "link": "/addRollNumber" }
       ]
+    },
+    {
+      "id": 11,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "subSidebar": [
+        { "id": 1, "title": "Add Notice", "link": "/noticeList" },
+        { "id": 2, "title": "View Notice", "link": "/notificationView" }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Message",
+      "icon": "MdOutlineMessage",
+      "subSidebar": [
+        { "id": 1, "title": "Add Message", "link": "/messageList" },
+        { "id": 2, "title": "View Message", "link": "/messageView" }
+      ]
     }
   ],
   "principal": [
@@ -198,8 +211,8 @@
       "title": "Add Notice",
       "icon": "MdNotificationAdd",
       "subSidebar": [
-        { "id": 1, "title": "Personal", "link": "/principalAddMessage" },
-        { "id": 2, "title": "Group", "link": "/principalAddNotice" }
+        { "id": 1, "title": "Personal", "link": "/messageList" },
+        { "id": 2, "title": "Group", "link": "/noticeList" }
       ]
     },
     {
@@ -264,6 +277,7 @@
       "icon": "MdOutlineSpaceDashboard",
       "link": "/accountantdashboard"
     },
+    
     {
       "id": 3,
       "title": "Task List",
@@ -312,7 +326,26 @@
         { "id": 2, "title": "Fee Amount", "link": "/addFeeAmount" },
         { "id": 3, "title": "Transportation", "link": "/addTransportationFee" }
       ]
+    },
+    {
+      "id": 10,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "subSidebar": [
+        { "id": 1, "title": "Add Notice", "link": "/noticeList" },
+        { "id": 2, "title": "View Notice", "link": "/notificationView" }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Message",
+      "icon": "MdOutlineMessage",
+      "subSidebar": [
+        { "id": 1, "title": "Add Message", "link": "/messageList" },
+        { "id": 2, "title": "View Message", "link": "/messageView" }
+      ]
     }
+
   ],
   "master": [
     {

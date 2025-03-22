@@ -98,10 +98,10 @@ const DiscussionForum = lazy(() => import("./pages/DiscussionForum"));
 const DiscussionForumDetails = lazy(() =>
   import("./pages/DiscussionForum/DiscussionDetails")
 );
-const PrincipalNotice = lazy(() => import("./pages/Notification/PrincipalNotice"))
-const PrincipalMessage = lazy(() => import ("./pages/Notification/PrincipalMessage"))
+const NoticeList = lazy(() => import("./pages/Notification/NoticeList"))
 const NotificationView = lazy(() => import("./pages/Notification/NotificationView"))
-const TeacherNotice = lazy(() => import("./pages/Notification/TeacherNotice") )
+const MessageList = lazy (() => import("./pages/Notification/MessageList"))
+const MessageView = lazy( () => import("./pages/Notification/MessageView"))
 
 
 
@@ -214,10 +214,12 @@ function App() {
         selectedClassForAttendance: selectedClassForAttendance,
       }),
     },
-      {path:"/principalAddNotice", element: LazyRoute(PrincipalNotice)},
-      {path: "/principalAddMessage", element: LazyRoute(PrincipalMessage)},
+      {path:"/noticeList", element: LazyRoute(NoticeList)},
       {path: "/notificationView", element: LazyRoute(NotificationView)},
-      {path: "/teacherNotice", element: LazyRoute(TeacherNotice)}
+      {path: "/messageList", element: LazyRoute(MessageList)},
+      {path: "/messageView", element: LazyRoute(MessageView)},
+
+
   ]);
 
   return <RouterProvider router={router} />;
