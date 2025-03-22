@@ -6,24 +6,23 @@ import axios from "axios";
 // import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 
-// Validation schema for editing subject
 export const editSubjectSchema = Yup.object().shape({
   subject_code: Yup.string().required("Subject Code is Required."),
   subject_name: Yup.string().required("Subject Name is Required."),
-  is_credit: Yup.boolean().required("Is Credit is Required."),
+  is_credit: Yup.boolean(),
   credit_hours: Yup.number()
-    .transform((value, originalValue) =>
-      originalValue === "" ? undefined : value
-    )
-    .when("is_credit", (is_credit, schema) =>
-      is_credit
-        ? schema
-            .required("Credit Hours are required when subject is credit.")
-            .min(0, "Credit Hours must be a positive number.")
-        : schema.notRequired()
-    ),
-  is_optional: Yup.boolean().required("Is Optional is Required."),
+    .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .when("is_credit", {
+      is: true,
+      then: (schema) =>
+        schema
+          .required("Credit Hours are required when subject is credit.")
+          .min(0, "Credit Hours must be a positive number."),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  is_optional: Yup.boolean(),
 });
+
 
 const EditSubjectModal = ({ subject, handleCloseModal, fetchSubjects }) => {
   const { access } = useSelector((state) => state.user);

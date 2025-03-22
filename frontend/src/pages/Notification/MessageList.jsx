@@ -4,30 +4,36 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import MessageModal from "./MessageModal";
 
-const NotificationView = () => {
-  const { access } = useSelector((state) => state.user);
+const MessageList = () => {
+  const { access, user } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState([]);
+
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
-
-  const fetchNotifications = async () => {
+  const fetchMessages = async () => {
     if (!access) {
       toast.error("User not authenticated.");
       return;
     }
     setLoading(true);
+
     try {
-      const { data } = await axios.get("http://localhost:8000/api/messages/role/", {
-        headers: { Authorization: `Bearer ${access}` },
+      const { data } = await axios.get("http://localhost:8000/api/messages/personal/", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${access}`,
+        },
       });
-      setNotifications(data);
+      setMessages(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching notifications: " + (error.message || error));
+        toast.error("Error fetching messages: " + (error.message || error.toString()));
       }
     } finally {
       setLoading(false);
@@ -35,13 +41,22 @@ const NotificationView = () => {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchMessages();
   }, [access]);
 
-
-  const sortedNotifications = [...notifications].sort(
+  const sortedMessages = [...messages].sort(
     (a, b) => new Date(b.sent_at) - new Date(a.sent_at)
   );
+
+
+  const openAddForm = () => {
+    setShowAddModal(true);
+  };
+
+  const refreshAndCloseModals = () => {
+    fetchMessages();
+    setShowAddModal(false);
+  };
 
 
   const renderTime = (isoString) => {
@@ -60,35 +75,35 @@ const NotificationView = () => {
     <MainLayout>
       <div className="bg-purple-50 min-h-screen p-4 md:p-6">
         <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg border border-purple-300 p-4 md:p-8">
-          <h1 className="text-3xl font-extrabold text-purple-800 mb-4">
-            Notices
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-extrabold text-purple-800">Messages</h1>
+            <button
+              onClick={openAddForm}
+              className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
+            >
+              Send New Message
+            </button>
+          </div>
 
           {loading ? (
-            <div className="text-center text-gray-600 mt-6">
-              Loading notice...
-            </div>
-          ) : sortedNotifications.length === 0 ? (
-            <div className="text-center text-gray-600 mt-6">
-              No notice found.
-            </div>
+            <div className="text-center text-gray-600 mt-6">Loading messages...</div>
+          ) : sortedMessages.length === 0 ? (
+            <div className="text-center text-gray-600 mt-6">No messages found.</div>
           ) : (
             <div className="flow-root mt-6">
               <ul role="list" className="-mb-8">
-                {sortedNotifications.map((note, index) => {
-                  const senderName = note?.sender
-                    ? `${note.sender.first_name} ${note.sender.last_name}`
+                {sortedMessages.map((msg, index) => {
+                  const senderName = msg?.sender
+                    ? `${msg.sender.first_name} ${msg.sender.last_name}`
                     : "Unknown Sender";
-                  const senderRole = note?.sender?.role || "Unknown Role";
-                  const isLastItem = index === sortedNotifications.length - 1;
-
-                  let classesText = "";
-                  if (Array.isArray(note.class_field) && note.class_field.length > 0) {
-                    classesText = `Classes: ${note.class_field.join(", ")}`;
-                  }
+                  const receiverName = msg?.receiver
+                    ? `${msg.receiver.first_name} ${msg.receiver.last_name} (${msg.receiver.username})`
+                    : "Unknown Receiver";
+                  const isMeSender = msg.sender && msg.sender.id === user?.id;
+                  const isLastItem = index === sortedMessages.length - 1;
 
                   return (
-                    <li key={note.id}>
+                    <li key={msg.id}>
                       <div className="relative pb-8">
                         {!isLastItem && (
                           <span
@@ -100,37 +115,26 @@ const NotificationView = () => {
                         <div className="relative flex items-start space-x-3">
                           <div>
                             <span className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center ring-8 ring-white text-white font-bold text-sm uppercase">
-                              {senderName?.charAt(0) || "U"}
+                              {senderName.charAt(0) || "U"}
                             </span>
                           </div>
-
                           <div className="min-w-0 flex-1 rounded-lg bg-purple-50 px-4 py-3 hover:bg-purple-100 transition-colors duration-200">
                             <div className="flex justify-between items-center mb-1">
                               <p className="text-sm font-semibold text-purple-800">
-                                {senderName}{" "}
-                                <span
-                                  className="ml-2 inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-purple-500 text-white"
-                                >
-                                  {senderRole}
+                                {isMeSender ? "Me" : senderName}{" "}
+                                <span className="ml-2 text-xs text-gray-500 font-normal">
+                                  → {receiverName}
                                 </span>
                               </p>
-                              <p className="text-xs text-gray-500">
-                                {renderTime(note.sent_at)}
-                              </p>
+                              <p className="text-xs text-gray-500">{renderTime(msg.sent_at)}</p>
                             </div>
-
-                            {note.subject && (
-                              <p className="text-base  text-gray-700">
-                               Topic: {note.subject}
-                              </p>
-                            )}
-
-                            <p
-                              className="text-gray-700 text-sm mt-1 whitespace-pre-line"
-                            >
-                              {note.message || "No message provided."}
+                            <p className="text-gray-700 ">
+                              Subject:  {msg.subject || "No subject provided."}
                             </p>
 
+                            <p className="text-gray-700 pt-2 text-sm whitespace-pre-line">
+                              {msg.message || "No message provided."}
+                            </p>
 
                           </div>
                         </div>
@@ -142,9 +146,17 @@ const NotificationView = () => {
             </div>
           )}
         </div>
+
+        {showAddModal && (
+          <MessageModal
+            onClose={() => setShowAddModal(false)}
+            refreshMessages={refreshAndCloseModals}
+          />
+        )}
+
       </div>
     </MainLayout>
   );
 };
 
-export default NotificationView;
+export default MessageList;

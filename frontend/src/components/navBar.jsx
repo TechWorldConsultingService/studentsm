@@ -44,12 +44,15 @@ const NavBar = () => {
         <div className="flex items-center gap-4">
 
 
-          {/* Messages Icon */}
+{
+  role === "principal" ? <></> : <>{/* Messages Icon */}
           <button
             type="button"
             className="relative text-xl hover:text-purple-200 transition-colors"
           >
-            <FaRegMessage />
+            <Link to={"/messageView"} >
+            <FaRegMessage  />
+            </Link>
             {/* Optional: A small badge or indicator can go here */}
             {/* <span className="absolute top-0 right-0 text-xs bg-red-500 text-white rounded-full px-1">
               5
@@ -61,12 +64,16 @@ const NavBar = () => {
             type="button"
             className="relative text-xl hover:text-purple-200 transition-colors"
           >
+            <Link to={"/notificationView"} >
             <IoMdNotificationsOutline />
             {/* Optional: A small badge or indicator can go here */}
             {/* <span className="absolute top-0 right-0 text-xs bg-red-500 text-white rounded-full px-1">
               2
             </span> */}
-          </button>
+            </Link>
+          </button></>
+}
+
 
           {/* Profile Dropdown */}
           <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>

@@ -4,21 +4,19 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import AddNoticeModal from "./AddNoticeModal";
-import EditNoticeModal from "./EditNoticeModal";
+import NoticeModal from "./NoticeModal";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 
-const PrincipalNotice = () => {
+const NoticeList = () => {
   const { access } = useSelector((state) => state.user);
   const navigate = useNavigate();
+
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const [selectedNotice, setSelectedNotice] = useState(null);
+
 
   const fetchNotices = async () => {
     if (!access) {
@@ -29,16 +27,16 @@ const PrincipalNotice = () => {
     try {
       const { data } = await axios.get(
         "http://localhost:8000/api/messages/role-based/",
-        {
-          headers: { Authorization: `Bearer ${access}` },
-        }
+        { headers: { Authorization: `Bearer ${access}` } }
       );
       setNotices(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
         navigate("/");
       } else {
-        toast.error("Error fetching notices: " + (error.message || error));
+        toast.error(
+          "Error fetching notices: " + (error.message || error.toString())
+        );
       }
     } finally {
       setLoading(false);
@@ -47,12 +45,19 @@ const PrincipalNotice = () => {
 
   useEffect(() => {
     fetchNotices();
-  }, [access, navigate]);
+  }, [access]);
 
-  const handleEdit = (notice) => {
-    setSelectedNotice(notice);
-    setShowEditModal(true);
+  const openAddModal = () => {
+    setSelectedNotice(null);
+    setShowModal(true);
   };
+
+
+  const openEditModal = (notice) => {
+    setSelectedNotice(notice); 
+    setShowModal(true);
+  };
+
 
   const handleDelete = (notice) => {
     setSelectedNotice(notice);
@@ -61,8 +66,7 @@ const PrincipalNotice = () => {
 
   const refreshAndCloseModals = () => {
     fetchNotices();
-    setShowAddModal(false);
-    setShowEditModal(false);
+    setShowModal(false);
     setShowDeleteModal(false);
     setSelectedNotice(null);
   };
@@ -73,15 +77,17 @@ const PrincipalNotice = () => {
         <div className="bg-white p-6 rounded-lg shadow-lg border border-purple-300">
           <h1 className="text-3xl font-extrabold text-purple-800">Notices</h1>
 
+          {/* Add Notice Button */}
           <div className="mt-6 flex justify-end">
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={openAddModal}
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800"
             >
               Send Notice
             </button>
           </div>
 
+          {/* Notices Table */}
           <div className="mt-6">
             <h2 className="text-xl font-semibold text-purple-700">
               All Notices
@@ -100,7 +106,8 @@ const PrincipalNotice = () => {
                     <th className="px-4 py-2 text-left">Date</th>
                     <th className="px-4 py-2 text-left">Receiver Role</th>
                     <th className="px-4 py-2 text-left">Class</th>
-                    <th className="px-4 py-2 text-left">Notice</th>
+                    <th className="px-4 py-2 text-left">Subject</th>
+                    <th className="px-4 py-2 text-left">Message</th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
@@ -108,16 +115,25 @@ const PrincipalNotice = () => {
                   {notices.map((notice) => (
                     <tr key={notice.id} className="border-b hover:bg-purple-50">
                       <td className="px-4 py-2">
-                        {new Date(notice.sent_at).toISOString().split("T")[0]}
+                        {new Date(notice.sent_at)
+                          .toISOString()
+                          .split("T")[0]}
                       </td>
                       <td className="px-4 py-2">{notice.receiver_role}</td>
-                      <td className="px-4 py-2">{notice.class_field || "-"}</td>
+
+                      <td className="px-4 py-2">
+                        {notice.class_field && notice.class_field.length > 0
+                          ? notice.class_field.join(", ")
+                          : "-"}
+                      </td>
+
+                      <td className="px-4 py-2">{notice.subject}</td>
                       <td className="px-4 py-2">{notice.message}</td>
 
                       <td className="px-4 py-2">
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => handleEdit(notice)}
+                            onClick={() => openEditModal(notice)}
                             className="text-blue-600 hover:underline"
                           >
                             Edit
@@ -142,24 +158,14 @@ const PrincipalNotice = () => {
           )}
         </div>
 
-        {/* Add Notice Modal */}
-        {showAddModal && (
-          <AddNoticeModal
-            onClose={() => setShowAddModal(false)}
-            refreshNotices={refreshAndCloseModals}
-          />
-        )}
+        <NoticeModal
+          noticeData={selectedNotice}  
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          refreshNotices={refreshAndCloseModals}
+        />
 
-        {/* Edit Notice Modal */}
-        {showEditModal && selectedNotice && (
-          <EditNoticeModal
-            noticeData={selectedNotice}
-            onClose={() => setShowEditModal(false)}
-            refreshNotices={refreshAndCloseModals}
-          />
-        )}
-
-        {/* Delete Confirmation */}
+        {/* Confirm Delete Modal */}
         {showDeleteModal && selectedNotice && (
           <ConfirmDeleteModal
             itemName="notice"
@@ -187,4 +193,4 @@ const PrincipalNotice = () => {
   );
 };
 
-export default PrincipalNotice;
+export default NoticeList;
