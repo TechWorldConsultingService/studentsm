@@ -22,7 +22,7 @@
       "id": 4,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
-      "link": "/welcomequiz"
+      "link": "/playquizpage"
     },
     {
       "id": 5,
@@ -101,7 +101,7 @@
       "icon": "IoCalendarOutline",
       "subSidebar": [
         { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
-        { "id": 2, "title": "Play Quiz", "link": "/welcomequiz" }
+        { "id": 2, "title": "Play Quiz", "link": "/playquizpage" }
       ]
     },
     {
@@ -190,7 +190,7 @@
       "icon": "IoCalendarOutline",
       "subSidebar": [
         { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
-        { "id": 2, "title": "Play Quiz", "link": "/welcomequiz" }
+        { "id": 2, "title": "Play Quiz", "link": "/playquizpage" }
       ]
     },
     {
@@ -276,7 +276,7 @@
       "icon": "IoCalendarOutline",
       "subSidebar": [
         { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
-        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+        { "id": 2, "title": "Play Quiz", "link": "/playquizpage" }
       ]
     },
     {

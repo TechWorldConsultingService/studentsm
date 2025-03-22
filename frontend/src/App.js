@@ -55,8 +55,9 @@ import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSub
 import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
 
 import AddQuiz from "./pages/Quiz/AddQuiz";
+
 import WelcomePage from "./pages/Quiz/PlayQuiz/WelcomePage";
-import PlayQuiz from "./pages/Quiz/PlayQuiz/PlayQuiz";
+// import PlayQuiz from "./pages/Quiz/PlayQuiz/PlayQuizPage";
 import Scoreboard from "./pages/Quiz/PlayQuiz/ScoreBoard";
 
 import MyStudentDetails from "./pages/principal/MyStudentDetails";
@@ -68,6 +69,8 @@ import PrincipalMessage from "./pages/Notification/PrincipalMessage";
 import PrincipalNotice from "./pages/Notification/PrincipalNotice";
 import DiscussionForum from "./pages/DiscussionForum";
 import DiscussionForumDetails from "./pages/DiscussionForum/DiscussionDetails";
+import PlayQuizPage from "./pages/Quiz/PlayQuiz/PlayQuizPage";
+
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
@@ -82,8 +85,9 @@ function App() {
     { path: "/homepage", element: <HomePage /> },
     { path: "/addquiz", element: <AddQuiz /> },
 
-    { path: "/welcomequiz", element: <WelcomePage  /> },
-    { path: "/playquiz", element: <PlayQuiz /> },
+    { path: "/welcomepage", element: <WelcomePage /> },
+    { path: "/playquizpage", element: <PlayQuizPage /> },
+    { path: "/scoreboard", element: <ScoreBoard /> },
 
 
     

@@ -77,14 +77,21 @@ const SubjectSyllabus = lazy(() => import("./pages/LMS/subjectSyllabus"));
 const ClassSyllabus = lazy(() => import("./pages/TMS/syllabus/classSyllabus"));
 const TeacherHomeworkDashboard = lazy(() => import("./pages/TMS/teacherHomework/TeacherHomeworkDashboard"));
 const ClassNotes = lazy(() => import("./pages/TMS/teacherNotes/classNotes"));
-const QuizComponent = lazy(() => import("./pages/Quiz/PlayQuiz/PlayQuiz"));
+
+
+// const QuizComponent = lazy(() => import("./pages/Quiz/PlayQuiz/PlayQuiz"));
 const AssignmentSubmissionsPage = lazy(() =>
   import("./pages/TMS/teacherHomework/AssignmentSubmissionsPage")
 );
 const StudentAssignmentsPage = lazy(() =>
   import("./pages/LMS/homework/AssignmentPage")
 );
+
 const AddQuiz = lazy(() => import("./pages/Quiz/AddQuiz"));
+const WelcomePage = lazy(() => import("./pages/Quiz/PlayQuiz/WelcomePage"));
+const PlayQuizPage = lazy(() => import("./pages/Quiz/PlayQuiz/PlayQuizPage"));
+const ScoreBoard = lazy(() => import("./pages/Quiz/PlayQuiz/ScoreBoard"));
+
 const MyStudentDetails = lazy(() =>
   import("./pages/principal/MyStudentDetails")
 );
@@ -114,8 +121,13 @@ function App() {
     // { path: "/todo", element: LazyRoute(TodoListPage ) },
 
     { path: "/homepage", element: LazyRoute(HomePage) },
+
     { path: "/addquiz", element: LazyRoute(AddQuiz) },
-    { path: "/welcomequiz", element: LazyRoute(QuizComponent) },
+    { path: "/welcomequiz", element: LazyRoute(WelcomePage) },
+    { path: "/playquizpage", element: LazyRoute(PlayQuizPage) },
+    { path: "/scoreboard", element: LazyRoute(ScoreBoard) },
+
+
     { path: "/studentdashboard", element: LazyRoute(StudentHomePage) },
     { path: "/masterdashboard", element: LazyRoute(MasterHomePage) },
     { path: "/principaldashboard", element: LazyRoute(PrincipalHomePage) },

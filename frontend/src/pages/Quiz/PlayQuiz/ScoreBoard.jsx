@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "./ScoreBoard.css"; // ✅ Ensure CSS is linked
+import { useSelector } from "react-redux";
 
-const Scoreboard = () => {
+const ScoreBoard = () => {
   const [scores, setScores] = useState([]);
+  const {access, role} = useSelector(state => state.user);
 
   useEffect(() => {
     // API ya backend se score fetch karna hai
-    fetch("http://127.0.0.1:8000/api/scores/")
+    fetch("http://localhost:8000/api/scores/",{
+      headers: { Authorization: `Bearer ${access}` },
+    })
       .then((response) => response.json())
       .then((data) => setScores(data))
       .catch((error) => console.error("Error fetching scores:", error));
@@ -27,8 +31,8 @@ const Scoreboard = () => {
           {scores.length > 0 ? (
             scores.map((item, index) => (
               <tr key={index}>
-                <td>{item.quiz_name || "Unknown Quiz"}</td>
-                <td>{item.student_name || "Anonymous"}</td>
+                <td>{item.quiz || "Some Quiz"}</td>
+                <td>{item.user || "Anonymous User"}</td>
                 <td>{item.score}</td>
               </tr>
             ))
@@ -43,4 +47,4 @@ const Scoreboard = () => {
   );
 };
 
-export default Scoreboard;
+export default ScoreBoard;
