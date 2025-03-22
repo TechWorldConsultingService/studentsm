@@ -4,6 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import type { RootStackParamList } from "../../navigation/AppNavigator";
 import { Avatar } from "react-native-paper";
+import SafeScreen from "@/src/components/SafeScreen/SafeScreen";
 
 type NavigationProp = StackNavigationProp<RootStackParamList, "StudentDashboard">;
 
@@ -36,15 +37,14 @@ const StudentDashboard: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeScreen>
       <FlatList
         data={features}
         renderItem={renderFeature} 
         keyExtractor={(item) => item.name}
         numColumns={3}
-        contentContainerStyle={styles.listContainer}
       />
-    </View>
+    </SafeScreen>
   );
 };
 

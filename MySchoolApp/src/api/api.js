@@ -1,11 +1,11 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setLoginDetails } from "../redux/userSlice";
-const API_URL = "http://192.168.100.7:8000/api";
+import { baseURL } from "../config/apiEndpoints";
 
 export const loginUser = async (dispatch, username, password) => {
   try {
-    const response = await axios.post(`${API_URL}/login/`, { username, password });
+    const response = await axios.post(`${baseURL}/login/`, { username, password });
     console.log("response when login:", response.data);
 
     if (response.data.access) {

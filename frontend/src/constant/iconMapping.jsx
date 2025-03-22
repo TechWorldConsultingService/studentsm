@@ -16,6 +16,8 @@ import { IoMdPersonAdd } from "react-icons/io";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { MdReceiptLong, MdForum } from "react-icons/md";
 import { FaTasks } from "react-icons/fa";
+import { IoMdNotifications } from "react-icons/io";
+
 
 
 const iconMapping = {
@@ -36,7 +38,8 @@ const iconMapping = {
   MdReceiptLong,
   FaTasks,
   MdForum,
-  MdNotificationAdd
+  MdNotificationAdd,
+  IoMdNotifications
 };
 
 export default iconMapping;
