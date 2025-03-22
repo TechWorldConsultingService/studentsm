@@ -15,7 +15,7 @@ class CustomUser(AbstractUser):
     is_teacher = models.BooleanField(default=False)
     is_student = models.BooleanField(default=False)
     is_accountant = models.BooleanField(default=False)
-    # is_driver = models.BooleanField(default=False)
+    is_driver = models.BooleanField(default=False)
 
 
 # For creating Post/reel type content
@@ -136,7 +136,7 @@ class Student(models.Model):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
     
     def delete(self, *args, **kwargs):
-        self.user.delete()
+        self.user.delete() 
         super().delete(*args, **kwargs)
 
 class Accountant(models.Model):
@@ -148,6 +148,20 @@ class Accountant(models.Model):
 
     def __str__(self):
         return f"User ID: {self.user.id}, Username: {self.user.username}"
+    
+    def delete(self, *args, **kwargs):
+        self.user.delete()  # Delete the associated user
+        super().delete(*args, **kwargs)  # Call the parent delete method
+
+class Driver(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15, unique=True)
+    address = models.CharField(max_length=255)
+    date_of_joining = models.DateField()
+    gender = models.CharField(max_length=6, null=True, choices=[('male', 'male'), ('female', 'female'), ('other', 'other')])
+
+    def __str__(self):
+        return self.user.get_full_name()
     
     def delete(self, *args, **kwargs):
         self.user.delete()  # Delete the associated user

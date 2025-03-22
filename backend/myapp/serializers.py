@@ -569,6 +569,70 @@ class AccountantSerializer(DateFormatMixin, serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+    
+
+from rest_framework import serializers
+from .models import Driver, CustomUser
+
+class DriverSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # Nested User Serializer
+
+    class Meta:
+        model = Driver
+        fields = [
+            'id', 'user', 'phone', 'address', 'date_of_joining', 'gender']
+
+    def convert_bs_to_ad(self, bs_date):
+        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '-' in bs_date:
+            try:
+                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
+                bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
+                return bs_date_obj.to_datetime_date()
+            except ValueError:
+                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY-MM-DD."})
+        return bs_date
+
+    def to_internal_value(self, data):
+        """Preprocess date_of_joining before default validation"""
+        date_setting = DateSetting.get_instance()
+
+        if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
+            if not date_setting.is_ad:
+                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
+
+        return super().to_internal_value(data)
+
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')
+        user_data['is_driver'] = True  # Mark as driver
+
+        user_serializer = UserSerializer(data=user_data)
+        if user_serializer.is_valid():
+            user = user_serializer.save()
+            user.is_driver = True
+            user.save()
+
+            driver = Driver.objects.create(user=user, **validated_data)
+            return driver
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        user_serializer = UserSerializer(instance=instance.user, data=user_data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+        else:
+            raise serializers.ValidationError(user_serializer.errors)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
 
 
 
