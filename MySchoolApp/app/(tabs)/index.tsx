@@ -19,7 +19,6 @@ type Props = {
 
 export default function HomeScreen({ navigation }: Props) {  // ✅ Accepting navigation prop
   return (
-    // <LoginScreen navigation={navigation} />
     <Provider store={store}>
       <AppNavigator />
     </Provider>

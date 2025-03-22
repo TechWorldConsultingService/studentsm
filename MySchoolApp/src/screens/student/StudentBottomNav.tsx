@@ -29,7 +29,9 @@ const TeacherBottomNav = () => {
           },
           tabBarActiveTintColor: "#6200ea",
           tabBarInactiveTintColor: "gray",
+          headerShown:false
         })}
+        
       >
         <Tab.Screen name="Home" component={StudentDashboard} />
         <Tab.Screen name="Notifications" component={NotificationsScreen} />

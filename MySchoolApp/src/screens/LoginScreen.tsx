@@ -34,20 +34,22 @@ const LoginScreen: React.FC = () => {
   
   const handleLogin = async () => {
     setError("");
-    try {
-      const userData = await loginUser(dispatch, username, password);
+    navigateToDashboard('student');
 
-      console.log("User Data:", userData);
-      if (userData && userData.role) {
-        navigateToDashboard(userData.role);
-      } else {
-        console.error("User data or role is missing:", userData);
-        Alert.alert("Error", "Invalid user data received.");
-      }
-    } catch (err: unknown) {
-      console.error("Login Error:", err);
-      setError("Login failed. Please try againn.");
-    }
+    // try {
+    //   const userData = await loginUser(dispatch, username, password);
+  
+    //   console.log("User Data:", userData);
+    //   if (userData && userData.role) {
+    //     navigateToDashboard(userData.role);
+    //   } else {
+    //     console.error("User data or role is missing:", userData);
+    //     Alert.alert("Error", "Invalid user data received.");
+    //   }
+    // } catch (err: unknown) {
+    //   console.error("Login Error:", err);
+    //   setError("Login failed. Please try againn.");
+    // }
   };
 
   return (
