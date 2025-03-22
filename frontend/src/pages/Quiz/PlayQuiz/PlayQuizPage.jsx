@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
-import WelcomePage from "./WelcomePage";
-import "./PlayQuiz.css";
-import Scoreboard from "./ScoreBoard";
+import WelcomePage from './WelcomePage'; 
 import { useNavigate } from "react-router-dom";
-import { FaBrain, FaFlask, FaLandmark, FaFutbol } from "react-icons/fa";
-import MainLayout from "../../../layout/MainLayout";
-// import categories from "../../data/categoryQuestions";  // Correct path to 
+// import ScoreBoard from "../../data/ScoreBoard";  
+import "./PlayQuizPage.css";  
+import { useSelector } from "react-redux";
 
 
-// import categories from "../../data/categoryQuestions";  // Correct path to categoryQuestions
-
-const PlayQuiz = () => {
-    const navigate = useNavigate();
+const PlayQuizPage = () => {
+  const navigate = useNavigate();
+  const { access, role } = useSelector(state => state.user);
+  
   const [category, setCategory] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -24,23 +22,40 @@ const PlayQuiz = () => {
   const [showScoreBoard, setShowScoreBoard] = useState(false);
   const [quizzes, setQuizzes] = useState([]);  // Backend se categories store karne ke liye
   const [loadingQuestions, setLoadingQuestions] = useState(false);
-  
+ 
   // ✅ Pehle backend se quizzes fetch karenge
   useEffect(() => {
-    fetch("http://localhost:8000/api/quizzes")
+    fetch("http://localhost:8000/api/quizzes", {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`, // ✅ Add Authorization header
+        },
+    })
         .then(response => response.json())
-        .then(data => setQuizzes(data))
+        .then(data => {
+            console.log("Fetched quizzes data:", data);
+            setQuizzes(data)
+            }
+        )
         .catch(error => console.error("Error fetching quizzes:", error));
 }, []);
 
 // ✅ Jab category select ho, backend se questions fetch karo
 useEffect(() => {
+    // if (category) {
     if (category) {
         setLoadingQuestions(true);
-        fetch(`http://localhost:8000/api/questions/by-quiz/?quiz_id=${category}`)
+        fetch(`http://localhost:8000/api/questions/by-quiz/?quiz_id=${category}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${access}`, // ✅ Add Authorization header
+            },
+        })
             .then(response => response.json())
             .then(data => {
-                setQuestions(data.length > 0 ? data : [{ question: "No questions found!", options: ["-", "-", "-", "-"] }]); 
+                setQuestions(data); 
                 setLoadingQuestions(false);
             })
             .catch(error => {
@@ -67,9 +82,10 @@ useEffect(() => {
 
   // Handle user's answer click
   const handleAnswerClick = (selectedOption) => {
-    const isCorrect = selectedOption === questions[currentQuestion].answer;
+    const isCorrect = selectedOption === questions[currentQuestion]?.correct_answer;
     setSelectedAnswers([...selectedAnswers, { 
-        question: questions[currentQuestion].question, selectedOption, correctAnswer: questions[currentQuestion].answer }]);
+        question: questions[currentQuestion]?.question_text, selectedOption, correctAnswer: questions[currentQuestion]?.correct_answer 
+    }]);
 
     if (isCorrect) {
       setScore(score + 1);
@@ -78,8 +94,7 @@ useEffect(() => {
       }, 1000);
     } else {
         setWrongAnswer(selectedOption);
-        setTimeout(() => {
-      setShowResult(true);
+        setTimeout(() => { setShowResult(true);
     }, 1500);  // End quiz if the answer is wrong
     }
   };
@@ -92,11 +107,31 @@ useEffect(() => {
       setCurrentQuestion(nextQuestion);
       setTimeLeft(20 );
     } else {
-            setShowResult(true);  // Show result if no more questions
+            setShowResult(true); 
+            saveScoreToBackend(); 
     }
   };
 
-  // restart quiz
+
+
+  const saveScoreToBackend = () => {
+    fetch("http://127.0.0.1:8000/api/scores/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+                Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({
+            category: category,
+            score: score,
+        }),
+    })
+    .then(response => response.json())
+    .then(data => console.log("Score saved successfully:", data))
+    .catch(error => console.error("Error saving score:", error));
+};
+
+  // restart quiz . only save if student is playing
   const restartQuiz = () => {
     setCategory(null);
     setQuestions([]);
@@ -107,18 +142,14 @@ useEffect(() => {
     setSelectedAnswers([]);
     setWrongAnswer(null);
   };
-  // Save score to localStorage
-const previousScores = JSON.parse(localStorage.getItem("quizScores")) || [];
-localStorage.setItem("quizScores", JSON.stringify([...previousScores, { category, score }]));
-
-
+  
   // Function to start the quiz (hide welcome page)
   const handleStartQuiz = () => {
     setIsWelcomePageVisible(false);
+    
   };
 
   return (
-    // <MainLayout>
     <div className="quiz-container">
       {isWelcomePageVisible ? (
         <WelcomePage onStartQuiz={handleStartQuiz} />  // Welcome page component
@@ -130,28 +161,24 @@ localStorage.setItem("quizScores", JSON.stringify([...previousScores, { category
              {quizzes.length > 0 ? (
                             quizzes.map((quiz) => (
                                 <div key={quiz.id} className="category-card" onClick={() => setCategory(quiz.id)}>
-                                    <p>{quiz.name}</p>
+                                    <p>{quiz.title}</p>
                                 </div>
                             ))
                         ) : (
-                            <p>NO Quizzes Available</p>
+                            <p>Sorry No categories available.</p>
                         )}
-
-                        {/* Dummy categories (fallback) */}
-            
+                        
           </div>
         ) : showResult ? (
-            <div 
-            className="result-container"
-            style={{
-              backgroundColor: score > questions.length / 2 ? "#d4edda" : "#f8d7da", // Green for good score, Red for low score
+            <div className="result-container" style={{ backgroundColor: score > questions.length / 2 ? "#d4edda" : "#f8d7da", // Green for good score, Red for low score
             }}
           >
             <h2 className="result-title">
               {score > questions.length / 2 ? "🎉 Congratulations!" : "😞 Better Luck Next Time!"}
             </h2>
             
-            <p className="score-text">Your Score: <strong>{score} / {questions.length}</strong></p>
+            <p className="score-text">Your Score: <strong>{score} </strong></p>
+            {/* <p className="score-text">Your Score: <strong>{score} / {questions.length}</strong></p> */}
         
             {/* Encouraging message */}
             <p className="encouraging-message">
@@ -170,25 +197,28 @@ localStorage.setItem("quizScores", JSON.stringify([...previousScores, { category
               
               {/* Question */}
               <div className="question-text">
-                <h2>{questions[currentQuestion]?.question}</h2>
+                <h2>{questions[currentQuestion]?.question_text}</h2>
               </div>
 
-              {/* Answer Options */}
-              <div className="options">
-                {questions[currentQuestion]?.options.map((option, index) => {
-                     // Apply red color for wrong answer
-                  const isWrongAnswer = option === wrongAnswer ? "wrong-answer" : "";
-                  return (
-                    <button 
-                    key={index} 
-                    onClick={() => handleAnswerClick(option)} 
-                    className={`option-button ${isWrongAnswer}`}
-                  >
-                    {String.fromCharCode(65 + index)}. {option}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="options">
+            {questions[currentQuestion] && [
+              questions[currentQuestion].option1,
+              questions[currentQuestion].option2,
+              questions[currentQuestion].option3,
+              questions[currentQuestion].option4
+            ].map((option, index) => {
+              const isWrongAnswer = option === wrongAnswer ? "wrong-answer" : "";
+              return (
+                <button 
+                  key={index} 
+                  onClick={() => handleAnswerClick(option)} 
+                  className={`option-button ${isWrongAnswer}`}
+                >
+                  {String.fromCharCode(65 + index)}. {option}
+                </button>
+              );
+            })}
+          </div>
 
             {/* Wrong answer message */}
             {wrongAnswer && (
@@ -201,10 +231,9 @@ localStorage.setItem("quizScores", JSON.stringify([...previousScores, { category
       )
     )}
      {/* ✅ Scoreboard Show Karne Ka Logic */}
-     {showScoreBoard && <Scoreboard onClose={() => setShowScoreBoard(false)} />}
+     {showScoreBoard && <ScoreBoard onClose={() => setShowScoreBoard(false)} />}
   </div>
-//   </MainLayout>
 );
 };
 
-export default PlayQuiz;
+export default PlayQuizPage;

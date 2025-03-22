@@ -350,8 +350,35 @@ class StudentTransactionAdmin(admin.ModelAdmin):
     payment_number.short_description = 'Payment Number'
 
 # Communication admin customization
+
 @admin.register(Communication)
 class CommunicationAdmin(admin.ModelAdmin):
     list_display = ('id', 'sender', 'receiver', 'receiver_role', 'sent_at')
     search_fields = ('sender__username', 'receiver__username', 'receiver_role')
     list_filter = ('receiver_role', 'sent_at')
+
+
+from .models import Quiz, QuizQuestion, QuizScore
+
+class QuizQuestionInline(admin.TabularInline):
+    model = QuizQuestion
+    extra = 1  # Allows adding extra questions inline
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ('title', 'created_by', 'highest_scorer', 'highest_score')
+    search_fields = ('title', 'created_by__username')
+    list_filter = ('created_by',)
+    inlines = [QuizQuestionInline]  # Allows adding questions directly in the Quiz admin page
+
+@admin.register(QuizQuestion)
+class QuizQuestionAdmin(admin.ModelAdmin):
+    list_display = ('question_text', 'quiz', 'correct_answer')
+    search_fields = ('question_text', 'quiz__title')
+    list_filter = ('quiz',)
+
+@admin.register(QuizScore)
+class QuizScoreAdmin(admin.ModelAdmin):
+    list_display = ('user', 'quiz', 'score')
+    search_fields = ('user__username', 'quiz__title')
+    list_filter = ('quiz', 'user')
