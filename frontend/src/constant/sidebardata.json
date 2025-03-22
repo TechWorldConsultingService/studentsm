@@ -1,6 +1,5 @@
 {
   "student": [
-    
     {
       "id": 1,
       "title": "Dashboard",
@@ -9,9 +8,9 @@
     },
     {
       "id": 2,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 3,
@@ -23,10 +22,16 @@
       "id": 4,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
-      "link": "/playquiz"
+      "link": "/welcomequiz"
     },
     {
       "id": 5,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"
+    },
+    {
+      "id": 6,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -35,19 +40,13 @@
       ]
     },
     {
-      "id": 6,
+      "id": 7,
       "title": "Request",
       "icon": "IoIosGitPullRequest",
       "subSidebar": [
         { "id": 1, "title": "All Request", "link": "/allrequest" },
         { "id": 2, "title": "My request", "link": "/myrequest" }
       ]
-    },
-    {
-      "id": 7,
-      "title": "My Bus",
-      "icon": "IoBusOutline",
-      "link": "/mybus"
     },
     {
       "id": 8,
@@ -60,14 +59,20 @@
       "title": "Chat",
       "icon": "MdChatBubbleOutline",
       "link": "/chat"
+    },
+    {
+      "id": 9,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "link": "/notificationView"
     }
   ],
   "teacher": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 2,
@@ -82,16 +87,31 @@
       "link": "/principal-calendar"
     },
     {
+      "id": 9,
+      "title": "Notification",
+      "icon": "IoMdNotifications",
+      "subSidebar": [
+        { "id": 1, "title": "Add Notice", "link": "/teacherNotice" },
+        { "id": 2, "title": "View Notice", "link": "/notificationView" }
+      ]
+    },
+    {
       "id": 4,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
-        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
+        { "id": 2, "title": "Play Quiz", "link": "/welcomequiz" }
       ]
     },
     {
       "id": 5,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"
+    },
+    {
+      "id": 6,
       "title": "Exam",
       "icon": "TbReportSearch",
       "link": "/examTeacher",
@@ -101,7 +121,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 7,
       "title": "Request",
       "icon": "IoIosGitPullRequest",
       "subSidebar": [
@@ -110,26 +130,19 @@
       ]
     },
     {
-      "id": 7,
+      "id": 8,
       "title": "Leave",
       "icon": "MdCoPresent",
       "subSidebar": [
         { "id": 1, "title": "Manage", "link": "/manage-leaves" },
         { "id": 2, "title": "My Leave", "link": "/my-leaves" }
-
       ]
     },
     {
-      "id": 8,
+      "id": 9,
       "title": "Attendance",
       "icon": "LuFileSpreadsheet",
       "link": "/selectClassForAttendence"
-    },
-    {
-      "id": 9,
-      "title": "My Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
     },
     {
       "id": 10,
@@ -141,7 +154,6 @@
     }
   ],
   "principal": [
-    
     {
       "id": 2,
       "title": "Dashboard",
@@ -150,9 +162,9 @@
     },
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
     {
       "id": 3,
@@ -168,39 +180,43 @@
     },
     {
       "id": 5,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"
+    },
+    {
+      "id": 6,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
-        { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
+        { "id": 2, "title": "Play Quiz", "link": "/welcomequiz" }
       ]
     },
     {
-      "id": 8,
+      "id": 7,
+      "title": "Add Notice",
+      "icon": "MdNotificationAdd",
+      "subSidebar": [
+        { "id": 1, "title": "Personal", "link": "/principalAddMessage" },
+        { "id": 2, "title": "Group", "link": "/principalAddNotice" }
+      ]
+    },
+    {
+      "id": 7,
       "title": "All Leaves",
       "icon": "MdCoPresent",
       "link": "/manage-leaves"
     },
-    
+
     {
-      "id": 5,
+      "id": 8,
       "title": "My Students",
       "icon": "SlPeople",
-      "subSidebar": [
-        { "id": 1, "title": "Class One", "link": "/myStudents?class_id=1" },
-        { "id": 2, "title": "Class Two", "link": "/myStudents?class_id=2" },
-        { "id": 3, "title": "Class Three", "link": "/myStudents?class_id=3" },
-        { "id": 4, "title": "Class Foue", "link": "/myStudents?class_id=4" },
-        { "id": 5, "title": "Class Five", "link": "/myStudents?class_id=5" },
-        { "id": 6, "title": "Class Six", "link": "/myStudents?class_id=6" },
-        { "id": 7, "title": "Class Seven", "link": "/myStudents?class_id=7" },
-        { "id": 8, "title": "Class Eight", "link": "/myStudents?class_id=8" },
-        { "id": 9, "title": "Class Nine", "link": "/myStudents?class_id=9" },
-        { "id": 10, "title": "Class Ten", "link": "/myStudents?class_id=10" }
-      ]
+      "link": "/myStudent"
     },
     {
-      "id": 5,
+      "id": 9,
       "title": "Exam",
       "icon": "TbReportSearch",
       "subSidebar": [
@@ -209,7 +225,7 @@
       ]
     },
     {
-      "id": 6,
+      "id": 10,
       "title": "Add Curriculum",
       "icon": "IoMdPersonAdd",
       "subSidebar": [
@@ -218,7 +234,7 @@
       ]
     },
     {
-      "id": 7,
+      "id": 11,
       "title": "Add Learner",
       "icon": "IoMdPersonAdd",
       "subSidebar": [
@@ -227,20 +243,19 @@
         { "id": 3, "title": "Accountent", "link": "/accountantList" }
       ]
     },
- 
     {
-      "id": 10,
-      "title": "All Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
+      "id": 12,
+      "title": "Statements",
+      "icon": "MdReceiptLong",
+      "link": "/statements"
     }
   ],
   "accountant": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
 
     {
@@ -250,50 +265,61 @@
       "link": "/accountantdashboard"
     },
     {
+      "id": 3,
+      "title": "Task List",
+      "icon": "FaTasks",
+      "link": "/tasklist"
+    },
+    {
       "id": 4,
       "title": "Quiz",
       "icon": "IoCalendarOutline",
       "subSidebar": [
-        { "id": 1, "title": "Add Quiz", "link": "/playquiz" },
+        { "id": 1, "title": "Add Quiz", "link": "/addquiz" },
         { "id": 2, "title": "Play Quiz", "link": "/playquiz" }
       ]
     },
     {
-      "id": 3,
+      "id": 5,
       "title": "Calendar",
       "icon": "IoCalendarOutline",
       "link": "/principal-calendar"
     },
     {
-      "id": 4,
-      "title": "Legder",
+      "id": 6,
+      "title": "Ledger",
       "icon": "FaFileInvoiceDollar",
       "link": "/invoicing"
     },
     {
-      "id": 5,
+      "id": 7,
+      "title": "Statements",
+      "icon": "MdReceiptLong",
+      "link": "/statements"
+    },
+    {
+      "id": 8,
       "title": "Fee Payment",
       "icon": "MdPayments",
       "link": "/feePayment"
     },
     {
-      "id": 6,
+      "id": 9,
       "title": "Fee Management",
       "icon": "MdOutlineManageHistory",
       "subSidebar": [
         { "id": 1, "title": "Category", "link": "/addCategory" },
         { "id": 2, "title": "Fee Amount", "link": "/addFeeAmount" },
         { "id": 3, "title": "Transportation", "link": "/addTransportationFee" }
-
       ]
     }
   ],
   "master": [
     {
       "id": 1,
-      "title": "NewsPosts",
-      "icon": "MdOutlineSpaceDashboard",
-      "link": "/homepage"
+      "title": "Discussion Forum",
+      "icon": "MdForum",
+      "link": "/discussion-forum"
     },
 
     {
@@ -313,12 +339,6 @@
       "title": "Attendence",
       "icon": "LuFileSpreadsheet",
       "link": "/attendence"
-    },
-    {
-      "id": 4,
-      "title": "All Buses",
-      "icon": "LuFileSpreadsheet",
-      "link": "/mybus"
     }
   ]
 }

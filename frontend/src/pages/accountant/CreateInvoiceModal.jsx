@@ -37,9 +37,6 @@ const adMonths = [
 ];
 
 const createInvoiceSchema = Yup.object().shape({
-  calendarType: Yup.string()
-    .oneOf(["BS", "AD"])
-    .required("Calendar type is required."),
   month: Yup.string().required("Month is required."),
   remarks: Yup.string(),
   fee_categories: Yup.array().of(
@@ -52,7 +49,7 @@ const createInvoiceSchema = Yup.object().shape({
 });
 
 const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [feeCategories, setFeeCategories] = useState([]);
@@ -100,7 +97,6 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
 
   const formik = useFormik({
     initialValues: {
-      calendarType: "", 
       month: "",
       remarks: "",
       fee_categories: [],
@@ -181,72 +177,48 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-2/3 lg:w-2/3 max-h-[94%] overflow-auto">
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">Create Invoice</h2>
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[94%] overflow-auto">
+        <h2 className="text-3xl font-bold text-center text-purple-800 mb-6">
+          Create Invoice
+        </h2>
         <form onSubmit={formik.handleSubmit}>
-          {/* Calendar Type Selection */}
+          {/* Calendar Type Display */}
           <div className="mb-4">
             <label className="block text-gray-700 mb-1">Calendar Type</label>
-            <div className="flex space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="calendarType"
-                  value="BS"
-                  checked={formik.values.calendarType === "BS"}
-                  onChange={formik.handleChange}
-                />
-                <span className="ml-2">BS</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="calendarType"
-                  value="AD"
-                  checked={formik.values.calendarType === "AD"}
-                  onChange={formik.handleChange}
-                />
-                <span className="ml-2">AD</span>
-              </label>
+            <div className="bg-gray-100 p-2 rounded border border-gray-300">
+              {is_ad ? "AD" : "BS"}
             </div>
-            {formik.touched.calendarType && formik.errors.calendarType && (
-              <div className="text-red-500 text-sm mt-1">{formik.errors.calendarType}</div>
+          </div>
+
+          {/* Month Selection */}
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-1">
+              {is_ad ? "Select AD Month" : "Select BS Month"}
+            </label>
+            <select
+              name="month"
+              className="border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.month}
+            >
+              <option value="">Select Month</option>
+              {(is_ad ? adMonths : bsMonths).map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+            {formik.touched.month && formik.errors.month && (
+              <div className="text-red-500 text-sm mt-1">{formik.errors.month}</div>
             )}
           </div>
 
-          {/* Month Selection (conditionally rendered) */}
-          {formik.values.calendarType && (
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-1">Month</label>
-              <select
-                name="month"
-                className="border border-gray-300 p-2 rounded w-full"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.month}
-              >
-                <option value="">Select Month</option>
-                {formik.values.calendarType === "BS"
-                  ? bsMonths.map((month) => (
-                      <option key={month} value={month}>
-                        {month}
-                      </option>
-                    ))
-                  : adMonths.map((month) => (
-                      <option key={month} value={month}>
-                        {month}
-                      </option>
-                    ))}
-              </select>
-              {formik.touched.month && formik.errors.month && (
-                <div className="text-red-500 text-sm mt-1">{formik.errors.month}</div>
-              )}
-            </div>
-          )}
-
           {/* Fee Categories Table */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-purple-700 mb-2">Select Fee Categories</h3>
+            <h3 className="text-xl font-semibold text-purple-700 mb-2">
+              Select Fee Categories
+            </h3>
             {feeCategories.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full table-auto">
@@ -261,7 +233,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
                   </thead>
                   <tbody>
                     {feeCategories.map((cat) => (
-                      <tr key={cat.id} className="border-b hover:bg-purple-50">
+                      <tr key={cat.id} className="border-b hover:bg-gray-100">
                         <td className="px-4 py-2 text-center">
                           <input
                             type="checkbox"
@@ -282,7 +254,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
                             onChange={(e) =>
                               handleScholarshipChange(cat.id, e.target.value)
                             }
-                            className="border border-gray-300 p-2 rounded"
+                            className="border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
                             value={
                               (formik.values.fee_categories.find(
                                 (item) => item.fee_category === cat.id
@@ -307,7 +279,9 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
 
           {/* Transportation Option */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-purple-700 mb-2">Transportation Needed?</h3>
+            <h3 className="text-xl font-semibold text-purple-700 mb-2">
+              Transportation Needed?
+            </h3>
             <div className="flex space-x-6">
               <label className="inline-flex items-center">
                 <input
@@ -345,7 +319,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
                       </thead>
                       <tbody>
                         {transportationList.map((item) => (
-                          <tr key={item.id} className="border-b hover:bg-purple-50">
+                          <tr key={item.id} className="border-b hover:bg-gray-100">
                             <td className="px-4 py-2 text-center">
                               <input
                                 type="radio"
@@ -375,7 +349,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
             <input
               type="number"
               name="discount"
-              className="border border-gray-300 p-2 rounded w-full"
+              className="border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
               placeholder="Discount"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -392,7 +366,7 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
             <input
               type="text"
               name="remarks"
-              className="border border-gray-300 p-2 rounded w-full"
+              className="border border-gray-300 p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-400"
               placeholder="Any remarks..."
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -404,17 +378,17 @@ const CreateInvoiceModal = ({ studentId, classId, onClose, fetchLedger }) => {
           </div>
 
           {/* Form Buttons */}
-          <div className="flex justify-center space-x-4">
+          <div className="flex justify-center space-x-4 mt-6">
             <button
               type="submit"
-              className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded-lg"
+              className="bg-purple-700 hover:bg-purple-800 text-white px-6 py-2 rounded transition duration-200"
             >
               Save Invoice
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
+              className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded transition duration-200"
             >
               Cancel
             </button>

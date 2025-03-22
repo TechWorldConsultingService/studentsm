@@ -1,9 +1,51 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
-from datetime import datetime
+from datetime import datetime, date
 from django.shortcuts import get_object_or_404
 
+class DateFormatMixin:
+    """Mixin to convert date and datetime fields based on DateSetting"""
+
+    def to_representation(self, instance):
+        """Modify representation of date and datetime fields"""
+        data = super().to_representation(instance)
+        date_setting = DateSetting.get_instance()
+
+        for field_name, field in self.fields.items():
+            if isinstance(field, serializers.DateField) and data.get(field_name):
+                # Convert AD to BS if `is_ad` is False
+                if not date_setting.is_ad:
+                    ad_date = data[field_name]
+
+                    # Handle ISO 8601 or plain date format
+                    if isinstance(ad_date, str):
+                        try:
+                            ad_date = date.fromisoformat(ad_date.split("T")[0])  # Extract date part safely
+                        except ValueError:
+                            continue  # Skip conversion if invalid format
+
+                    if isinstance(ad_date, date):
+                        bs_date = nepali_datetime.date.from_datetime_date(ad_date)
+                        data[field_name] = bs_date.strftime('%Y-%m-%d')  # Convert to BS format
+
+            elif isinstance(field, serializers.DateTimeField) and data.get(field_name):
+                # Convert AD datetime to BS if `is_ad` is False
+                if not date_setting.is_ad:
+                    ad_datetime = data[field_name]
+
+                    # Handle ISO 8601 datetime format
+                    if isinstance(ad_datetime, str):
+                        try:
+                            ad_datetime = datetime.fromisoformat(ad_datetime.replace("Z", ""))
+                        except ValueError:
+                            continue  # Skip conversion if invalid format
+
+                    if isinstance(ad_datetime, datetime):
+                        bs_datetime = nepali_datetime.date.from_datetime_date(ad_datetime.date())
+                        data[field_name] = bs_datetime.strftime('%Y-%m-%d %H:%M:%S')  # Convert to BS format
+
+        return data
 
 # Serializer for the CustomUser model
 class UserSerializer(serializers.ModelSerializer):
@@ -13,6 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = (
+            'id',
             'username',
             'email',
             'password',
@@ -98,15 +141,12 @@ class SubjectSerializer(serializers.ModelSerializer):
         model = Subject
         fields = ['id', 'subject_code', 'subject_name', 'is_credit', 'credit_hours', 'is_optional']
 
-
 class ClassSerializer(serializers.ModelSerializer):
-    subjects = serializers.ListField(
-        child=serializers.DictField(),  # Accepts a list of dictionaries for subjects
-        write_only=True
+    subjects = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), many=True, write_only=True
     )
-    optional_subjects = serializers.ListField(
-        child=serializers.DictField(),  # Accepts a list of dictionaries for optional subjects
-        write_only=True, required=False  # Optional field
+    optional_subjects = serializers.PrimaryKeyRelatedField(
+        queryset=Subject.objects.all(), many=True, write_only=True, required=False
     )
 
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
@@ -117,72 +157,57 @@ class ClassSerializer(serializers.ModelSerializer):
         fields = ['id', 'class_code', 'class_name', 'subjects', 'optional_subjects', 'subject_details', 'optional_subject_details']
 
     def create(self, validated_data):
-        subjects_data = validated_data.pop('subjects', [])
-        optional_subjects_data = validated_data.pop('optional_subjects', [])
+        subjects = validated_data.pop('subjects', [])
+        optional_subjects = validated_data.pop('optional_subjects', [])
 
-        # Create the class instance
         class_instance = Class.objects.create(**validated_data)
-
-        # Handle subjects
-        for subject_data in subjects_data:
-            subject, _ = Subject.objects.get_or_create(
-                subject_code=subject_data['subject_code'],
-                defaults={'subject_name': subject_data['subject_name']}
-            )
-            class_instance.subjects.add(subject)
-
-        # Handle optional subjects
-        for optional_subject_data in optional_subjects_data:
-            optional_subject, _ = Subject.objects.get_or_create(
-                subject_code=optional_subject_data['subject_code'],
-                defaults={'subject_name': optional_subject_data['subject_name']}
-            )
-            class_instance.optional_subjects.add(optional_subject)
-
+        class_instance.subjects.set(subjects)
+        class_instance.optional_subjects.set(optional_subjects)
+        
         return class_instance
 
     def update(self, instance, validated_data):
-        subjects_data = validated_data.pop('subjects', None)
-        optional_subjects_data = validated_data.pop('optional_subjects', None)
+        subjects = validated_data.pop('subjects', None)
+        optional_subjects = validated_data.pop('optional_subjects', None)
 
         instance.class_code = validated_data.get('class_code', instance.class_code)
         instance.class_name = validated_data.get('class_name', instance.class_name)
         instance.save()
 
-        # Update subjects if provided
-        if subjects_data is not None:
-            instance.subjects.clear()
-            for subject_data in subjects_data:
-                subject, _ = Subject.objects.get_or_create(
-                    subject_code=subject_data['subject_code'],
-                    defaults={'subject_name': subject_data['subject_name']}
-                )
-                instance.subjects.add(subject)
-
-        # Update optional subjects if provided
-        if optional_subjects_data is not None:
-            instance.optional_subjects.clear()
-            for optional_subject_data in optional_subjects_data:
-                optional_subject, _ = Subject.objects.get_or_create(
-                    subject_code=optional_subject_data['subject_code'],
-                    defaults={'subject_name': optional_subject_data['subject_name']}
-                )
-                instance.optional_subjects.add(optional_subject)
-
+        if subjects is not None:
+            instance.subjects.set(subjects)
+        
+        if optional_subjects is not None:
+            instance.optional_subjects.set(optional_subjects)
+        
         return instance
+
 
 
 class ClassDetailSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
+    subject_details = serializers.SerializerMethodField()
+    optional_subject_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Class
-        fields = ['id', 'class_code', 'class_name', 'sections']
+        fields = ['id', 'class_code', 'class_name', 'subject_details', 'optional_subject_details', 'sections']
+
+    def get_subject_details(self, obj):
+        """Fetch subjects that are in the `subjects` field but not in `optional_subjects`."""
+        compulsory_subjects = obj.subjects.exclude(id__in=obj.optional_subjects.values_list('id', flat=True))
+        return SubjectSerializer(compulsory_subjects, many=True).data
+
+    def get_optional_subject_details(self, obj):
+        """Fetch subjects that are explicitly marked as optional for this class."""
+        optional_subjects = obj.optional_subjects.all()
+        return SubjectSerializer(optional_subjects, many=True).data
+
 
 # Serializer for the Teacher model
 class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-    subjects = serializers.ListField(child=serializers.DictField(), write_only=True)
+    subjects = serializers.PrimaryKeyRelatedField(queryset=Subject.objects.all(), many=True, write_only=True)
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
 
     classes = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
@@ -193,28 +218,38 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = [ 'id', 'user', 'phone', 'address', 'date_of_joining', 'gender', 'subjects', 'subject_details', 'classes', 'classes_section', 'class_teacher', 'class_teacher_section']
-    
+        fields = [
+            'id', 'user', 'phone', 'address', 'date_of_joining', 'gender', 
+            'subjects', 'subject_details', 'classes', 'classes_section', 
+            'class_teacher', 'class_teacher_section'
+        ]
+
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '/' in bs_date:
+        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '-' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                return bs_date_obj.to_datetime_date()  # Return as a datetime.date object
+                return bs_date_obj.to_datetime_date()
             except ValueError:
-                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY/MM/DD."})
-        return bs_date  # If it's already in AD, return as is
+                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY-MM-DD."})
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess date_of_joining before default validation"""
+        # Get the current date setting (AD or BS)
+        date_setting = DateSetting.get_instance()
+
         if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
-            data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])  # Convert BS to AD before validation
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
+        
         return super().to_internal_value(data)
-    
+
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        subjects_data = validated_data.pop('subjects', [])
+        subjects = validated_data.pop('subjects', [])
         classes = validated_data.pop('classes', [])
         classes_section = validated_data.pop('classes_section', [])
         class_teacher = validated_data.pop('class_teacher', None)
@@ -235,18 +270,9 @@ class TeacherSerializer(serializers.ModelSerializer):
                 **validated_data
             )
             
+            teacher.subjects.set(subjects)
             teacher.classes.set(classes)
             teacher.classes_section.set(classes_section)
-
-            subject_instances = []
-            for subject_data in subjects_data:
-                subject, _ = Subject.objects.get_or_create(
-                    subject_code=subject_data['subject_code'],
-                    defaults={'subject_name': subject_data['subject_name']}
-                )
-                subject_instances.append(subject)
-
-            teacher.subjects.set(subject_instances)
             teacher.save()
             return teacher
         else:
@@ -254,7 +280,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         user_data = validated_data.pop('user', {})
-        subjects_data = validated_data.pop('subjects', [])
+        subjects = validated_data.pop('subjects', [])
         classes = validated_data.pop('classes', [])
         classes_section = validated_data.pop('classes_section', [])
         class_teacher = validated_data.pop('class_teacher', None)
@@ -268,17 +294,9 @@ class TeacherSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError(user_serializer.errors)
 
+        instance.subjects.set(subjects)
         instance.classes.set(classes)
         instance.classes_section.set(classes_section)
-
-        subject_instances = []
-        for subject_data in subjects_data:
-            subject, _ = Subject.objects.get_or_create(
-                subject_code=subject_data['subject_code'],
-                defaults={'subject_name': subject_data['subject_name']}
-            )
-            subject_instances.append(subject)
-        instance.subjects.set(subject_instances)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -291,7 +309,8 @@ class TeacherSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class GetTeacherSerializer(serializers.ModelSerializer):
+
+class GetTeacherSerializer(DateFormatMixin, serializers.ModelSerializer):
     user = UserSerializer()
     subject_details = SubjectSerializer(source='subjects', many=True, read_only=True)
     class_details = ClassSerializer(source='classes', many=True, read_only=True)
@@ -325,12 +344,15 @@ class GetTeacherSerializer(serializers.ModelSerializer):
         return None
 
     def get_classes_section_details(self, obj):
-        if obj.classes_section:
-            return {
-                "id": obj.classes_section.id,
-                "section_name": obj.classes_section.section_name
+    # Ensure obj.classes_section is iterable and extract details for each section
+        return [
+            {
+                "id": section.id,
+                "section_name": section.section_name
             }
-        return None
+            for section in obj.classes_section.all()
+        ]
+
 
 
 
@@ -394,22 +416,29 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'phone', 'address', 'date_of_birth', 'parents', 'gender', 'class_code', 'class_code_section', 'roll_no', 'optional_subjects']
 
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '/' in bs_date:
+        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '-' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
                 ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to AD string format (YYYY-MM-DD)
             except ValueError:
-                raise serializers.ValidationError({"date_of_birth": "Invalid BS date format. Use YYYY/MM/DD."})
+                raise serializers.ValidationError({"date_of_birth": "Invalid BS date format. Use YYYY-MM-DD."})
         return bs_date  # If it's already in AD, return as is
 
     def to_internal_value(self, data):
         """Preprocess date_of_birth before default validation"""
+        # Get the current date setting (AD or BS)
+        date_setting = DateSetting.get_instance()
+
         if 'date_of_birth' in data and isinstance(data['date_of_birth'], str):
-            data['date_of_birth'] = self.convert_bs_to_ad(data['date_of_birth'])  # Convert BS to AD before validation
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_birth'] = self.convert_bs_to_ad(data['date_of_birth'])
+        
         return super().to_internal_value(data)
+
 
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -457,7 +486,7 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 
-class GetStudentSerializer(serializers.ModelSerializer):
+class GetStudentSerializer(DateFormatMixin, serializers.ModelSerializer):
     user = UserSerializer()
     class_details = serializers.SerializerMethodField()
     optional_subjects = serializers.SerializerMethodField()  # ✅ Add field for optional subjects
@@ -479,7 +508,7 @@ class GetStudentSerializer(serializers.ModelSerializer):
         return [{"id": sub.id, "subject_code": sub.subject_code, "subject_name": sub.subject_name} for sub in obj.optional_subjects.all()]
 
 
-class AccountantSerializer(serializers.ModelSerializer):
+class AccountantSerializer(DateFormatMixin, serializers.ModelSerializer):
     user = UserSerializer()  # Nested serializer for the user associated with the staff
 
     class Meta:
@@ -488,21 +517,26 @@ class AccountantSerializer(serializers.ModelSerializer):
         extra_kwargs = {'user.password': {'write_only': True}}
 
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '/' in bs_date:
+        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '-' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                return bs_date_obj.to_datetime_date()
             except ValueError:
-                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY/MM/DD."})
-        return bs_date  # If it's already in AD, return as is
+                raise serializers.ValidationError({"date_of_joining": "Invalid BS date format. Use YYYY-MM-DD."})
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess date_of_joining before default validation"""
+        # Get the current date setting (AD or BS)
+        date_setting = DateSetting.get_instance()
+
         if 'date_of_joining' in data and isinstance(data['date_of_joining'], str):
-            data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])  # Convert BS to AD before validation
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['date_of_joining'] = self.convert_bs_to_ad(data['date_of_joining'])
+        
         return super().to_internal_value(data)
 
     def create(self, validated_data):
@@ -546,29 +580,36 @@ class PostSerializer(serializers.ModelSerializer):
 
 # Serializer for the leave application model
 
-class LeaveApplicationSerializer(serializers.ModelSerializer):
+class LeaveApplicationSerializer(DateFormatMixin, serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
         fields = ['id', 'applicant', 'applicant_name', 'applicant_type', 'applied_on', 'leave_date', 'message', 'status', 'created_at', 'updated_at']
         read_only_fields = ['applicant', 'applicant_type', 'applicant_name', 'applied_on', 'status']
 
     def convert_bs_to_ad(self, bs_date):
-        """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
-        if isinstance(bs_date, str) and '/' in bs_date:
+        """Convert BS date (YYYY-MM-DD) to AD date (YYYY-MM-DD)"""
+        if isinstance(bs_date, str) and '-' in bs_date:
             try:
-                bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                bs_year, bs_month, bs_day = map(int, bs_date.split('-'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
                 ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to AD string format (YYYY-MM-DD)
             except ValueError:
-                raise serializers.ValidationError({"leave_date": "Invalid BS date format. Use YYYY/MM/DD."})
+                raise serializers.ValidationError({"leave_date": "Invalid BS date format. Use YYYY-MM-DD."})
         return bs_date  # If it's already in AD, return as is
 
     def to_internal_value(self, data):
         """Preprocess leave_date before default validation"""
+        # Get the current date setting (AD or BS)
+        date_setting = DateSetting.get_instance()
+
         if 'leave_date' in data and isinstance(data['leave_date'], str):
-            data['leave_date'] = self.convert_bs_to_ad(data['leave_date'])  # Convert BS to AD before validation
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['leave_date'] = self.convert_bs_to_ad(data['leave_date'])
+        
         return super().to_internal_value(data)
+
 
     def validate_leave_date(self, value):
         if value < timezone.now().date():
@@ -601,16 +642,39 @@ import nepali_datetime
 from rest_framework import serializers
 from .models import Assignment, Teacher, Class, Subject
 
-class AssignmentSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from .models import Assignment, Subject, Class, Teacher
+import nepali_datetime
+
+class AssignmentSerializer(DateFormatMixin, serializers.ModelSerializer):
+    # For output, display teacher's username instead of its id.
+    teacher = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='user.username'
+    )
+    # For subject, on write we still need to accept an ID or name, but on read we display subject_name.
+    subject = serializers.SlugRelatedField(
+        queryset=Subject.objects.all(),
+        slug_field='subject_name'
+    )
     class_assigned = serializers.SlugRelatedField(
-        queryset=Class.objects.all(),  # Fetch class based on `class_name`
-        slug_field='class_name'        # Use `class_name` for representation and lookup
+        queryset=Class.objects.all(),
+        slug_field='class_name'
     )
 
     class Meta:
         model = Assignment
-        fields = ['id', 'teacher', 'subject', 'class_assigned', 'assignment_name', 'description', 'due_date', 'assigned_on']
-        read_only_fields = ['teacher']  # Make `teacher` read-only
+        fields = [
+            'id',
+            'teacher',
+            'subject',
+            'class_assigned',
+            'assignment_name',
+            'description',
+            'due_date',
+            'assigned_on'
+        ]
+        read_only_fields = ['teacher']
 
     def convert_bs_to_ad(self, bs_date):
         """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
@@ -618,17 +682,24 @@ class AssignmentSerializer(serializers.ModelSerializer):
             try:
                 bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                ad_date_obj = bs_date_obj.to_datetime_date()  # Convert to AD date
+                return ad_date_obj.strftime('%Y-%m-%d')  # Return in AD format (YYYY-MM-DD)
             except ValueError:
                 raise serializers.ValidationError({"due_date": "Invalid BS date format. Use YYYY/MM/DD."})
         return bs_date  # If it's already in AD, return as is
 
     def to_internal_value(self, data):
         """Preprocess due_date before default validation"""
+        # Get the current date setting (AD or BS)
+        date_setting = DateSetting.get_instance()
+
         if 'due_date' in data and isinstance(data['due_date'], str):
-            data['due_date'] = self.convert_bs_to_ad(data['due_date'])  # Convert BS to AD before validation
+            # If the date format is BS and the setting is AD, convert BS to AD
+            if not date_setting.is_ad:
+                data['due_date'] = self.convert_bs_to_ad(data['due_date'])
+        
         return super().to_internal_value(data)
+
 
     def create(self, validated_data):
         teacher = self.context.get('teacher')
@@ -637,7 +708,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         return Assignment.objects.create(teacher=teacher, **validated_data)
 
 
-class AssignmentSubmissionSerializer(serializers.ModelSerializer):
+class AssignmentSubmissionSerializer(DateFormatMixin, serializers.ModelSerializer):
     class Meta:
         model = AssignmentSubmission
         fields = ['id','assignment', 'student', 'submission_file','written_submission', 'submitted_on','review_text','is_checked']
@@ -696,16 +767,18 @@ class ChapterSerializer(serializers.ModelSerializer):
 
         return chapter
 
-
+from django.db.models import Count, Q
 class SyllabusSerializer(serializers.ModelSerializer):
     chapters = ChapterSerializer(many=True, required=False)
     subject_name = serializers.CharField(source='subject.subject_name', read_only=True)
     teacher_name = serializers.CharField(source='teacher.user.username', read_only=True)
     class_name = serializers.CharField(source='class_assigned.class_name', read_only=True)
+    completion_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Syllabus
-        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at']
+        fields = ['id', 'class_assigned', 'class_name', 'subject', 'subject_name', 'teacher', 'teacher_name', 'chapters', 'created_at', 'updated_at',
+            'completion_percentage']
 
     def create(self, validated_data):
         chapters_data = validated_data.pop('chapters', [])
@@ -722,14 +795,40 @@ class SyllabusSerializer(serializers.ModelSerializer):
                 for subtopic_data in subtopics_data:
                     Subtopic.objects.create(topic=topic, **subtopic_data)
         return syllabus
+    def get_completion_percentage(self, obj):
+        """
+        Calculates the syllabus completion percentage based on topics completed.
+        """
+        total_topics = obj.chapters.aggregate(total=Count("topics"))["total"] or 0
+        completed_topics = obj.chapters.aggregate(
+            completed=Count("topics", filter=Q(topics__is_completed=True))
+        )["completed"] or 0
+
+        # Calculate completion percentage
+        if total_topics == 0:
+            return 0
+        return round((completed_topics / total_topics) * 100, 2)
 
 class DiscussionPostSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
 
     class Meta:
         model = DiscussionPost
-        fields = ['id', 'topic', 'content', 'created_by', 'created_at']
+        fields = ['id', 'topic', 'content', 'created_by', 'created_at', 'updated_at']
 
+class GetDiscussionPostSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DiscussionPost
+        fields = ['id', 'topic', 'content', 'created_by', 'created_at', 'updated_at']
+
+    def get_created_by(self, obj):
+        return {
+            "id": obj.created_by.id,
+            "username": obj.created_by.username,
+            "fullname": f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+        }
 
 class DiscussionCommentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')
@@ -737,11 +836,32 @@ class DiscussionCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiscussionComment
-        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'replies']
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
 
     def get_replies(self, obj):
         replies = DiscussionComment.objects.filter(parent=obj)
         return DiscussionCommentSerializer(replies, many=True).data
+
+class GetDiscussionCommentSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+    post = DiscussionPostSerializer(read_only=True)  # Full post details
+
+    class Meta:
+        model = DiscussionComment
+        fields = ['id', 'post', 'parent', 'content', 'created_by', 'created_at', 'updated_at', 'replies']
+
+    def get_created_by(self, obj):
+        return {
+            "id": obj.created_by.id,
+            "username": obj.created_by.username,
+            "fullname": f"{obj.created_by.first_name} {obj.created_by.last_name}".strip()
+        }
+
+    def get_replies(self, obj):
+        replies = DiscussionComment.objects.filter(parent=obj)
+        return GetDiscussionCommentSerializer(replies, many=True).data
+
 
 
 class ExamSerializer(serializers.ModelSerializer):
@@ -765,19 +885,34 @@ class ExamDetailSerializer(serializers.ModelSerializer):
         """Convert BS date (YYYY/MM/DD) to AD date (YYYY-MM-DD)"""
         if isinstance(bs_date, str) and '/' in bs_date:
             try:
+                # Split the BS date into year, month, and day
                 bs_year, bs_month, bs_day = map(int, bs_date.split('/'))
+                
+                # Convert to Nepali datetime object
                 bs_date_obj = nepali_datetime.date(bs_year, bs_month, bs_day)
-                ad_date_obj = bs_date_obj.to_datetime_date()  # Correct conversion method
-                return ad_date_obj.strftime('%Y-%m-%d')  # Convert to string format
+                
+                # Convert BS date to AD date
+                ad_date_obj = bs_date_obj.to_datetime_date()
+                
+                # Return the AD date in the correct format (YYYY-MM-DD)
+                return ad_date_obj.strftime('%Y-%m-%d')
             except ValueError:
+                # Raise error if the BS date format is incorrect
                 raise serializers.ValidationError({"exam_date": "Invalid BS date format. Use YYYY/MM/DD."})
-        return bs_date  # If it's already in AD, return as is
+        
+        # If it's already in AD, return as is
+        return bs_date
 
     def to_internal_value(self, data):
         """Preprocess exam_date before default validation"""
+        # Check if the 'exam_date' is provided in the data and is a string
         if 'exam_date' in data and isinstance(data['exam_date'], str):
-            data['exam_date'] = self.convert_bs_to_ad(data['exam_date'])  # Convert BS to AD before validation
+            # Convert BS date to AD date before validation
+            data['exam_date'] = self.convert_bs_to_ad(data['exam_date'])
+        
+        # Call the parent method to perform default validation
         return super().to_internal_value(data)
+
 
     def validate(self, data):
         # Check if class_assigned needs to be automatically filled based on the subject
@@ -802,7 +937,7 @@ class ExamDetailSerializer(serializers.ModelSerializer):
 
 
 
-class GetExamDetailSerializer(serializers.ModelSerializer):
+class GetExamDetailSerializer(DateFormatMixin, serializers.ModelSerializer):
     exam = serializers.SerializerMethodField()  # Field to fetch exam details
     subject_details = serializers.SerializerMethodField()  # Field to fetch subject details
     class_details = serializers.SerializerMethodField()  # Field to fetch class details
@@ -851,7 +986,7 @@ class StudentResultSerializer(serializers.ModelSerializer):
             'total_marks', 'percentage', 'gpa', 'created_by', 'created_at'
         ]
 
-class GetStudentResultSerializer(serializers.ModelSerializer):
+class GetStudentResultSerializer(DateFormatMixin, serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.username')  # Display the creator's username
     student_details = serializers.SerializerMethodField()  # Fetch student details
     exam_detail = serializers.SerializerMethodField()  # Fetch detailed exam information
@@ -865,6 +1000,15 @@ class GetStudentResultSerializer(serializers.ModelSerializer):
 
     def get_student_details(self, obj):
         student = obj.student
+        date_setting = DateSetting.get_instance()
+        date_of_birth = student.date_of_birth
+
+        if date_setting.is_ad:
+            formatted_dob = date_of_birth.strftime('%Y-%m-%d') if date_of_birth else None
+        else:
+            bs_date = nepali_datetime.date.from_datetime_date(date_of_birth)
+            formatted_dob = bs_date.strftime('%Y-%m-%d') if bs_date else None
+
         return {
             "id": student.id,
             "username": student.user.username,
@@ -873,11 +1017,20 @@ class GetStudentResultSerializer(serializers.ModelSerializer):
             "gender": student.gender,
             "address": student.address,
             "phone": student.phone,
-            "date_of_birth": student.date_of_birth
+            "date_of_birth": formatted_dob
         }
 
     def get_exam_detail(self, obj):
         exam_detail = obj.exam_detail
+        date_setting = DateSetting.get_instance()
+        exam_date = exam_detail.exam_date
+
+        if date_setting.is_ad:
+            formatted_exam_date = exam_date.strftime('%Y-%m-%d') if exam_date else None
+        else:
+            bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+            formatted_exam_date = bs_date.strftime('%Y-%m-%d') if bs_date else None
+
         return {
             "id": exam_detail.id,
             "exam": {
@@ -896,18 +1049,8 @@ class GetStudentResultSerializer(serializers.ModelSerializer):
             },
             "full_marks": exam_detail.full_marks,
             "pass_marks": exam_detail.pass_marks,
-            "exam_date": exam_detail.exam_date
+            "exam_date": formatted_exam_date
         }
-
-from .models import Message
-class MessageSerializer(serializers.ModelSerializer):
-    sender_username = serializers.CharField(source='sender.username', read_only=True)
-    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
-
-    class Meta:
-        model = Message
-        fields = ['id', 'sender', 'receiver', 'content', 'timestamp', 'is_read', 'sender_username', 'receiver_username']
-
 
 
 class NotesSerializer(serializers.ModelSerializer):
@@ -970,13 +1113,13 @@ class GetNotesSerializer(serializers.ModelSerializer):
 
 
 
-class DailyAttendanceSerializer(serializers.ModelSerializer):
+class DailyAttendanceSerializer(DateFormatMixin, serializers.ModelSerializer):
     class Meta:
         model = DailyAttendance
         fields = ['student', 'date', 'status', 'recorded_by']
 
 
-class AttendanceDetailSerializer(serializers.ModelSerializer):
+class AttendanceDetailSerializer(DateFormatMixin, serializers.ModelSerializer):
     student = GetStudentSerializer()
     status = serializers.BooleanField()
 
@@ -985,7 +1128,7 @@ class AttendanceDetailSerializer(serializers.ModelSerializer):
         fields = ['student', 'status', 'date']
 
 
-class StudentListAttendanceSerializer(serializers.ModelSerializer):
+class StudentListAttendanceSerializer(DateFormatMixin, serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     class_details = serializers.SerializerMethodField()
     pre_balance = serializers.SerializerMethodField()  # New field for balance
@@ -1017,7 +1160,7 @@ class StudentListAttendanceSerializer(serializers.ModelSerializer):
 
 
     
-class SimpleAttendanceSerializer(serializers.ModelSerializer):
+class SimpleAttendanceSerializer(DateFormatMixin, serializers.ModelSerializer):
     student = StudentListAttendanceSerializer()
     date = serializers.DateField()
     status = serializers.BooleanField()
@@ -1120,7 +1263,7 @@ class StudentBillSerializer(serializers.ModelSerializer):
         return bill
 
 
-class GetStudentBillSerializer(serializers.ModelSerializer):
+class GetStudentBillSerializer(DateFormatMixin, serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     fee_categories = serializers.SerializerMethodField()
     transportation_fee = serializers.SerializerMethodField()
@@ -1136,16 +1279,25 @@ class GetStudentBillSerializer(serializers.ModelSerializer):
         ]
 
     def get_student(self, obj):
+        student = obj.student
+        date_setting = DateSetting.get_instance()
+
+        # Convert date_of_birth if BS is needed
+        date_of_birth = student.date_of_birth
+        if date_of_birth and not date_setting.is_ad:
+            bs_date = nepali_datetime.date.from_datetime_date(date_of_birth)
+            date_of_birth = bs_date.strftime('%Y-%m-%d')
+
         return {
-            'id': obj.student.id,
-            'name': obj.student.user.get_full_name(),
-            'roll_no': obj.student.roll_no,
-            'class': obj.student.class_code.class_name,
-            'phone': obj.student.phone,
-            'address': obj.student.address,
-            'date_of_birth': obj.student.date_of_birth,
-            'gender': obj.student.gender,
-            'parents': obj.student.parents
+            'id': student.id,
+            'name': student.user.get_full_name(),
+            'roll_no': student.roll_no,
+            'class': student.class_code.class_name,
+            'phone': student.phone,
+            'address': student.address,
+            'date_of_birth': date_of_birth,  # Converted if necessary
+            'gender': student.gender,
+            'parents': student.parents
         }
 
     def get_fee_categories(self, obj):
@@ -1234,7 +1386,7 @@ class StudentPaymentSerializer(serializers.ModelSerializer):
         return payment
 
 
-class GetStudentPaymentSerializer(serializers.ModelSerializer):
+class GetStudentPaymentSerializer(DateFormatMixin, serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     created_by = serializers.CharField(source="created_by.username", read_only=True)  # Show username
     pre_balance = serializers.SerializerMethodField()
@@ -1248,17 +1400,27 @@ class GetStudentPaymentSerializer(serializers.ModelSerializer):
         ]
 
     def get_student(self, obj):
+        student = obj.student
+        date_setting = DateSetting.get_instance()
+
+        # Convert date_of_birth if BS is needed
+        date_of_birth = student.date_of_birth
+        if date_of_birth and not date_setting.is_ad:
+            bs_date = nepali_datetime.date.from_datetime_date(date_of_birth)
+            date_of_birth = bs_date.strftime('%Y-%m-%d')
+
         return {
-            'id': obj.student.id,
-            'name': obj.student.user.get_full_name(),
-            'roll_no': obj.student.roll_no,
-            'class': obj.student.class_code.class_name,
-            'phone': obj.student.phone,
-            'address': obj.student.address,
-            'date_of_birth': obj.student.date_of_birth,
-            'gender': obj.student.gender,
-            'parents': obj.student.parents
+            'id': student.id,
+            'name': student.user.get_full_name(),
+            'roll_no': student.roll_no,
+            'class': student.class_code.class_name,
+            'phone': student.phone,
+            'address': student.address,
+            'date_of_birth': date_of_birth,  # Converted if necessary
+            'gender': student.gender,
+            'parents': student.parents
         }
+
 
     def get_pre_balance(self, obj):
         last_transaction = StudentTransaction.objects.filter(
@@ -1269,7 +1431,7 @@ class GetStudentPaymentSerializer(serializers.ModelSerializer):
     def get_post_balance(self, obj):
         return self.get_pre_balance(obj) - obj.amount_paid
 
-class StudentTransactionSerializer(serializers.ModelSerializer):
+class StudentTransactionSerializer(DateFormatMixin, serializers.ModelSerializer):
     bill = serializers.SerializerMethodField()
     bill_number = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
@@ -1322,7 +1484,7 @@ class StudentTransactionSerializer(serializers.ModelSerializer):
 class CommunicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Communication
-        fields = ["id", "sender", "receiver", "message","class_field", "receiver_role", "sent_at"]
+        fields = ["id", "sender", "receiver", "subject", "message", "class_field", "receiver_role", "sent_at"]
         read_only_fields = ["id", "sender", "sent_at"]
 
     def validate(self, data):
@@ -1344,15 +1506,17 @@ class CommunicationSerializer(serializers.ModelSerializer):
         validated_data["sender"] = self.context["request"].user
         return super().create(validated_data)
 
+
 class GetCommunicationSerializer(serializers.ModelSerializer):
     """Serializer to get full details of sender & receiver instead of just IDs"""
     sender = UserSerializer(read_only=True)
     receiver = UserSerializer(read_only=True, allow_null=True)
-    class_field = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), allow_null=True)
-    
+    class_field = serializers.PrimaryKeyRelatedField(queryset=Class.objects.all(), many=True)
+
     class Meta:
         model = Communication
-        fields = '__all__'  # Includes sender & receiver as full objects
+        fields = ["id", "sender", "receiver", "subject", "message", "class_field", "receiver_role", "sent_at"]
+
 
 
 class FinanceSummarySerializer(serializers.Serializer):
@@ -1389,3 +1553,9 @@ class QuizScoreSerializer(serializers.ModelSerializer):
         fields = ['id', 'quiz', 'user', 'score']
         read_only_fields = ['user']
         
+from .models import Task
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = '__all__'
+        read_only_fields = ('user',)

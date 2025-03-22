@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
-import BillModal from "./BillModal"; 
+import BillModal from "./BillModal";
 
 const SuccessInvoice = () => {
   const location = useLocation();
@@ -18,7 +18,6 @@ const SuccessInvoice = () => {
   const handleGoBack = () => {
     navigate("/invoicing");
   };
-
 
   if (showBillModal) {
     return <BillModal billNumber={billNumber} onClose={handleGoBack} />;

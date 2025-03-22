@@ -6,7 +6,7 @@ import SelectClassForAttendance from "./pages/attendance/SelectClassForAttendenc
 import Attendance from "./pages/attendance/attendence";
 import AttendancePrincipal from "./pages/attendance/AttendancePrincipal";
 import StudentReports from "./pages/reports/StudentReports";
-import MyBus from "./pages/mybus";
+// import MyBus from "./pages/mybus";
 import MyRequest from "./pages/myrequest";
 import AllRequest from "./pages/allrequest";
 import StudentHomePage from "./pages/studentdashboard";
@@ -46,23 +46,47 @@ import SuccessPayment from "./pages/accountant/SuccessPayment";
 import MyLeaves from "./pages/leave/MyLeaves";
 import ManageAllLeaves from "./pages/leave/ManageAllLeaves";
 import SubjectNotes from "./pages/LMS/subjectNotes";
-import AssignmentPage from "./pages/LMS/homework/AssignmentPage";
 import SubjectSyllabus from "./pages/LMS/subjectSyllabus";
 import ClassSyllabus from "./pages/TMS/syllabus/classSyllabus";
-import ClassHomework from "./pages/TMS/teacherHomework/classHomework";
+import TeacherHomeworkDashboard from "./pages/TMS/teacherHomework/TeacherHomeworkDashboard";
 import ClassNotes from "./pages/TMS/teacherNotes/classNotes";
-import QuizComponent from "./pages/Quiz/QuizComponent";
+// import QuizComponent from "./pages/Quiz/QuizComponent";
+import AssignmentSubmissionsPage from "./pages/TMS/teacherHomework/AssignmentSubmissionsPage";
+import StudentAssignmentsPage from "./pages/LMS/homework/AssignmentPage";
+
+import AddQuiz from "./pages/Quiz/AddQuiz";
+import WelcomePage from "./pages/Quiz/PlayQuiz/WelcomePage";
+import PlayQuiz from "./pages/Quiz/PlayQuiz/PlayQuiz";
+import Scoreboard from "./pages/Quiz/PlayQuiz/ScoreBoard";
+
+import MyStudentDetails from "./pages/principal/MyStudentDetails";
+import SchoolSettings from "./pages/SchoolSetting";
+import PaymentStatements from "./pages/statements";
+import TaskList from "./pages/TasksMS/TaskList";
+import TodoListPage from "./pages/TasksMS/TodoListPage";
+import PrincipalMessage from "./pages/Notification/PrincipalMessage";
+import PrincipalNotice from "./pages/Notification/PrincipalNotice";
+import DiscussionForum from "./pages/DiscussionForum";
+import DiscussionForumDetails from "./pages/DiscussionForum/DiscussionDetails";
 
 function App() {
   const [selectedClassForAttendance, setSelectedClassForAttendance] =
     useState("");
 
   const router = createBrowserRouter([
-
     { path: "/examplePage", element: <ArrayInput /> },
     { path: "/", element: <Login /> },
+    { path: "/tasklist", element: <TaskList /> },
+    { path: "/todo", element: <TodoListPage /> },
+
     { path: "/homepage", element: <HomePage /> },
-    { path: "/playquiz", element: <QuizComponent /> },
+    { path: "/addquiz", element: <AddQuiz /> },
+
+    { path: "/welcomequiz", element: <WelcomePage  /> },
+    { path: "/playquiz", element: <PlayQuiz /> },
+
+
+    
     { path: "/studentdashboard", element: <StudentHomePage /> },
     { path: "/masterdashboard", element: <MasterHomePage /> },
     { path: "/principaldashboard", element: <PrincipalHomePage /> },
@@ -71,7 +95,7 @@ function App() {
     { path: "/studentResult", element: <StudentReports /> },
     { path: "/myrequest", element: <MyRequest /> },
     { path: "/allrequest", element: <AllRequest /> },
-    { path: "/mybus", element: <MyBus /> },
+    // { path: "/mybus", element: <MyBus /> },
     { path: "/profile", element: <Profile /> },
     { path: "/myStudents", element: <MyStudents /> },
     { path: "/lms", element: <LearningManagemanetSystem /> },
@@ -94,6 +118,7 @@ function App() {
     { path: "/feePayment", element: <FeePayment /> },
     { path: "/payment/:studentId", element: <PaymentPage /> },
     { path: "/invoicing", element: <Invoicing /> },
+    { path: "/statements", element: <PaymentStatements /> },
     { path: "/addCategory", element: <CategoryList /> },
     { path: "/addFeeAmount", element: <AddFeeAmount /> },
     { path: "/addTransportationFee", element: <AddTransportationFee /> },
@@ -102,12 +127,27 @@ function App() {
     { path: "/successPayment", element: <SuccessPayment /> },
     { path: "/my-leaves", element: <MyLeaves /> },
     { path: "/manage-leaves", element: <ManageAllLeaves /> },
-    { path: "/lms/:subjectName/homework", element: <AssignmentPage /> },
+    { path: "/lms/:subjectName/homework", element: <StudentAssignmentsPage /> },
     { path: "/lms/:subjectName/notes", element: <SubjectNotes /> },
     { path: "/lms/:subjectName/syllabus", element: <SubjectSyllabus /> },
-    {path: "/tms/:classId/syllabus", element: <ClassSyllabus />},
-    {path: "/tms/:classId/homework", element: <ClassHomework />},
-    {path: "/tms/:classId/notes", element: <ClassNotes />},
+    { path: "/tms/:classId/syllabus", element: <ClassSyllabus /> },
+    { path: "/tms/:classId/homework", element: <TeacherHomeworkDashboard /> },
+    {path:"/myStudent", element: <MyStudentDetails />},
+    {path:"/schoolSetting", element: <SchoolSettings />},
+    {path:"/principalAddMessage" , element: <PrincipalMessage />},
+    {path:"/principalAddNotice", element: <PrincipalNotice />},
+    { path: "/myStudent", element: <MyStudentDetails /> },
+    { path: "/schoolSetting", element: <SchoolSettings /> },
+    { path: "/discussion-forum", element: <DiscussionForum /> },
+    {
+      path: "/discussion-forum/details/:id",
+      element: <DiscussionForumDetails />,
+    },
+    {
+      path: "/tms/assignments/:assignmentId/submissions",
+      element: <AssignmentSubmissionsPage />,
+    },
+    { path: "/tms/:classId/notes", element: <ClassNotes /> },
     {
       path: "/selectClassForAttendence",
       element: (

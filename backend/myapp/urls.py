@@ -9,9 +9,11 @@ from rest_framework import viewsets, permissions
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import QuizViewSet, QuizQuestionViewSet, QuizScoreViewSet
+from .models import *
 
 # Initialize the router for syllabus-related views
 router = DefaultRouter()
+router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'events', EventViewSet, basename='event')
 router.register(r'chapters', ChapterViewSet)
 router.register(r'topics', TopicViewSet)
@@ -98,8 +100,10 @@ urlpatterns = [
     path('api/student/assignments/', StudentAssignmentsView.as_view(), name='student-assignments'), # Get assignments for students / to see all the assginments given by teacher
     path('api/submit-assignment/', SubmitStudentAssignmentView.as_view(), name='assignment-list'), # Submit assignment by the student
     path('api/assignments/reviews/', ReviewAssignmentsView.as_view(), name='reviews-homework'), # Review assignments by the teacher
+    path('api/assignments/subject/', AssignmentsBySubjectView.as_view(), name='assignments-by-subject'), # get assignments with subject id
 
     path('api/assignments/submissions/review/<int:submission_id>/', ReviewAssignmentSubmissionView.as_view(), name='review-assignment-submission'),
+    path('api/check-submission/<int:assignment_id>/', CheckSubmissionStatusView.as_view(), name='check-submission-status'),
     # delete submited assignment of student by student if not reviewed yet
     path('api/delete-submission/<int:submission_id>/', DeleteStudentSubmissionView.as_view(), name='delete-submission'),
 
@@ -107,12 +111,10 @@ urlpatterns = [
     # API endpoints for discussion forums
     path('api/forum/posts/', DiscussionPostAPIView.as_view(), name='discussion-post-api'),
     path('api/forum/posts/<int:post_id>/comments/', DiscussionCommentAPIView.as_view(), name='discussion-comment-api'),
-    
     # API endpoints for deleting discussion forums
-    path('api/forum/posts/<int:post_id>/delete/', DiscussionPostDeleteAPIView.as_view(), name='discussion-post-delete'),
-    path('api/forum/comments/<int:comment_id>/delete/', DiscussionCommentDeleteAPIView.as_view(), name='discussion-comment-delete'),
+    path('api/forum/posts/<int:post_id>/', DiscussionPostDetailAPIView.as_view(), name='discussion-post-details'),
+    path('api/forum/comments/<int:comment_id>/', DiscussionCommentDetailAPIView.as_view(), name='discussion-comment-details'),
 
- 
      # API endpoints for exams management
     path('api/exams/', ExamAPIView.as_view(), name='exam-list-create'),  # Endpoint to list all exams and create new exams.
     path('api/exams/<int:exam_id>/', SingleExamAPIView.as_view(), name='single-exam'),  # Endpoint to retrieve, update, or delete a specific exam by its ID (`exam_id`).
@@ -136,15 +138,14 @@ urlpatterns = [
     path("api/students/update-roll-numbers/<int:class_id>/", BulkUpdateRollNumbersAPIView.as_view(), name="bulk_update_roll_numbers"),
     path('api/rankings/<int:exam_id>/<int:class_id>/', StudentRankingView.as_view(), name='student_rankings'),
 
-
-    path('api/messages/', MessageListView.as_view(), name='message-list'),
-    path('api/messages/send/', SendMessageView.as_view(), name='send-message'),
-
     # Syllabus and related endpoints
     path('api/syllabus/', SyllabusView.as_view(), name='syllabus-list'),
     path('api/syllabus/<int:pk>/', SyllabusView.as_view(), name='syllabus-detail'), # Retrieve & Update
     path("api/syllabus/filter/", SyllabusFilterView.as_view(), name="syllabus-filter"), 
+    path('api/syllabus/completion/', SyllabusCompletionPercentageAPIView.as_view(), name='syllabus-completion-percentage'),
+    # path('api/syllabus/completed/', CompletedSyllabusBySubjectAPIView.as_view(), name='completed-syllabus-by-subject'),
     # /api/syllabus/filter/?subject_id=2  to get syllabus as per subject id
+   
     path('api/', include(router.urls)),  # Including router URLs for chapters, topics, and subtopics
     
     path('api/notes/', NotesCreateView.as_view(), name='notes-list-create'),
@@ -179,6 +180,8 @@ urlpatterns = [
     path('api/messages/user/', UserMessagesAPIView.as_view(), name='user-messages'),   #API to view all the personal msg of a single user
     path('api/messages/role/', RoleBasedMessagesAPIView.as_view(), name='role-messages'), #API to view all the role based msg of a single user
     path('api/messages/<int:pk>/', CommunicationDetailAPIView.as_view(), name='message-detail'), #API to view/edit/delete a specific msg
+    path('api/messages/personal/', PersonalMessageListAPIView.as_view(), name='personal-messages'),
+    path('api/messages/role-based/', RoleBasedMessageListAPIView.as_view(), name='role-based-messages'),
 
     path('api/users/search/', UserSearchAPIView.as_view(), name='user-search'),
     path('api/finance-summary/', FinanceSummaryAPIView.as_view(), name='finance-summary'),

@@ -24,48 +24,89 @@ from collections import defaultdict
 from django.db.models import Count, Q
 from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenRefreshView
+# from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.views import TokenRefreshView
 from django.utils.decorators import method_decorator
 import nepali_datetime as ndt
 from .serializers import FinanceSummarySerializer
+from rest_framework.pagination import PageNumberPagination
+
+class CustomPagination(PageNumberPagination):
+    page_size = 5  # Default page size
+    page_size_query_param = 'page_size'  # Allow dynamic page size in request
+    max_page_size = 100  # Limit max items per page
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     def post(self, request):
-        # Deserialize the request data using LoginSerializer
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
 
-            # Authenticate the user
             user = authenticate(request, username=username, password=password)
             if user is None:
-                return Response({'error': 'Invalid credentialss'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
-            # Generate JWT tokens for the authenticated user
             refresh = RefreshToken.for_user(user)
+            setting = DateSetting.get_instance()
+            is_ad = setting.is_ad  
 
-            # Determine the role and retrieve the role-specific data
             role_data = {}
-            if hasattr(user, 'teacher'):
+
+            if hasattr(user, 'student'):
+                student = user.student
+                student_class = student.class_code
+
+                # Fetch class subjects
+                class_subjects = student_class.subjects.all() if student_class else []
+                
+                # Fetch optional subjects for the student
+                optional_subjects = student.optional_subjects.all()
+
+                # Combine class subjects and optional subjects
+                subjects = list(class_subjects) + list(optional_subjects)
+
+                # Format subjects data
+                subjects_data = [
+                    {'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name}
+                    for subject in subjects
+                ]
+
+                role_data = {
+                    'id': student.id,
+                    'role': 'student',
+                    'phone': student.phone,
+                    'address': student.address,
+                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
+                    'gender': student.gender,
+                    'parents': student.parents,
+                    'class': {
+                        'id': student_class.id if student_class else None,
+                        'class_code': student_class.class_code if student_class else None,
+                        'class_name': student_class.class_name if student_class else None,
+                    } if student_class else None,
+                    'subjects': subjects_data,  # Include both class subjects and optional subjects
+                }
+
+            elif hasattr(user, 'teacher'):
                 teacher = user.teacher
                 role_data = {
-                    'id': teacher.id,  # Ensure you send teacher's ID, not user ID
+                    'id': teacher.id,
                     'role': 'teacher',
                     'phone': teacher.phone,
                     'address': teacher.address,
                     'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
                     'gender': teacher.gender,
-                    'subjects': [{'id': subject.id,'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
+                    'subjects': [{'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
                     'classes': [{'id': cls.id, 'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
                     'class_teacher': {
                         'id': teacher.class_teacher.id if teacher.class_teacher else None,
-                        'class_code': teacher.class_teacher.class_code,
-                        'class_name': teacher.class_teacher.class_name
+                        'class_code': teacher.class_teacher.class_code if teacher.class_teacher else None,
+                        'class_name': teacher.class_teacher.class_name if teacher.class_teacher else None,
                     } if teacher.class_teacher else None,
                 }
+
             elif hasattr(user, 'principal'):
                 principal = user.principal
                 role_data = {
@@ -75,31 +116,7 @@ class LoginAPIView(APIView):
                     'address': principal.address,
                     'gender': principal.gender,
                 }
-            elif hasattr(user, 'student'):
-                student = user.student
-                student_class = student.class_code
 
-                # Prepare the subjects based on whether the class_code exists or not
-                if student_class:
-                    subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
-                else:
-                    subjects = []  # If no class_code exists, return an empty list for subjects
-
-                role_data = {
-                    'id': student.id, 
-                    'role': 'student',
-                    'phone': student.phone,
-                    'address': student.address,
-                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
-                    'gender': student.gender,
-                    'parents': student.parents,
-                    'class': {
-                        'id': student_class.id if student_class else None,
-                        'class_code': student_class.class_code  if student_class else None,
-                        'class_name': student_class.class_name if student_class else None,
-                    } if student_class else None,
-                    'subjects': subjects  # Add subjects related to the student's class
-                }
             elif hasattr(user, 'accountant'):
                 accountant = user.accountant
                 role_data = {
@@ -114,97 +131,27 @@ class LoginAPIView(APIView):
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
 
-            # Prepare the response data
             response_data = {
-                # 'id': user.id,  # Add the user's ID
-                'id': role_data.get('id'),  # Use the role-specific ID
+                'id': role_data.get('id'),
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,
                 'username': username,
-                **role_data,  # Include role-specific data
-                'email': user.email,  # User's email (assuming it exists in your user model)
-                'first_name': user.first_name,  # User's first name
+                **role_data,
+                'email': user.email,
+                'first_name': user.first_name,
                 'last_name': user.last_name,
+                'is_ad': is_ad,
             }
 
-            # Add role-specific data
-            if hasattr(user, 'teacher'):
-                teacher = user.teacher
-                response_data.update({
-                    'role': 'teacher',
-                    'phone': teacher.phone,
-                    'address': teacher.address,
-                    'date_of_joining': teacher.date_of_joining.strftime('%Y-%m-%d'),
-                    'gender': teacher.gender,
-                    'subjects': [{'id': subject.id, 'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in teacher.subjects.all()],
-                    'classes': [{'id': cls.id, 'class_code': cls.class_code, 'class_name': cls.class_name} for cls in teacher.classes.all()],
-                    'class_teacher': {
-                        'id': teacher.class_teacher.id if teacher.class_teacher else None,
-                        'class_code': teacher.class_teacher.class_code if teacher.class_teacher else None,
-                        'class_name': teacher.class_teacher.class_name if teacher.class_teacher else None,
-                    } if teacher.class_teacher else None,
-                })
-            elif hasattr(user, 'principal'):
-                principal = user.principal
-                response_data.update({
-                    'role': 'principal',
-                    'phone': principal.phone,
-                    'address': principal.address,
-                    'gender': principal.gender,
-                })
-            elif hasattr(user, 'student'):
-                student = user.student
-                student_class = student.class_code
-                # subjects = [{'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
-            
-                # Check if the student_class is None before accessing its attributes
-                if student_class:
-                    subjects = [{'id': subject.id,'subject_code': subject.subject_code, 'subject_name': subject.subject_name} for subject in student_class.subjects.all()]
-                else:
-                    subjects = []  # If no class_code exists, return an empty list for subjects
-
-                response_data.update({
-                    'role': 'student',
-                    'phone': student.phone,
-                    'address': student.address,
-                    'date_of_birth': student.date_of_birth.strftime('%Y-%m-%d'),
-                    'gender': student.gender,
-                    'parents': student.parents,
-                    'class': {
-                        'id': student_class.id,
-                        'class_code': student.class_code.class_code,
-                        'class_name': student.class_code.class_name
-                    } if student.class_code else None,
-                    'subjects': subjects  # Add subjects related to the student's class
-                })
-            elif hasattr(user, 'accountant'):
-                accountant = user.accountant
-                response_data.update({
-                    'role': 'accountant',
-                    'phone': accountant.phone,
-                    'address': accountant.address,
-                    'gender': accountant.gender,
-                    'date_of_joining': accountant.date_of_joining.strftime('%Y-%m-%d')
-                })
-            else:
-                # Handle case where user has no specific role
-                response_data.update({
-                    'role': None,
-                    'error': 'User has no role assigned',
-                })
-            # Log the user in
-            # login(request, user)
             return Response(response_data, status=status.HTTP_200_OK)
         
-        # If serializer is invalid
-        print("\n=== INVALID DATA ===")
-        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
  
 
 # View for handling user logout
+@method_decorator(csrf_exempt, name='dispatch')
 class LogoutAPIView(APIView):
     permission_classes = (IsAuthenticated,)  # Ensure the user is authenticated
 
@@ -250,7 +197,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("You do not have permission to create posts.")
         
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class DateSettingView(APIView):
     """
     API to get and update the global date setting.
@@ -276,6 +223,7 @@ class DateSettingView(APIView):
         
 # View for handling teacher registration
 # @csrf_exempt
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterTeacherView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -329,6 +277,7 @@ class RegisterTeacherView(APIView):
             return Response(teacher_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling principal registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterPrincipalView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -372,6 +321,7 @@ class RegisterPrincipalView(APIView):
             return Response(principal_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # View for handling student registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterStudentView(APIView):
     def post(self, request, format=None):
         if request.content_type == 'application/json':
@@ -413,6 +363,7 @@ class RegisterStudentView(APIView):
 
 
 # View for handling staff registration
+@method_decorator(csrf_exempt, name='dispatch')
 class RegisterAccountantView(APIView):
     def post(self, request, format=None):
         # Determine if the request data is in JSON format or form-data
@@ -797,6 +748,7 @@ class LeaveApplicationListView(APIView):
         return Response(serializer.data)
 
 # API view to create a new leave application
+@method_decorator(csrf_exempt, name='dispatch')
 class LeaveApplicationCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1036,6 +988,7 @@ class OptionalSubjectsAPIView(APIView):
         return Response(serializer.data)
 
 # API view to list all classes or create a new class
+@method_decorator(csrf_exempt, name='dispatch')
 class ClassListCreateView(APIView):
     def get(self, request, *args, **kwargs):
         classes = Class.objects.prefetch_related("sections")  # ✅ Prefetch only sections
@@ -1079,14 +1032,25 @@ class ClassDetailView(APIView):
         class_instance.delete()  # Delete the Class instance
         return Response({"message": "Class successfully deleted"}, status=status.HTTP_204_NO_CONTENT)  # Return success message with 204 No Content status
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SectionListCreateAPIView(APIView):
     def get(self, request, class_id, format=None):
         """
-        Retrieve all sections for a specific class.
+        Retrieve class details along with its sections.
         """
-        sections = Section.objects.filter(school_class_id=class_id)
-        serializer = SectionSerializer(sections, many=True)
-        return Response({"status": "success", "sections": serializer.data}, status=status.HTTP_200_OK)
+        try:
+            school_class = Class.objects.prefetch_related("sections").get(id=class_id)
+        except Class.DoesNotExist:
+            return Response({"status": "error", "message": "Class not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        class_data = {
+            "id": school_class.id,
+            "class_code": school_class.class_code,
+            "class_name": school_class.class_name,
+            "sections": SectionSerializer(school_class.sections.all(), many=True).data
+        }
+
+        return Response({"status": "success", "class": class_data}, status=status.HTTP_200_OK)
 
     def post(self, request, class_id, format=None):
         """
@@ -1218,6 +1182,7 @@ class StudentAssignmentsBySubjectView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # to assign homework for student by teacher
+@method_decorator(csrf_exempt, name='dispatch')
 class AssignHomeworkView(APIView):
     permission_classes = [AllowAny]
 
@@ -1378,6 +1343,7 @@ class StudentAssignmentsView(APIView):
         serializer = AssignmentSerializer(assignments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class SubmitStudentAssignmentView(APIView):
     permission_classes = [IsAuthenticated]
  
@@ -1386,7 +1352,10 @@ class SubmitStudentAssignmentView(APIView):
         Submit an assignment for a student.
         """
         try:
-            student = request.user.student  # Ensure the user is linked to a Student instance
+            # student = request.user  # Ensure the user is linked to a Student instance
+            # student = request.user.student  # Ensure the user is linked to a Student instance
+                    # Ensure the user is linked to a Student instance
+            student = get_object_or_404(Student, user=request.user)  
 
         except Student.DoesNotExist:
             return Response(
@@ -1429,14 +1398,48 @@ class SubmitStudentAssignmentView(APIView):
         # Create submission
         submission = AssignmentSubmission.objects.create(
             assignment=assignment,
-            student=request.user,  # # Pass the CustomUser instance
+            # student=request.user,  # # Pass the CustomUser instance
+            student=student.user,  # # Pass the CustomUser instance
             submission_file=submission_file,
             written_submission=written_submission,
         )
 
         serializer = AssignmentSubmissionSerializer(submission)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data,{"message": "Assignment submitted successfully."}, status=status.HTTP_201_CREATED)
     
+class CheckSubmissionStatusView(APIView):
+    """
+    Check if a student has already submitted a specific assignment.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, assignment_id, format=None):
+        try:
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response(
+                {"error": "Only students can check submission status."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Debugging: Print student instance to confirm
+        print(f"Student instance: {student}") 
+        
+        # Ensure that the student variable contains a Student instance
+        if not isinstance(student, Student):
+            return Response(
+                {"error": "Invalid student reference."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if the student has submitted this assignment
+        submission_exists = AssignmentSubmission.objects.filter(
+            assignment_id=assignment_id, student=student.user
+        ).exists()
+
+        return Response({"submitted": submission_exists}, status=status.HTTP_200_OK)
+
+
+
 # delete submitted assignment of student by student if not reviewed yet:
 class DeleteStudentSubmissionView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1512,6 +1515,7 @@ class ReviewAssignmentsView(APIView):
 
 # to allow a teacher to review a specific assignment submission
 # from rest_framework import status
+@method_decorator(csrf_exempt, name='dispatch')
 class ReviewAssignmentSubmissionView(APIView):
     # permission_classes = [IsAuthenticated]
     permission_classes = [AllowAny]
@@ -1553,7 +1557,40 @@ class ReviewAssignmentSubmissionView(APIView):
             {"message": "Review submitted successfully."},
             status=status.HTTP_200_OK
         )
+    
+# get/fetch all assignment with subject id
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
+class AssignmentsBySubjectView(APIView):
+    """
+    API view to fetch all assignments filtered by subject id.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        subject_id = request.query_params.get('subject_id')
+        if not subject_id:
+            return Response(
+                {"error": "Subject ID is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter assignments by subject id
+        assignments = Assignment.objects.filter(subject_id=subject_id)
+
+        if not assignments.exists():
+            return Response(
+                {"message": "No assignments found for this subject."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = AssignmentSerializer(assignments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
+@method_decorator(csrf_exempt, name='dispatch')
 class SyllabusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1624,6 +1661,23 @@ class SyllabusView(APIView):
         serializer = SyllabusSerializer(syllabus)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def delete(self, request, *args, **kwargs):
+        """ Allows teachers to delete a syllabus """
+        if not hasattr(request.user, 'teacher'):
+            return Response({"error": "Only teachers can delete a syllabus."}, status=status.HTTP_403_FORBIDDEN)
+
+        teacher = request.user.teacher
+        syllabus_id = kwargs.get("pk")  # Get the syllabus ID from URL
+
+        try:
+            syllabus = Syllabus.objects.get(id=syllabus_id, teacher=teacher)
+        except Syllabus.DoesNotExist:
+            return Response({"error": "You do not have permission to delete this syllabus."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        syllabus.delete()  # Delete the syllabus
+        return Response({"message": "Syllabus deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 # syllabus get / filter by subject id
 class SyllabusFilterView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1674,6 +1728,7 @@ class SubtopicViewSet(viewsets.ModelViewSet):
         return Response({"message": "Subtopic marked as completed"}, status=status.HTTP_200_OK)
 
 # Discussion Post API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionPostAPIView(APIView):
     """
     API View to list and create posts.
@@ -1681,7 +1736,7 @@ class DiscussionPostAPIView(APIView):
     def get(self, request):
         # Get all discussion posts
         posts = DiscussionPost.objects.all()
-        serializer = DiscussionPostSerializer(posts, many=True)
+        serializer = GetDiscussionPostSerializer(posts, many=True)
         return Response(serializer.data)
 
     def post(self, request):
@@ -1694,13 +1749,14 @@ class DiscussionPostAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Discussion Comment API Views
+@method_decorator(csrf_exempt, name='dispatch')
 class DiscussionCommentAPIView(APIView):
     """
     API View to list and create comments under a specific post.
     """
     def get(self, request, post_id):
         comments = DiscussionComment.objects.filter(post_id=post_id, parent=None)
-        serializer = DiscussionCommentSerializer(comments, many=True)
+        serializer = GetDiscussionCommentSerializer(comments, many=True)
         return Response(serializer.data)
 
     def post(self, request, post_id):
@@ -1711,12 +1767,38 @@ class DiscussionCommentAPIView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class DiscussionPostDeleteAPIView(APIView):
+    
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionPostDetailAPIView(APIView):
     """
-    API View to delete a discussion post.
+    API View to retrieve, update, and delete a discussion post.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionPostSerializer(post)
+        return Response(serializer.data)
+
+    def put(self, request, post_id):
+        try:
+            post = DiscussionPost.objects.get(id=post_id)
+        except DiscussionPost.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this post.")
+
+        serializer = DiscussionPostSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, post_id):
         try:
@@ -1726,14 +1808,41 @@ class DiscussionPostDeleteAPIView(APIView):
 
         if post.created_by != request.user:
             raise PermissionDenied("You are not authorized to delete this post.")
+
         post.delete()
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
-class DiscussionCommentDeleteAPIView(APIView):
+
+@method_decorator(csrf_exempt, name='dispatch')
+class DiscussionCommentDetailAPIView(APIView):
     """
-    API View to delete a discussion comment.
+    API View to retrieve, update, and delete a discussion comment.
     """
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GetDiscussionCommentSerializer(comment)
+        return Response(serializer.data)
+
+    def put(self, request, comment_id):
+        try:
+            comment = DiscussionComment.objects.get(id=comment_id)
+        except DiscussionComment.DoesNotExist:
+            return Response({"error": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if comment.created_by != request.user:
+            raise PermissionDenied("You are not authorized to edit this comment.")
+
+        serializer = DiscussionCommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, comment_id):
         try:
@@ -1746,8 +1855,9 @@ class DiscussionCommentDeleteAPIView(APIView):
 
         comment.delete()
         return Response({"message": "Comment deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
-    
 
+    
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamAPIView(APIView):
     def get(self, request, *args, **kwargs):
         exams = Exam.objects.all()
@@ -1761,6 +1871,7 @@ class ExamAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ExamDetailAPIView(APIView):
     def get(self, request):
         """
@@ -1777,6 +1888,7 @@ class ExamDetailAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentResultAPIView(APIView):
     def get(self, request):
         results = StudentResult.objects.all()
@@ -1880,6 +1992,7 @@ class SingleStudentResultAPIView(APIView):
         student_result.delete()
         return Response({"message": "Student result deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
+
 class MarksheetView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1972,10 +2085,18 @@ class ExamDetailsByExamView(APIView):
         try:
             # Fetch the exam
             exam = Exam.objects.get(id=exam_id)      
-
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            
             # Fetch the related exam details
             exam_details = []
             for detail in exam.exam_details.all():
+                exam_date = detail.exam_date
+
+                # Convert exam_date to BS if needed
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
                 exam_details.append({
                     "id": detail.id,
                     "class_details": {
@@ -1990,7 +2111,7 @@ class ExamDetailsByExamView(APIView):
                     },
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
                 })
 
@@ -2003,10 +2124,13 @@ class ExamDetailsByExamView(APIView):
                 "exam_details": exam_details,
             }
             return Response(response_data, status=status.HTTP_200_OK)
+
         except Exam.DoesNotExist:
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class SubjectWiseExamResultsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2027,8 +2151,17 @@ class SubjectWiseExamResultsView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Prepare exam and subject details
+            # Get the first exam detail
             exam_detail = results[0].exam_detail
+
+            # Convert exam_date to BS if needed
+            exam_date = exam_detail.exam_date
+            date_setting = DateSetting.get_instance()  # Get global date setting
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
+            # Prepare exam and subject details
             exam_details = {
                 "exam_id": exam_detail.exam.id,
                 "exam_name": exam_detail.exam.name,
@@ -2038,7 +2171,7 @@ class SubjectWiseExamResultsView(APIView):
                 "subject_name": exam_detail.subject.subject_name,
                 "full_marks": exam_detail.full_marks,
                 "pass_marks": exam_detail.pass_marks,
-                "exam_date": exam_detail.exam_date,
+                "exam_date": exam_date,  # Converted if necessary
             }
 
             # Prepare results data for all students
@@ -2081,7 +2214,6 @@ class SubjectWiseExamResultsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
 class ExamDetailsByTeacherView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
 
@@ -2104,15 +2236,24 @@ class ExamDetailsByTeacherView(APIView):
         if not exam_details.exists():
             return Response({"detail": "No exam details found for this teacher and exam."}, status=404)
 
+        # Check date format setting (BS or AD)
+        date_setting = DateSetting.get_instance()
+
         # Prepare the response with the desired structure
         response_data = []
         for detail in exam_details:
+            # Convert exam_date to BS if needed
+            exam_date = detail.exam_date
+            if exam_date and not date_setting.is_ad:
+                bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                exam_date = bs_date.strftime('%Y-%m-%d')
+
             response_data.append({
                 "exam_details": {
                     "id": detail.id,  # Exam detail ID
                     "full_marks": detail.full_marks,
                     "pass_marks": detail.pass_marks,
-                    "exam_date": detail.exam_date,
+                    "exam_date": exam_date,  # Converted if necessary
                 },
                 "exam": {
                     "id": detail.exam.id,
@@ -2131,6 +2272,8 @@ class ExamDetailsByTeacherView(APIView):
             })
         return Response(response_data, status=200)
 
+
+
 class ExamTimetableView(APIView):
     def get(self, request, exam_id, class_id, *args, **kwargs):
         try:
@@ -2143,9 +2286,19 @@ class ExamTimetableView(APIView):
             if not exam_details.exists():
                 return Response({"detail": "No exam timetable found for this class."}, status=status.HTTP_404_NOT_FOUND)
 
-            # Prepare response data without full_marks and pass_marks
-            exam_details_data = [
-                {
+            # Check date format setting (BS or AD)
+            date_setting = DateSetting.get_instance()
+
+            # Prepare response data with date conversion
+            exam_details_data = []
+            for detail in exam_details:
+                # Convert exam_date to BS if needed
+                exam_date = detail.exam_date
+                if exam_date and not date_setting.is_ad:
+                    bs_date = nepali_datetime.date.from_datetime_date(exam_date)
+                    exam_date = bs_date.strftime('%Y-%m-%d')
+
+                exam_details_data.append({
                     "id": detail.id,
                     "class_details": {
                         "id": detail.class_assigned.id,
@@ -2157,11 +2310,9 @@ class ExamTimetableView(APIView):
                         "subject_code": detail.subject.subject_code,
                         "subject_name": detail.subject.subject_name,
                     },
-                    "exam_date": detail.exam_date,  # Keeping only necessary fields
+                    "exam_date": exam_date,  # Converted if necessary
                     "exam_time": detail.exam_time,
-                }
-                for detail in exam_details
-            ]
+                })
 
             response_data = {
                 "id": exam.id,
@@ -2178,6 +2329,7 @@ class ExamTimetableView(APIView):
             return Response({"detail": "Exam not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ExamsByClassView(APIView):
     def get(self, request, class_id, *args, **kwargs):
@@ -2210,12 +2362,6 @@ class ExamsByClassView(APIView):
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from django.db import transaction
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import Student, Class
 
 class BulkUpdateRollNumbersAPIView(APIView):
     def put(self, request, class_id, *args, **kwargs):
@@ -2365,6 +2511,7 @@ def recalculate_rankings(exam, class_instance):
         result.rank = rank
         result.save()
 
+
 class StudentRankingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2422,22 +2569,7 @@ class StudentRankingView(APIView):
             )
 
 
-class MessageListView(generics.ListAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
-
-class SendMessageView(generics.CreateAPIView):
-    serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(sender=self.request.user)
-
-
+@method_decorator(csrf_exempt, name='dispatch')
 class NotesCreateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -2517,7 +2649,7 @@ class NotesBySubjectAPIView(APIView):
         # Return the serialized data
         return Response({"notes": serializer.data}, status=status.HTTP_200_OK)
     
-
+@method_decorator(csrf_exempt, name='dispatch')
 class DailyAttendanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2739,10 +2871,9 @@ class SubjectWiseStudentListAPIView(APIView):
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import FeeCategoryName
-from .serializers import FeeCategoryNameSerializer
 from rest_framework.permissions import IsAuthenticated
 
+@method_decorator(csrf_exempt, name='dispatch')
 class FeeCategoryNameAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2788,7 +2919,7 @@ class FeeCategoryNameDetailAPIView(APIView):
         except FeeCategoryName.DoesNotExist:
             return Response({"detail": "FeeCategoryName not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class FeeCategoryByClassAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -2847,9 +2978,8 @@ class FeeCategoryDetailAPIView(APIView):
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import TransportationFee
-from .serializers import TransportationFeeSerializer
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TransportationFeeListCreateAPIView(APIView):
     def get(self, request):
         transportation_fees = TransportationFee.objects.all()
@@ -2899,7 +3029,7 @@ class TransportationFeeDetailAPIView(APIView):
         transportation_fee.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentBillAPIView(APIView):
     def get(self, request, student_id, *args, **kwargs):
         """Retrieve all bills for a specific student."""
@@ -2973,7 +3103,7 @@ class StudentBillDetailAPIView(APIView):
         except StudentBill.DoesNotExist:
             return Response({"detail": "Bill not found."}, status=status.HTTP_404_NOT_FOUND)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class StudentPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -3054,12 +3184,14 @@ class StudentPaymentDetailAPIView(APIView):
             return Response({"detail": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class StudentTransactionsAPIView(APIView):
-
     def get(self, request, student_id):
         # Get all transactions for the student
         transactions = StudentTransaction.objects.filter(student_id=student_id)
         if not transactions.exists():
             return Response({"message": "No transactions found"}, status=404)
+
+        # Get the date setting (BS or AD)
+        date_setting = DateSetting.get_instance()
 
         # Serialize transactions
         transaction_serializer = StudentTransactionSerializer(transactions, many=True)
@@ -3067,20 +3199,35 @@ class StudentTransactionsAPIView(APIView):
 
         # Extract student details from the first transaction manually
         first_transaction = transactions.first()
+        student = first_transaction.student
+
+        # Convert date_of_birth to BS if needed
+        date_of_birth = student.date_of_birth
+        if date_of_birth and not date_setting.is_ad:
+            bs_dob = nepali_datetime.date.from_datetime_date(date_of_birth)
+            date_of_birth = bs_dob.strftime('%Y-%m-%d')
+
         student_data = {
-            "id": first_transaction.student.id,
-            "name": first_transaction.student.user.username,
-            "parents": first_transaction.student.parents,
-            "roll_no": first_transaction.student.roll_no,
-            "phone": first_transaction.student.phone,
-            "address": first_transaction.student.address,
-            "date_of_birth": first_transaction.student.date_of_birth,
-            "gender": first_transaction.student.gender,
-            "class_name": first_transaction.student.class_code.class_name if first_transaction.student.class_code else None
+            "id": student.id,
+            "name": student.user.username,
+            "parents": student.parents,
+            "roll_no": student.roll_no,
+            "phone": student.phone,
+            "address": student.address,
+            "date_of_birth": date_of_birth,  # Converted if necessary
+            "gender": student.gender,
+            "class_name": student.class_code.class_name if student.class_code else None
         }
 
-        # Remove student data from each transaction
+        # Convert transaction dates to BS if needed
         for transaction in transaction_data:
+            transaction_date = transaction.get("transaction_date")
+            if transaction_date and not date_setting.is_ad:
+                ad_date = datetime.strptime(transaction_date, "%Y-%m-%d")  # Assuming AD format in DB
+                bs_date = nepali_datetime.date.from_datetime_date(ad_date)
+                transaction["transaction_date"] = bs_date.strftime('%Y-%m-%d')
+
+            # Remove student data from each transaction
             transaction.pop("student", None)
 
         # Return response with student details only once
@@ -3088,6 +3235,7 @@ class StudentTransactionsAPIView(APIView):
             "student": student_data,  # Extracted manually
             "transactions": transaction_data  # Transactions without duplicate student data
         })
+
 
 
 class DashboardAPIView(APIView):
@@ -3196,10 +3344,56 @@ class SyllabusSummaryAPIView(APIView):
 
         return Response({"syllabus_progress": syllabus_data}, status=200)
 
+class SyllabusCompletionPercentageAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        subject_name = request.query_params.get("subject_name", None)
+        subject_code = request.query_params.get("subject_code", None)
+
+        if not subject_name and not subject_code:
+            return Response({"error": "Either subject_name or subject_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter syllabus by subject name or code
+        if subject_name:
+            syllabuses = Syllabus.objects.filter(subject__subject_name__icontains=subject_name)
+        elif subject_code:
+            syllabuses = Syllabus.objects.filter(subject__subject_code__icontains=subject_code)
+
+        if not syllabuses.exists():
+            return Response({"message": "No syllabuses found for this subject."}, status=status.HTTP_404_NOT_FOUND)
+
+        syllabus_data = []
+
+        # Calculate completion percentage for each syllabus
+        for syllabus in syllabuses:
+            total_topics = syllabus.chapters.aggregate(total=Count("topics"))["total"] or 0
+            total_subtopics = syllabus.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+
+            completed_topics = syllabus.chapters.aggregate(
+                completed=Count("topics", filter=Q(topics__is_completed=True))
+            )["completed"] or 0
+
+            completed_subtopics = syllabus.chapters.aggregate(
+                completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+            )["completed"] or 0
+
+            total_completed = completed_topics + completed_subtopics
+            total_items = total_topics + total_subtopics
+
+            completion_percentage = (total_completed / total_items * 100) if total_items else 0
+
+            syllabus_data.append({
+                "subject": syllabus.subject.subject_name,
+                "subject_code": syllabus.subject.subject_code,
+                "class_name": syllabus.class_assigned.class_name,
+                "teacher_name": syllabus.teacher.user.username,
+                "completion_percentage": round(completion_percentage, 2),
+            })
+
+        return Response({"syllabus_progress": syllabus_data}, status=status.HTTP_200_OK)
 
 from django.db.models import Sum
-
-
 class FeeDashboardAPIView(APIView):
     def get(self, request):
         # Get current month & year
@@ -3268,50 +3462,44 @@ class FeeDashboardAPIView(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-class PaymentSearchAPIView(APIView):
+@method_decorator(csrf_exempt, name='dispatch')
+class PaymentSearchAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination  # Pagination class should not be instantiated
+    serializer_class = None  # We will return custom JSON
 
-    def post(self, request, *args, **kwargs):
-        # Get start and end dates from the request body
-        start_date = request.data.get('start_date')
-        end_date = request.data.get('end_date')
+    def get_queryset(self):
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
 
-        # Validate that both dates are provided
         if not start_date or not end_date:
-            return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()  # Return empty queryset
 
         try:
-            # Check if the date is in BS format (YYYY/MM/DD) or AD format (YYYY-MM-DD)
             if '/' in start_date and '/' in end_date:
-                # Convert BS to AD
                 start_date_bs_obj = ndt.date(*map(int, start_date.split('/')))
                 end_date_bs_obj = ndt.date(*map(int, end_date.split('/')))
-                
                 start_date_ad = start_date_bs_obj.to_datetime_date()
                 end_date_ad = end_date_bs_obj.to_datetime_date()
             else:
-                # Parse as AD date (YYYY-MM-DD)
                 start_date_ad = parse_date(start_date)
                 end_date_ad = parse_date(end_date)
-
                 if not start_date_ad or not end_date_ad:
-                    raise ValueError  # If parsing fails
-
+                    raise ValueError
                 if start_date_ad > end_date_ad:
-                    return Response({"error": "start_date cannot be after end_date."}, status=status.HTTP_400_BAD_REQUEST)
+                    return StudentPayment.objects.none()
 
         except ValueError:
-            return Response({"error": "Invalid date format. Use YYYY/MM/DD for BS or YYYY-MM-DD for AD."}, status=status.HTTP_400_BAD_REQUEST)
+            return StudentPayment.objects.none()
 
-        # Fetch payments within the date range (converted to AD)
-        payments = StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
+        return StudentPayment.objects.filter(date__date__range=(start_date_ad, end_date_ad))
 
-        # Calculate total amount directly using aggregation (efficient)
-        total_amount = payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        total_amount = queryset.aggregate(total=Sum('amount_paid'))['total'] or 0
 
-        # Serialize payment data
         payment_data = []
-        for payment in payments:
+        for payment in queryset:
             student_name = payment.student.user.get_full_name() if payment.student and payment.student.user else "Unknown"
             class_name = payment.student.class_code.class_name if payment.student and payment.student.class_code else "Not Assigned"
             created_by = payment.created_by.username if payment.created_by else "Unknown"
@@ -3324,15 +3512,28 @@ class PaymentSearchAPIView(APIView):
                 "created_by": created_by
             })
 
+        # Apply pagination
+        page = self.paginate_queryset(payment_data)
+        if page is not None:
+            return self.get_paginated_response({
+                "payments": page,
+                "total_payment_amount": total_amount
+            })
+
         return Response({
             "payments": payment_data,
             "total_payment_amount": total_amount
-        }, status=status.HTTP_200_OK)
+        })
 
 
 # API to create a new message
 class CreateMessageAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = CommunicationSerializer(data=request.data, context={"request": request})
@@ -3367,30 +3568,30 @@ class RoleBasedMessagesAPIView(APIView):
         role_filters = []
         messages = Communication.objects.none()
 
-        # Logic for Teachers
+        # Role-based filters
         if user.is_teacher:
             role_filters += ["teacher", "teacher_student", "teacher_accountant", "all"]
-
-        # Logic for Accountants
         if user.is_accountant:
             role_filters += ["accountant", "teacher_accountant", "student_accountant", "all"]
 
         # Fetch general role-based messages
         messages = Communication.objects.filter(receiver_role__in=role_filters)
 
-        # Additional logic for Students
+        # Student-specific message filtering
         if user.is_student:
             student_instance = getattr(user, 'student', None)
             if student_instance:
-                student_class = student_instance.class_code
+                user_classes = student_instance.class_code.all()  # ✅ Fetch student's multiple classes
+
                 student_messages = Communication.objects.filter(
                     receiver_role__in=["student", "teacher_student", "student_accountant", "all"]
                 ).filter(
-                    Q(class_field__isnull=True) | Q(class_field=student_class)
+                    Q(class_field__isnull=True) | Q(class_field__in=user_classes)  # ✅ Check if student belongs to any of the message's classes
                 )
+
                 messages = messages.union(student_messages)
 
-        # Serialize the messages and send the response
+        # Serialize messages and send response
         serializer = GetCommunicationSerializer(messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -3437,6 +3638,23 @@ class CommunicationDetailAPIView(APIView):
         
         # Return 200 OK with the success message
         return Response({"detail": "Message deleted successfully"}, status=status.HTTP_200_OK)
+    
+
+class PersonalMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=False)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RoleBasedMessageListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        messages = Communication.objects.filter(sender=request.user, receiver__isnull=True)
+        serializer = GetCommunicationSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class FinanceSummaryAPIView(APIView):
     permission_classes = [IsAuthenticated]  # Optional, restrict access
@@ -3513,9 +3731,6 @@ class UserSearchAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-# from .models import Quiz, Question, UserScore
-from .models import Quiz, QuizQuestion, QuizScore
-from .serializers import QuizSerializer, QuizQuestionSerializer, QuizScoreSerializer
 
 class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.all()
@@ -3525,11 +3740,20 @@ class QuizViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-
 class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = QuizQuestion.objects.all()
     serializer_class = QuizQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'], url_path='by-quiz')
+    def get_questions_by_quiz(self, request):
+        quiz_id = request.query_params.get('quiz_id')  # Fetch from query params
+        if not quiz_id:
+            return Response({"error": "quiz_id is required"}, status=400)
+        
+        questions = QuizQuestion.objects.filter(quiz_id=quiz_id)
+        serializer = self.get_serializer(questions, many=True)
+        return Response(serializer.data)
 
 
 class QuizScoreViewSet(viewsets.ModelViewSet):
@@ -3538,4 +3762,37 @@ class QuizScoreViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
+        user = self.request.user
+        quiz = serializer.validated_data['quiz']
+        new_score = serializer.validated_data['score']
+
+        # Check if the user already has a score for this quiz
+        existing_score = QuizScore.objects.filter(user=user, quiz=quiz).first()
+
+        if existing_score:
+            # Update the existing score only if the new one is higher
+            if new_score > existing_score.score:
+                existing_score.score = new_score
+                existing_score.save()
+                quiz.update_highest_score(user, new_score)  # Update highest score if necessary
+        else:
+            # Create a new score entry if no previous score exists
+            serializer.save(user=user)
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from .models import Task
+from .serializers import TaskSerializer
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    # permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).order_by("order")  # Order tasks properly
+
+    def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+

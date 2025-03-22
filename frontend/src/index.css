@@ -3,12 +3,64 @@
 @tailwind utilities;
 
 .mainFooterr {
-    position: fixed;
-    bottom: 0;
-    z-index:99;
-    width: 100%;
-    white-space: nowrap;
-    padding: 7px 7px 7px 15px;
-    font-size: 14px;
-    background-color: rgb(242, 242, 242);
+  position: fixed;
+  bottom: 0;
+  z-index: 99;
+  width: 100%;
+  white-space: nowrap;
+  padding: 7px 7px 7px 15px;
+  font-size: 14px;
+  background-color: rgb(242, 242, 242);
+}
+
+.sms-loader {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-bottom-color: #78e0ee;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
   }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.sms-custom-dropdown .ant-btn-compact-first-item {
+  display: none;
+}
+.sms-custom-dropdown .ant-btn-compact-last-item:hover {
+  background-color: rgb(218, 217, 217) !important;
+  border-radius: 5px;
+}
+
+.sms-custom-discussion-tree .ant-tree-treenode,
+.sms-custom-discussion-tree .ant-tree-treenode .ant-tree-node-content-wrapper {
+  width: 100% !important;
+}
+
+.sms-skeleton-wrapper {
+  display: grid;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main-content";
+  grid-template-columns: 255px 1fr;
+  grid-template-rows: 150px 1fr;
+}
+
+.sms-skeleton-aside {
+  grid-area: sidebar;
+}
+.sms-skeleton-header {
+  grid-area: header;
+}
+.sms-skeleton-main {
+  grid-area: main-content;
+}

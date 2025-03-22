@@ -156,6 +156,21 @@ class AssignmentAdmin(admin.ModelAdmin):
     # list_filter = ('subject','student')  # Filters for the sidebar
     search_fields = ('title', 'subject')  # Searchable fields
 
+@admin.register(AssignmentSubmission)
+class AssignmentSubmissionAdmin(admin.ModelAdmin):
+    list_display = ('student', 'assignment', 'submitted_on', 'is_checked')
+    list_filter = ('is_checked', 'submitted_on')
+    search_fields = ('student__username', 'assignment__assignment_name')
+    ordering = ('-submitted_on',)
+    readonly_fields = ('submitted_on',)
+
+    def student(self, obj):
+        return obj.student.username  # Display student username
+
+    def assignment(self, obj):
+        return obj.assignment.assignment_name  # Display assignment name
+
+
 @admin.register(Syllabus)
 class SyllabusAdmin(admin.ModelAdmin):
     list_display = ('class_assigned', 'subject', 'teacher', 'completion_percentage', 'created_at', 'updated_at')
@@ -330,6 +345,6 @@ class StudentTransactionAdmin(admin.ModelAdmin):
 # Communication admin customization
 @admin.register(Communication)
 class CommunicationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'class_field', 'sent_at')
+    list_display = ('id', 'sender', 'receiver', 'receiver_role', 'sent_at')
     search_fields = ('sender__username', 'receiver__username', 'receiver_role')
-    list_filter = ('receiver_role', 'class_field', 'sent_at')
+    list_filter = ('receiver_role', 'sent_at')

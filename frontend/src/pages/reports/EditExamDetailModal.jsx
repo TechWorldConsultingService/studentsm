@@ -3,6 +3,8 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
 
 // Validation Schema for Formik
 const EditExamDetailSchema = Yup.object().shape({
@@ -50,11 +52,9 @@ const EditExamDetailModal = ({
   onSave,
   onCancel,
 }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const [selectedClassCode, setSelectedClassCode] = useState("");
   const [subjects, setSubjects] = useState([]);
-
-  console.log(exams, "exams is ");
 
   const formik = useFormik({
     initialValues: {
@@ -128,9 +128,9 @@ const EditExamDetailModal = ({
               className="p-2 border border-purple-300 rounded w-full"
             >
               <option value="">Select an exam</option>{" "}
-                <option key={exams.id} value={exams.id}>
-                  {exams.name}
-                </option>
+              <option key={exams.id} value={exams.id}>
+                {exams.name}
+              </option>
             </select>
             {formik.touched.exam && formik.errors.exam && (
               <div className="text-red-500 text-sm">{formik.errors.exam}</div>
@@ -242,17 +242,30 @@ const EditExamDetailModal = ({
           {/* Exam Date */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">
-              Exam Date
+              Exam Date {is_ad ? "(AD)" : "(BS)"}
             </label>
-            <input
-              type="date"
-              id="exam_date"
-              name="exam_date"
-              value={formik.values.exam_date}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className="p-2 border border-purple-300 rounded w-full"
-            />
+            {is_ad ? (
+              <input
+                type="date"
+                id="exam_date"
+                name="exam_date"
+                value={formik.values.exam_date}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="p-2 border border-purple-300 rounded w-full"
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.exam_date}
+                onChange={(date) => formik.setFieldValue("exam_date", date)}
+                onBlur={() => formik.setFieldTouched("exam_date", true)}
+                inputClassName="p-2 border border-purple-300 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Select Date"
+              />
+            )}
+
             {formik.touched.exam_date && formik.errors.exam_date && (
               <div className="text-red-500 text-sm">
                 {formik.errors.exam_date}

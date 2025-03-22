@@ -210,6 +210,7 @@ class AssignmentSubmission(models.Model):
     def __str__(self):
         return f"{self.student.username} - {self.assignment.assignment_name}"    
 
+from django.db.models import Count, Q
 class Syllabus(models.Model):
     class_assigned = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="syllabus")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="syllabus")
@@ -218,6 +219,25 @@ class Syllabus(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.class_assigned} - {self.subject} - {self.teacher.user.username}"
+
+    def get_completion_percentage(self):
+        total_topics = self.chapters.aggregate(total=Count("topics"))["total"] or 0
+        total_subtopics = self.chapters.aggregate(total=Count("topics__subtopics"))["total"] or 0
+
+        completed_topics = self.chapters.aggregate(
+            completed=Count("topics", filter=Q(topics__is_completed=True))
+        )["completed"] or 0
+
+        completed_subtopics = self.chapters.aggregate(
+            completed=Count("topics__subtopics", filter=Q(topics__subtopics__is_completed=True))
+        )["completed"] or 0
+
+        total_completed = completed_topics + completed_subtopics
+        total_items = total_topics + total_subtopics
+
+        if total_items == 0:
+            return 0
+        return (total_completed / total_items) * 100
 
 class Chapter(models.Model):
     syllabus = models.ForeignKey(Syllabus, on_delete=models.CASCADE, related_name="chapters")
@@ -244,6 +264,7 @@ class DiscussionPost(models.Model):
     content = models.TextField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"Post by {self.created_by.username} in {self.topic}"
@@ -254,6 +275,7 @@ class DiscussionComment(models.Model):
     content = models.TextField()
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"Comment by {self.created_by.username} on {self.post.content[:20]}"
@@ -551,6 +573,7 @@ class StudentTransaction(models.Model):
 class Communication(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_communications")
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="received_communications")
+    subject = models.CharField(max_length=255, null=True, blank=True)  
     message = models.TextField()
     receiver_role = models.CharField(max_length=255, choices=(
         ('teacher', 'Teacher'),
@@ -561,8 +584,8 @@ class Communication(models.Model):
         ('student_accountant', 'Student and Accountant'),
         ('all', 'All'),),null=True,blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
-    class_field = models.ForeignKey('Class', null=True, blank=True, on_delete=models.SET_NULL, related_name="communications")
-
+    class_field = models.ManyToManyField('Class', blank=True, related_name="communications")
+    
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username if self.receiver else self.receiver_role}"
 
@@ -607,3 +630,25 @@ class QuizScore(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.score} in {self.quiz.title}"
+    
+
+class Task(models.Model):
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tasks")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    due_date = models.DateField()
+    is_completed = models.BooleanField(default=False)
+    completion_percentage = models.IntegerField(default=0)  # 0 to 100
+    order = models.IntegerField(default=0)  # For drag-and-drop ordering
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

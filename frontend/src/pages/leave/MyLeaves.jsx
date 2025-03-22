@@ -17,7 +17,7 @@ const MyLeaves = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [leaveData, setLeaveData] = useState([]);
+  const [, setLeaveData] = useState([]);
   const [newRequests, setNewRequests] = useState([]);
   const [updatedRequests, setUpdatedRequests] = useState([]);
 
@@ -37,11 +37,14 @@ const MyLeaves = () => {
     }
     try {
       setIsLoading(true);
-      const res = await axios.get("http://localhost:8000/api/leave-applications/", {
-        headers: {
-          Authorization: `Bearer ${access}`,
-        },
-      });
+      const res = await axios.get(
+        "http://localhost:8000/api/leave-applications/",
+        {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
 
       const data = res.data;
       const pending = data.filter((item) => item.status === "Pending");
@@ -63,7 +66,6 @@ const MyLeaves = () => {
   useEffect(() => {
     fetchLeaveData();
   }, [access]);
-
 
   // (A) Apply Leave
   const handleApplyLeave = (leave_date, message) => {
@@ -89,9 +91,12 @@ const MyLeaves = () => {
   const handleDeleteLeave = async (id) => {
     if (!access) return;
     try {
-      await axios.delete(`http://localhost:8000/api/leave-applications/${id}/`, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
+      await axios.delete(
+        `http://localhost:8000/api/leave-applications/${id}/`,
+        {
+          headers: { Authorization: `Bearer ${access}` },
+        }
+      );
       toast.success("Leave deleted successfully.");
       fetchLeaveData();
     } catch (error) {
@@ -220,9 +225,7 @@ const MyLeaves = () => {
           <h1 className="text-3xl font-extrabold text-purple-800">My Leaves</h1>
           <p className="mt-1 text-gray-600">Manage your leave requests.</p>
 
-          {errorMessage && (
-            <p className="mt-2 text-red-500">{errorMessage}</p>
-          )}
+          {errorMessage && <p className="mt-2 text-red-500">{errorMessage}</p>}
 
           <div className="text-right my-4">
             <button
@@ -237,19 +240,23 @@ const MyLeaves = () => {
             <p className="text-gray-600">Loading...</p>
           ) : (
             <>
-              <h3 className="text-xl font-bold text-purple-800">Pending Requests</h3>
+              <h3 className="text-xl font-bold text-purple-800">
+                Pending Requests
+              </h3>
               {newRequests.length > 0 ? (
                 <Table
                   dataSource={newRequests}
                   columns={pendingColumns}
                   rowKey="id"
                   className="mt-4"
-                />  
+                />
               ) : (
                 <p className="mt-2 text-gray-600">No pending leaves found.</p>
               )}
 
-              <h3 className="text-xl font-bold text-purple-800 mt-8">Reviewed Requestss</h3>
+              <h3 className="text-xl font-bold text-purple-800 mt-8">
+                Reviewed Requestss
+              </h3>
               {updatedRequests.length > 0 ? (
                 <Table
                   dataSource={updatedRequests}

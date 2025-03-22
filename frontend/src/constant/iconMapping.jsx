@@ -4,6 +4,7 @@ import {
   MdCoPresent,
   MdPayments,
   MdOutlineManageHistory,
+  MdNotificationAdd
 } from "react-icons/md";
 import { IoCalendarOutline, IoBusOutline } from "react-icons/io5";
 import { PiStudent } from "react-icons/pi";
@@ -13,6 +14,11 @@ import { LuFileSpreadsheet } from "react-icons/lu";
 import { SlPeople } from "react-icons/sl";
 import { IoMdPersonAdd } from "react-icons/io";
 import { FaFileInvoiceDollar } from "react-icons/fa";
+import { MdReceiptLong, MdForum } from "react-icons/md";
+import { FaTasks } from "react-icons/fa";
+import { IoMdNotifications } from "react-icons/io";
+
+
 
 const iconMapping = {
   MdOutlineSpaceDashboard,
@@ -29,6 +35,11 @@ const iconMapping = {
   MdPayments,
   FaFileInvoiceDollar,
   MdOutlineManageHistory,
+  MdReceiptLong,
+  FaTasks,
+  MdForum,
+  MdNotificationAdd,
+  IoMdNotifications
 };
 
 export default iconMapping;

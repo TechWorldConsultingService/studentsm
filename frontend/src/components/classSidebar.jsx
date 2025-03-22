@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { FaBars, FaAngleLeft, FaAngleRight, FaHouse } from "react-icons/fa6";
 import { SiGoogleclassroom } from "react-icons/si";
-import { setSelectedClass } from "../redux/reducerSlices/userSlice";
+import {
+  setSelectedClass,
+  setSelectedClassId,
+} from "../redux/reducerSlices/userSlice";
 
 const buildClassSubSidebar = (classItem) => {
   return [
@@ -34,24 +37,28 @@ const ClassSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSubMenuId, setOpenSubMenuId] = useState(null);
 
-  const sidebarItems = [
-    {
-      id: "dashboard",
-      icon: FaHouse,
-      title: "Dashboard",
-      link: "/tms",
-    },
-    ...classes.map((classItem) => ({
-      id: `class-${classItem.id}`,
-      icon: SiGoogleclassroom,
-      title: classItem.class_name,
-      link: `/tms/${classItem.class_name.toLowerCase()}`,
-      subSidebar: buildClassSubSidebar(classItem),
-    })),
-  ];
+  const sidebarItems = useMemo(
+    () => [
+      {
+        id: "dashboard",
+        icon: FaHouse,
+        title: "Dashboard",
+        link: "/tms",
+      },
+      ...classes.map((classItem) => ({
+        id: classItem.id,
+        icon: SiGoogleclassroom,
+        title: classItem.class_name,
+        link: `/tms/${classItem.class_name.toLowerCase()}`,
+        subSidebar: buildClassSubSidebar(classItem),
+      })),
+    ],
+    [classes]
+  );
 
-  const handleClassClick = (className) => {
-    dispatch(setSelectedClass(className));
+  const handleClassClick = (clasesObject) => {
+    dispatch(setSelectedClass(clasesObject.title));
+    dispatch(setSelectedClassId(clasesObject.id));
   };
 
   const handleMobileToggle = () => {
@@ -104,7 +111,9 @@ const ClassSidebar = () => {
         `}
       >
         <div
-          className={`flex items-center justify-between p-3 ${isCollapsed ? "justify-center" : ""}`}
+          className={`flex items-center justify-between p-3 ${
+            isCollapsed ? "justify-center" : ""
+          }`}
         >
           {/* Logo */}
           <div className="flex items-center">
@@ -151,7 +160,11 @@ const ClassSidebar = () => {
                     `}
                   >
                     <div className="flex items-center gap-2">
-                      <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
+                      <span
+                        className={`${
+                          isCollapsed ? "text-3xl" : "text-2xl"
+                        } transition-all duration-300`}
+                      >
                         <Icon />
                       </span>
                       {!isCollapsed && (
@@ -176,7 +189,7 @@ const ClassSidebar = () => {
                           to={subItem.link}
                           key={subItem.id}
                           end
-                          onClick={() => handleClassClick(item.title)}
+                          onClick={() => handleClassClick(item)}
                           className={({ isActive }) => `
                             py-2 pl-4 my-1 rounded-r-md text-sm transition-colors
                             ${
@@ -198,7 +211,7 @@ const ClassSidebar = () => {
             return (
               <NavLink
                 to={item.link}
-                onClick={() => handleClassClick(item.title)}
+                onClick={() => handleClassClick(item)}
                 key={item.id}
                 end
                 className={({ isActive }) => `
@@ -211,7 +224,11 @@ const ClassSidebar = () => {
                   ${isCollapsed ? "justify-center" : ""}
                 `}
               >
-                <span className={`${isCollapsed ? "text-3xl" : "text-2xl"} transition-all duration-300`}>
+                <span
+                  className={`${
+                    isCollapsed ? "text-3xl" : "text-2xl"
+                  } transition-all duration-300`}
+                >
                   <Icon />
                 </span>
                 {!isCollapsed && (

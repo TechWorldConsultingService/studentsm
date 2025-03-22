@@ -23,7 +23,7 @@ const NavBar = () => {
       key: "profile",
     },
     {
-      label: <Link to="/setting">Setting</Link>,
+      label: <Link to="/schoolSetting">Setting</Link>,
       key: "settings",
     },
     {
@@ -42,14 +42,7 @@ const NavBar = () => {
 
         {/* Right-side: Search, Icons, Profile */}
         <div className="flex items-center gap-4">
-          {/* Search Bar (hidden on small screens, show on md+) */}
-          <div className="relative hidden md:flex items-center">
-            <input
-              placeholder="Search..."
-              className="pr-10 pl-3 py-1 text-black rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400"
-            />
-            <IoMdSearch className="absolute right-2 text-purple-600 text-lg" />
-          </div>
+
 
           {/* Messages Icon */}
           <button

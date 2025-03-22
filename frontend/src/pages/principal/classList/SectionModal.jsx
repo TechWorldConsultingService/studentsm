@@ -11,10 +11,7 @@ const SectionModal = ({
 }) => {
   const { access } = useSelector((state) => state.user);
 
-  // If `initialSection` is present, we are editing
   const isEdit = Boolean(initialSection && initialSection.id);
-
-  // Local state
   const [sectionName, setSectionName] = useState(
     isEdit ? initialSection.section_name : ""
   );

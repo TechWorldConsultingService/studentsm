@@ -6,13 +6,15 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import Password from "antd/es/input/Password";
+import { NepaliDatePicker } from "nepali-datepicker-reactjs";
+import "nepali-datepicker-reactjs/dist/index.css";
 
 const EditAccountentModal = ({
   handleCloseModal,
   fetchAccountents,
   accountentInfo,
 }) => {
-  const { access } = useSelector((state) => state.user);
+  const { access, is_ad } = useSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [isUsernameEditable, setIsUsernameEditable] = useState(false);
@@ -26,28 +28,25 @@ const EditAccountentModal = ({
 
   const editAccountentSchema = Yup.object().shape({
     user: Yup.object().shape({
-      username: Yup.string()
-        .when([], {
-          is: () => isUsernameEditable,
-          then: Yup.string()
+      username: Yup.string().when("$isUsernameEditable", {
+        is: true,
+        then: (schema) =>
+          schema
             .required("Username is required when changing.")
             .min(3, "Username must be at least 3 characters long.")
             .max(20, "Username can't exceed 20 characters."),
-          otherwise: Yup.string().notRequired(),
-        }),
-      password: Yup.string()
-        .when([], {
-          is: () => isPasswordEditable,
-          then: Yup.string()
+        otherwise: (schema) => schema.notRequired(),
+      }),
+      password: Yup.string().when("$isPasswordEditable", {
+        is: true,
+        then: (schema) =>
+          schema
             .required("Password is required when changing.")
             .min(6, "Password must be at least 6 characters long.")
-            .max(15, "Password can't exceed 15 characters.")
-            .matches(
-              /[a-zA-Z0-9]/,
-              "Password must contain at least one letter and one number."
-            ),
-          otherwise: Yup.string().notRequired(),
-        }),
+            .max(15, "Password can't exceed 15 characters."),
+        otherwise: (schema) => schema.notRequired(),
+      }),
+
       email: Yup.string()
         .required("Email is required.")
         .email("Please enter a valid email address."),
@@ -68,9 +67,7 @@ const EditAccountentModal = ({
       .min(5, "Address must be at least 5 characters long.")
       .max(50, "Address can't exceed 50 characters."),
     gender: Yup.string().required("Gender is required."),
-    date_of_joining: Yup.date()
-      .required("Date of joining is required.")
-      .max(new Date(), "Date of joining cannot be in the future."),
+    date_of_joining: Yup.date().required("Date of joining is required."),
   });
 
   const formik = useFormik({
@@ -100,17 +97,14 @@ const EditAccountentModal = ({
       return;
     }
     try {
-      // Build payload
       const payload = {
         ...values,
       };
 
-      // If username is not being changed, remove it from payload
       if (!isUsernameEditable) {
         delete payload.user.username;
       }
 
-      // If password is not being changed, remove it from payload
       if (!isPasswordEditable) {
         delete payload.user.password;
       }
@@ -145,7 +139,9 @@ const EditAccountentModal = ({
           {/* Username */}
           <div className="mb-4">
             <div className="flex items-center">
-              <span className="mr-2">Username:</span>
+              <span className="mr-2 text-gray-700 font-semibold">
+                Username:
+              </span>
               <button
                 type="button"
                 onClick={() => setIsUsernameEditable(!isUsernameEditable)}
@@ -177,7 +173,9 @@ const EditAccountentModal = ({
           {/* Password */}
           <div className="mb-4">
             <div className="flex items-center">
-              <span className="mr-2">Password:</span>
+              <span className="mr-2 text-gray-700 font-semibold">
+                Password:
+              </span>
               <button
                 type="button"
                 onClick={() => setIsPasswordEditable(!isPasswordEditable)}
@@ -207,6 +205,7 @@ const EditAccountentModal = ({
 
           {/* Email */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">Email:</label>
             <input
               type="email"
               className="border border-gray-300 p-2 rounded w-full"
@@ -225,6 +224,9 @@ const EditAccountentModal = ({
 
           {/* First Name */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">
+              First Name:
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -244,6 +246,9 @@ const EditAccountentModal = ({
 
           {/* Last Name */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">
+              Last Name:
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -263,6 +268,7 @@ const EditAccountentModal = ({
 
           {/* Phone */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">Phone:</label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -281,6 +287,9 @@ const EditAccountentModal = ({
 
           {/* Address */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">
+              Address:
+            </label>
             <input
               type="text"
               className="border border-gray-300 p-2 rounded w-full"
@@ -299,6 +308,7 @@ const EditAccountentModal = ({
 
           {/* Gender */}
           <div className="mb-4">
+            <label className="block text-gray-700 font-semibold">Gender:</label>
             <select
               name="gender"
               className="border border-gray-300 p-2 rounded w-full"
@@ -320,14 +330,32 @@ const EditAccountentModal = ({
 
           {/* Date of Joining */}
           <div className="mb-4">
-            <input
-              type="date"
-              className="border border-gray-300 p-2 rounded w-full"
-              name="date_of_joining"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.date_of_joining}
-            />
+            <label className="block text-gray-700 font-semibold">
+              Date Of Joining:
+            </label>
+            {is_ad ? (
+              <input
+                type="date"
+                className="border border-gray-300 p-2 rounded w-full"
+                name="date_of_joining"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.date_of_joining}
+              />
+            ) : (
+              <NepaliDatePicker
+                value={formik.values.date_of_joining}
+                onChange={(date) =>
+                  formik.setFieldValue("date_of_joining", date)
+                }
+                onBlur={() => formik.setFieldTouched("date_of_joining", true)}
+                inputClassName="border border-gray-300 p-2 rounded w-full"
+                dateFormat="YYYY-MM-DD"
+                language="ne"
+                placeholder="Date of Joining"
+              />
+            )}
+
             {formik.touched.date_of_joining &&
               formik.errors.date_of_joining && (
                 <div className="p-1 px-2 text-red-500 text-sm mt-1">
@@ -338,6 +366,7 @@ const EditAccountentModal = ({
 
           {/* Buttons */}
           <div className="mt-6 text-center">
+            <label className="block text-gray-700 font-semibold"></label>
             <button
               type="submit"
               className="bg-purple-700 text-white px-6 py-2 rounded-lg hover:bg-purple-800 mr-2"

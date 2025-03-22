@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../../layout/MainLayout";
 import ReceiptModal from "./ReceiptModal";
@@ -37,12 +37,21 @@ const SuccessPayment = () => {
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-green-700 mb-4">Successful!</h1>
+          <h1 className="text-3xl font-bold text-green-700 mb-4">
+            Successful!
+          </h1>
           <p className="mb-6">Your payment was processed successfully.</p>
-          <p className="mb-6">Would you like to view the payment receipt details?</p>
+          <p className="mb-6">
+            Would you like to view the payment receipt details?
+          </p>
           <div className="flex justify-center space-x-4">
             <button
               onClick={handleViewDetails}
