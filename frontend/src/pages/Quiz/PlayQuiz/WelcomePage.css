@@ -93,11 +93,11 @@
   .light-icon {
     color: #f3f32d;  /* Yellow */
   }
-  
+
   .question-icon {
     color: #d55633;  /* Lime Green */
   }
-  
+
   /* Icon Animation (Scaling effect) */
   @keyframes iconAnimation {
     0% {

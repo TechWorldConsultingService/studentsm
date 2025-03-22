@@ -72,9 +72,7 @@ const ManageAllLeaves = lazy(() => import("./pages/leave/ManageAllLeaves"));
 const SubjectNotes = lazy(() => import("./pages/LMS/subjectNotes"));
 const SubjectSyllabus = lazy(() => import("./pages/LMS/subjectSyllabus"));
 const ClassSyllabus = lazy(() => import("./pages/TMS/syllabus/classSyllabus"));
-const TeacherHomeworkDashboard = lazy(() =>
-  import("./pages/TMS/teacherHomework/TeacherHomeworkDashboard")
-);
+const TeacherHomeworkDashboard = lazy(() => import("./pages/TMS/teacherHomework/TeacherHomeworkDashboard"));
 const ClassNotes = lazy(() => import("./pages/TMS/teacherNotes/classNotes"));
 const QuizComponent = lazy(() => import("./pages/Quiz/PlayQuiz/PlayQuiz"));
 const AssignmentSubmissionsPage = lazy(() =>
