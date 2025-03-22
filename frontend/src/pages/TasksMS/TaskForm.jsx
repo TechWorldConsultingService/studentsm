@@ -27,30 +27,6 @@ const TaskForm = ({ addTask, onClose }) => {
   });
 
   return (
-<<<<<<< HEAD
-    <form onSubmit={handleSubmit} className="flex space-x-2 mb-4">
-
-      <input
-        type="text"
-        placeholder="Task title"
-        value={task.title}
-        onChange={(e) => setTask({ ...task, title: e.target.value })}
-        className="p-2 border rounded w-full"
-      />
-
-      <input
-        type="date"
-        value={task.due_date}
-        onChange={(e) => setTask({ ...task, due_date: e.target.value })}
-        className="p-2 border rounded"
-      />
-
-      <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-        Addd
-      </button>
-      
-    </form>
-=======
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-11/12 md:w-1/2">
         <h2 className="text-2xl font-bold text-purple-800 mb-4">Add To-do List</h2>
@@ -134,7 +110,6 @@ const TaskForm = ({ addTask, onClose }) => {
         </form>
       </div>
     </div>
->>>>>>> 350a47efc47fd8a8fd6c98485a7093010672dc4c
   );
 };
 
