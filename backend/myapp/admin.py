@@ -53,6 +53,12 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'phone', 'address')
     list_filter = ['class_code']
 
+@admin.register(Driver)
+class DriverAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'phone', 'date_of_joining')
+    search_fields = ('user__username', 'user__email', 'phone',)
+    ordering = ('-date_of_joining',)
+
 
 # LeaveApplication admin customization
 @admin.register(LeaveApplication)
@@ -342,6 +348,7 @@ class StudentTransactionAdmin(admin.ModelAdmin):
     def payment_number(self, obj):
         return obj.payment.payment_number if obj.transaction_type == 'payment' else None
     payment_number.short_description = 'Payment Number'
+
 # Communication admin customization
 @admin.register(Communication)
 class CommunicationAdmin(admin.ModelAdmin):

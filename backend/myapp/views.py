@@ -127,7 +127,18 @@ class LoginAPIView(APIView):
                     'gender': accountant.gender,
                     'date_of_joining': accountant.date_of_joining.strftime('%Y-%m-%d'),
                 }
-            
+
+            elif hasattr(user, 'driver'):
+                driver = user.driver
+                role_data = {
+                    'id': driver.id, 
+                    'role': 'driver',
+                    'phone': driver.phone,
+                    'address': driver.address,
+                    'gender': driver.gender,
+                    'date_of_joining': driver.date_of_joining.strftime('%Y-%m-%d'),
+                }
+
             else:
                 return Response({'error': 'User has no role assigned'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -135,7 +146,7 @@ class LoginAPIView(APIView):
                 'id': role_data.get('id'),
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'staff' if user.is_staff else None,
+                'role': 'master' if user.is_master else 'principal' if user.is_principal else 'teacher' if user.is_teacher else 'student' if user.is_student else 'accountant' if user.is_accountant else 'driver' if user.is_driver else None,
                 'username': username,
                 **role_data,
                 'email': user.email,
@@ -147,6 +158,7 @@ class LoginAPIView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
  
 
@@ -659,6 +671,84 @@ class AccountantUpdateAPIView(APIView):
             return Response(AccountantSerializer(accountant).data)
         # If validation fails, return the errors in the response
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterDriverView(APIView):
+    def post(self, request, format=None):
+        if request.content_type == 'application/json':
+            user_data = request.data.get('user')
+            if not user_data:
+                return Response({"error": "User data not provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+            driver_data = request.data
+        else:
+            user_data = {
+                'username': request.data.get('user.username'),
+                'password': request.data.get('user.password'),
+                'email': request.data.get('user.email'),
+                'first_name': request.data.get('user.first_name'),
+                'last_name': request.data.get('user.last_name'),
+            }
+
+            driver_data = {
+                'phone': request.data.get('phone'),
+                'address': request.data.get('address'),
+                'date_of_joining': request.data.get('date_of_joining'),
+                'license_number': request.data.get('license_number'),
+                'vehicle_assigned': request.data.get('vehicle_assigned'),
+                'gender': request.data.get('gender'),
+                'user': user_data,
+            }
+
+        driver_serializer = DriverSerializer(data=driver_data)
+
+        if driver_serializer.is_valid():
+            driver = driver_serializer.save()
+            driver.user.is_driver = True
+            driver.user.save()
+            return Response(driver_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(driver_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DriverListView(APIView):
+    def get(self, request, format=None):
+        drivers = Driver.objects.all()
+        serializer = DriverSerializer(drivers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DriverDetailView(APIView):
+    def get(self, request, pk, format=None):
+        try:
+            driver = Driver.objects.get(pk=pk)
+            serializer = DriverSerializer(driver)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Driver.DoesNotExist:
+            return Response({"error": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class DriverUpdateAPIView(APIView):
+    def put(self, request, pk):
+        try:
+            driver = Driver.objects.get(pk=pk)
+        except Driver.DoesNotExist:
+            return Response({"error": "Driver not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DriverSerializer(driver, data=request.data, partial=True)
+        if serializer.is_valid():
+            driver = serializer.save()
+            return Response(DriverSerializer(driver).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DriverDeleteView(APIView):
+    def delete(self, request, pk, format=None):
+        try:
+            driver = Driver.objects.get(pk=pk)
+            driver.delete()
+            return Response({"message": "Driver deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Driver.DoesNotExist:
+            return Response({"error": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 from rest_framework.decorators import api_view, permission_classes
 @api_view(["GET"])
@@ -1275,41 +1365,36 @@ class FilterSubjectsView(APIView):
 
     def get(self, request):
         teacher_id = request.GET.get('teacher')
-        print(teacher_id)
-        
         class_assigned = request.GET.get('class_assigned')
-        print(class_assigned)
 
         if not teacher_id or not class_assigned:
-            return JsonResponse({"error": "Missing teacher or class_assigned parameter"}, status=400)
-        teacher_id = int(teacher_id)
+            return JsonResponse({"error": "Missing 'teacher' or 'class_assigned' parameter"}, status=400)
+
+        # Validate teacher_id
         try:
             teacher_id = int(teacher_id)
         except ValueError:
-            return JsonResponse({"error": "Invalid teacher parameter"}, status=400)
+            return JsonResponse({"error": "Invalid 'teacher' parameter. Must be an integer."}, status=400)
 
-        print(f"Received teacher ID: {teacher_id}")
-        # Fetch the teacher by user_id (which is teacher_id)
+        # Fetch the teacher by ID
         try:
-            # print(f"Teacher is : {Teacher}")
-
             teacher = Teacher.objects.get(id=teacher_id)
-            # teacher = Teacher.objects.get(teacher_id)
-            print(f"Teacher is : {Teacher}")
-
-            print(f"teachersssss ID: {teacher}")
         except Teacher.DoesNotExist:
-            print(f"Teacher with user_id {teacher_id} not found.")
-            return JsonResponse({"error": "Teacher not found"}, status=404)
+            return JsonResponse({"error": f"Teacher with ID {teacher_id} not found."}, status=404)
 
+        # Fetch the assigned class
         try:
             assigned_class = Class.objects.get(class_name=class_assigned)
         except Class.DoesNotExist:
-            return JsonResponse({"error": f"Class '{class_assigned}' not found"}, status=404)
+            return JsonResponse({"error": f"Class '{class_assigned}' not found."}, status=404)
 
-        # Now filter the subjects for the teacher and the assigned class
-        subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class)
-        return JsonResponse({"subjects": list(subjects.values())}, safe=False)
+        # Filter subjects for the given teacher and class
+        subjects = Subject.objects.filter(teachers=teacher, classes=assigned_class).values(
+            "id", "subject_code", "subject_name", "is_credit", "credit_hours", "is_optional"
+        )
+
+        return JsonResponse({"subjects": list(subjects)}, safe=False)
+
 
 
 class StudentAssignmentsView(APIView):
@@ -3566,7 +3651,8 @@ class RoleBasedMessagesAPIView(APIView):
         """
         user = request.user
         role_filters = []
-        messages = Communication.objects.none()
+        student_messages = Communication.objects.none()  # Initialize empty queryset
+        messages = Communication.objects.none()  # Initialize empty queryset
 
         # Role-based filters
         if user.is_teacher:
@@ -3581,18 +3667,20 @@ class RoleBasedMessagesAPIView(APIView):
         if user.is_student:
             student_instance = getattr(user, 'student', None)
             if student_instance:
-                user_classes = student_instance.class_code.all()  # ✅ Fetch student's multiple classes
+                user_class = student_instance.class_code  # ✅ Get student's class
 
+                # Fetch messages only for the student if class matches or if class is null
                 student_messages = Communication.objects.filter(
                     receiver_role__in=["student", "teacher_student", "student_accountant", "all"]
                 ).filter(
-                    Q(class_field__isnull=True) | Q(class_field__in=user_classes)  # ✅ Check if student belongs to any of the message's classes
+                    Q(class_field__isnull=True) | Q(class_field=user_class)  # ✅ Only matching class or null class messages
                 )
 
-                messages = messages.union(student_messages)
+        # Merge querysets using `|` instead of `union()`
+        final_messages = messages | student_messages
 
         # Serialize messages and send response
-        serializer = GetCommunicationSerializer(messages, many=True)
+        serializer = GetCommunicationSerializer(final_messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CommunicationDetailAPIView(APIView):

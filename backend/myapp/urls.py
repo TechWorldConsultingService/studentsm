@@ -65,6 +65,13 @@ urlpatterns = [
     path('api/student/<int:pk>/update/', StudentUpdateAPIView.as_view(), name='student-update'),
     path('api/accountant/<int:pk>/update/', AccountantUpdateAPIView.as_view(), name='accountant-update'),
 
+    # API endpoints for driver management
+    path('api/register/driver/', RegisterDriverView.as_view(), name='register-driver'),
+    path('api/drivers/', DriverListView.as_view(), name='driver-list'),
+    path('api/drivers/<int:pk>/', DriverDetailView.as_view(), name='driver-detail'),
+    path('api/drivers/<int:pk>/update/', DriverUpdateAPIView.as_view(), name='driver-update'),
+    path('api/drivers/<int:pk>/delete/', DriverDeleteView.as_view(), name='driver-delete'),
+
     # API endpoints for leave applications
     path("api/role/", get_user_role, name="get_user_role"), # to get the role
     path('api/total-leave-applications/', TotalLeaveApplicationListView.as_view(), name='total-leave-application-list'),  # Endpoint for listing all leave applications for the principal
